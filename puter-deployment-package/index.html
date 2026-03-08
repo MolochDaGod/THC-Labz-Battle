@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THC Dope Budz - Cannabis Trading Empire</title>
+    
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- THC Dope Budz Branding -->
+    <link rel="icon" type="image/x-icon" href="https://thclogo.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0d4f3c 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid #00ff88;
+        }
+        
+        .header h1 {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 1.2rem;
+        }
+        
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        .wallet-section {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 20px;
+            margin: 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .wallet-title {
+            color: #00ff88;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .connect-button {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+        
+        .connect-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .balance-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .balance-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .balance-label {
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .market-section {
+            flex: 1;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0 20px 20px 20px;
+            border-radius: 15px;
+        }
+        
+        .market-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .drug-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .drug-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .drug-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .drug-emoji {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        
+        .drug-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .drug-price {
+            color: #00ff88;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .buy-button {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        
+        .buy-button:hover {
+            background: rgba(0, 255, 136, 0.3);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: 80vh;
+            border: none;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .game-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .drug-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>THC DOPE BUDZ</h1>
+            <p>Cannabis Trading Empire on Solana Blockchain</p>
+        </div>
+
+        <!-- Game Stats -->
+        <div class="game-stats">
+            <div class="stat-card">
+                <div class="stat-value" style="color: #00ff88;" id="money">$2,000</div>
+                <div class="stat-label">Money</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #ff4444;" id="debt">$5,500</div>
+                <div class="stat-label">Debt</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #4488ff;" id="health">100%</div>
+                <div class="stat-label">Health</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #ffaa00;" id="day">Day 1</div>
+                <div class="stat-label" id="city">New York</div>
+            </div>
+        </div>
+
+        <!-- Wallet Section -->
+        <div class="wallet-section">
+            <div class="wallet-title">🌿 Web3 Wallet Connection</div>
+            <div id="wallet-status">
+                <button class="connect-button" onclick="connectWallet()">
+                    Connect Phantom Wallet
+                </button>
+            </div>
+            <div class="balance-grid" id="balance-display" style="display: none;">
+                <div class="balance-item">
+                    <div class="balance-value" id="budz-balance">0</div>
+                    <div class="balance-label">BUDZ</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-value" id="gbux-balance">0</div>
+                    <div class="balance-label">GBUX</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-value" id="thc-balance">0</div>
+                    <div class="balance-label">THC LABZ</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-value" id="sol-balance">0</div>
+                    <div class="balance-label">SOL</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full Game Iframe -->
+        <div style="margin: 20px; text-align: center;">
+            <h3 style="margin-bottom: 15px;">🎮 Play Full Game</h3>
+            <iframe 
+                src="https://thc-labz-dope-budz-grudgedev.replit.app/"
+                class="iframe-container"
+                frameborder="0"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <!-- Market Section -->
+        <div class="market-section">
+            <div class="market-title">🏪 Street Market - New York</div>
+            <div class="drug-grid">
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-emoji">🌿</div>
+                        <div>
+                            <div class="drug-name">OG Kush</div>
+                            <div class="drug-price">$800/gram</div>
+                        </div>
+                    </div>
+                    <button class="buy-button" onclick="buyDrug('OG Kush', 800)">
+                        Buy 1 gram - $800
+                    </button>
+                </div>
+
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-emoji">⚡</div>
+                        <div>
+                            <div class="drug-name">Sour Diesel</div>
+                            <div class="drug-price">$1,200/gram</div>
+                        </div>
+                    </div>
+                    <button class="buy-button" onclick="buyDrug('Sour Diesel', 1200)">
+                        Buy 1 gram - $1,200
+                    </button>
+                </div>
+
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-emoji">💜</div>
+                        <div>
+                            <div class="drug-name">Purple Haze</div>
+                            <div class="drug-price">$950/gram</div>
+                        </div>
+                    </div>
+                    <button class="buy-button" onclick="buyDrug('Purple Haze', 950)">
+                        Buy 1 gram - $950
+                    </button>
+                </div>
+
+                <div class="drug-card">
+                    <div class="drug-header">
+                        <div class="drug-emoji">❄️</div>
+                        <div>
+                            <div class="drug-name">White Widow</div>
+                            <div class="drug-price">$1,100/gram</div>
+                        </div>
+                    </div>
+                    <button class="buy-button" onclick="buyDrug('White Widow', 1100)">
+                        Buy 1 gram - $1,100
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🚀 Real Solana integration • 50 achievements • BUDZ token rewards</p>
+            <p>Build your cannabis empire and earn cryptocurrency!</p>
+            <p>Powered by THC LABZ Ecosystem</p>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            money: 2000,
+            debt: 5500,
+            health: 100,
+            day: 1,
+            city: 'New York'
+        };
+
+        let walletConnected = false;
+        let walletAddress = '';
+
+        // Auto-detect and connect wallet
+        async function autoConnectWallet() {
+            if (typeof window !== 'undefined' && window.solana?.isPhantom) {
+                try {
+                    const response = await window.solana.connect({ onlyIfTrusted: true });
+                    if (response.publicKey) {
+                        walletAddress = response.publicKey.toString();
+                        walletConnected = true;
+                        updateWalletDisplay();
+                        fetchBalances();
+                        console.log('✅ Wallet auto-connected:', walletAddress);
+                    }
+                } catch (error) {
+                    console.log('Wallet not auto-connected');
+                }
+            }
+        }
+
+        // Connect wallet manually
+        async function connectWallet() {
+            if (typeof window !== 'undefined' && window.solana?.isPhantom) {
+                try {
+                    const response = await window.solana.connect();
+                    walletAddress = response.publicKey.toString();
+                    walletConnected = true;
+                    updateWalletDisplay();
+                    fetchBalances();
+                    console.log('✅ Wallet connected:', walletAddress);
+                } catch (error) {
+                    console.error('Wallet connection failed:', error);
+                    alert('Failed to connect wallet. Please try again.');
+                }
+            } else {
+                alert('Please install Phantom wallet to connect');
+                window.open('https://phantom.app/', '_blank');
+            }
+        }
+
+        // Update wallet display
+        function updateWalletDisplay() {
+            const walletStatus = document.getElementById('wallet-status');
+            const balanceDisplay = document.getElementById('balance-display');
+            
+            if (walletConnected) {
+                walletStatus.innerHTML = `
+                    <div style="color: #00ff88; font-weight: bold;">
+                        ✅ Connected: ${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}
+                    </div>
+                `;
+                balanceDisplay.style.display = 'grid';
+            }
+        }
+
+        // Fetch token balances
+        async function fetchBalances() {
+            if (!walletConnected) return;
+            
+            try {
+                const response = await fetch(`https://thc-labz-dope-budz-grudgedev.replit.app/api/wallet/${walletAddress}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    document.getElementById('budz-balance').textContent = (data.budzBalance || 0).toLocaleString();
+                    document.getElementById('gbux-balance').textContent = (data.gbuxBalance || 0).toLocaleString();
+                    document.getElementById('thc-balance').textContent = (data.thcLabzTokenBalance || 0).toLocaleString();
+                    document.getElementById('sol-balance').textContent = (data.solBalance || 0).toFixed(3);
+                    
+                    console.log('✅ Balances updated:', data);
+                }
+            } catch (error) {
+                console.error('Error fetching balances:', error);
+            }
+        }
+
+        // Buy drug function
+        function buyDrug(drugName, price) {
+            if (gameState.money >= price) {
+                gameState.money -= price;
+                updateGameStats();
+                
+                // Show success message
+                alert(`✅ Bought 1 gram of ${drugName} for $${price.toLocaleString()}!`);
+                
+                // Simple profit calculation for demo
+                setTimeout(() => {
+                    const profit = Math.floor(price * (0.2 + Math.random() * 0.8));
+                    gameState.money += profit;
+                    updateGameStats();
+                    alert(`💰 Sold ${drugName} for $${profit.toLocaleString()} profit!`);
+                }, 2000);
+            } else {
+                alert('❌ Not enough money! Connect your wallet to earn BUDZ tokens.');
+            }
+        }
+
+        // Update game stats display
+        function updateGameStats() {
+            document.getElementById('money').textContent = `$${gameState.money.toLocaleString()}`;
+            document.getElementById('debt').textContent = `$${gameState.debt.toLocaleString()}`;
+            document.getElementById('health').textContent = `${gameState.health}%`;
+            document.getElementById('day').textContent = `Day ${gameState.day}`;
+        }
+
+        // Simulate game progression
+        function simulateGameTime() {
+            setInterval(() => {
+                // Random events
+                if (Math.random() < 0.1) {
+                    const events = [
+                        'Police raid nearby! Stay alert.',
+                        'New shipment arrived in town.',
+                        'Prices fluctuating due to market demand.',
+                        'Rival dealer spotted in the area.'
+                    ];
+                    
+                    const randomEvent = events[Math.floor(Math.random() * events.length)];
+                    console.log('🎲 Random event:', randomEvent);
+                }
+                
+                // Update day every 30 seconds for demo
+                if (Math.random() < 0.05) {
+                    gameState.day++;
+                    updateGameStats();
+                }
+            }, 5000);
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            console.log('🌿 THC Dope Budz initialized');
+            autoConnectWallet();
+            simulateGameTime();
+            
+            // Try to refresh balances periodically
+            setInterval(() => {
+                if (walletConnected) {
+                    fetchBalances();
+                }
+            }, 30000);
+        });
+
+        // Console art
+        console.log(`
+        ████████╗██╗  ██╗ ██████╗    ██████╗  ██████╗ ██████╗ ███████╗    ██████╗ ██╗   ██╗██████╗ ███████╗
+        ╚══██╔══╝██║  ██║██╔════╝    ██╔══██╗██╔═══██╗██╔══██╗██╔════╝    ██╔══██╗██║   ██║██╔══██╗╚══███╔╝
+           ██║   ███████║██║         ██║  ██║██║   ██║██████╔╝█████╗      ██████╔╝██║   ██║██║  ██║  ███╔╝ 
+           ██║   ██╔══██║██║         ██║  ██║██║   ██║██╔═══╝ ██╔══╝      ██╔══██╗██║   ██║██║  ██║ ███╔╝  
+           ██║   ██║  ██║╚██████╗    ██████╔╝╚██████╔╝██║     ███████╗    ██████╔╝╚██████╔╝██████╔╝███████╗
+           ╚═╝   ╚═╝  ╚═╝ ╚═════╝    ╚═════╝  ╚═════╝ ╚═╝     ╚══════╝    ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝
+        
+        🌿 Cannabis Trading Empire on Solana
+        🚀 Connect your Phantom wallet to start earning BUDZ tokens!
+        `);
+    </script>
+</body>
+</html>

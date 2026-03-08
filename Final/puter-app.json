@@ -1,0 +1,53 @@
+{
+  "name": "THC Dope Budz",
+  "description": "Cannabis trading simulation with Web3 integration and NFT-gated AI assistants",
+  "version": "1.0.0",
+  "main": "index.html",
+  "category": "games",
+  "public": true,
+  "icon": "/attached_assets/THCDopeBuds.png",
+  "screenshots": [
+    "/attached_assets/THCDopeBuds.png"
+  ],
+  "keywords": [
+    "cannabis",
+    "trading",
+    "simulation", 
+    "web3",
+    "solana",
+    "blockchain",
+    "nft",
+    "gaming"
+  ],
+  "author": "THC LABZ",
+  "website": "https://thclabz.com",
+  "features": [
+    "Web3 wallet integration",
+    "Real token balance fetching",
+    "NFT-gated AI assistants", 
+    "45-day trading cycles",
+    "Achievement system with rewards",
+    "Multi-city economics simulation"
+  ],
+  "permissions": [
+    "wallet-connect",
+    "blockchain-read",
+    "local-storage"
+  ],
+  "puter": {
+    "embed_support": true,
+    "iframe_allowed": true,
+    "mobile_optimized": true,
+    "web3_enabled": true
+  },
+  "build": {
+    "command": "npm install && npm run build",
+    "output": "dist",
+    "main_file": "index.html"
+  },
+  "server": {
+    "port": 5000,
+    "command": "npm start",
+    "health_check": "/api/health"
+  }
+}

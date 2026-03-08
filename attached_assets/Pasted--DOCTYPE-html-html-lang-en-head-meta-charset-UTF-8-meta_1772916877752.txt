@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cannabis Screensaver</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* BACKGROUND SMOKE/FOG EFFECT */
+        .smoke-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 2; /* Above background, below other elements */
+            overflow: hidden;
+        }
+        
+        .smoke {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        @keyframes smokeFloat {
+            0% {
+                transform: translateX(0) translateY(0) scale(0.8);
+                opacity: 0;
+            }
+            10% {
+                opacity: var(--max-opacity);
+            }
+            90% {
+                opacity: var(--max-opacity);
+            }
+            100% {
+                transform: translateX(var(--x-drift)) translateY(var(--y-drift)) scale(1.6);
+                opacity: 0;
+            }
+        }
+        
+        /* BACKGROUND IMAGE */
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            object-fit: cover;
+        }
+        
+        /* LOGO */
+        .logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 300px;
+            max-height: 300px;
+            z-index: 50; /* Above smoke and buds, below characters */
+            object-fit: contain;
+            opacity: 0.9;
+            filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.3));
+        }
+        
+        /* RAIN STYLES */
+        .bud {
+            position: absolute;
+            top: -100px;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center;
+            pointer-events: none;
+            z-index: 10; /* Above background and smoke */
+        }
+        
+        /* Color variation classes */
+        .green-tint {
+            filter: hue-rotate(-30deg) saturate(1.2) brightness(1.1) drop-shadow(0 0 3px rgba(255, 255, 255, 0.2));
+        }
+        
+        .purple-tint {
+            filter: hue-rotate(70deg) saturate(1.5) brightness(0.9) drop-shadow(0 0 3px rgba(255, 255, 255, 0.2));
+        }
+        
+        .white-tint {
+            filter: hue-rotate(0deg) saturate(0.3) brightness(1.4) drop-shadow(0 0 3px rgba(255, 255, 255, 0.2));
+        }
+        
+        .light-green-tint {
+            filter: hue-rotate(-10deg) saturate(1.1) brightness(1.2) drop-shadow(0 0 3px rgba(255, 255, 255, 0.2));
+        }
+        
+        .blue-tint {
+            filter: hue-rotate(140deg) saturate(1.3) brightness(1) drop-shadow(0 0 3px rgba(255, 255, 255, 0.2));
+        }
+        
+        .smoke-particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateX(0) translateY(-100px) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(var(--wind-drift)) translateY(calc(100vh + 200px)) rotate(var(--rotation));
+                opacity: var(--end-opacity);
+            }
+        }
+        
+        @keyframes smoke {
+            0% {
+                transform: translate(0, 0) scale(0.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translate(var(--x-move), var(--y-move)) scale(1);
+                opacity: 0;
+            }
+        }
+        
+        /* CHARACTER POP-UP STYLES */
+        .character {
+            position: absolute;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center bottom;
+            pointer-events: none;
+            bottom: 0;
+            z-index: 100; /* Make characters appear above everything */
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+        }
+        
+        /* Pop up and leave left animation */
+        @keyframes popUpAndLeaveLeft {
+            0% {
+                transform: translateY(100%) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                transform: translateY(20%) translateX(0);
+                opacity: 1;
+            }
+            20%, 70% {
+                transform: translateY(20%) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(20%) translateX(-150%);
+                opacity: 0;
+            }
+        }
+        
+        /* Pop up and leave right animation */
+        @keyframes popUpAndLeaveRight {
+            0% {
+                transform: translateY(100%) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                transform: translateY(20%) translateX(0);
+                opacity: 1;
+            }
+            20%, 70% {
+                transform: translateY(20%) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(20%) translateX(150%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="animation-container">
+        <!-- Background smoke container -->
+        <div class="smoke-container" id="smoke-container"></div>
+        
+        <!-- Background image -->
+        <img src="https://i.imgur.com/AsXtIvK.png" alt="Background" class="background-image">
+        
+        <!-- Logo in center -->
+        <img src="https://i.imgur.com/EvHRwWf.png" alt="Logo" class="logo">
+    </div>
+
+    <script>
+        // ============ BACKGROUND SMOKE CONFIGURATION ============
+        const smokeConfig = {
+            count: 15,           // Number of smoke elements visible at once
+            minSize: 300,        // Minimum smoke size in pixels
+            maxSize: 800,        // Maximum smoke size in pixels
+            minDuration: 15000,  // Minimum float animation duration (ms)
+            maxDuration: 40000,  // Maximum float animation duration (ms)
+            minOpacity: 0.05,    // Minimum opacity of smoke
+            maxOpacity: 0.15,    // Maximum opacity of smoke
+            driftRange: 400,     // Maximum drift distance in any direction
+            spawnInterval: 2000, // Time between spawning new smoke elements
+            smokeColors: [       // Array of colors for smoke (subtle tints)
+                'rgba(255, 255, 255, 1)',      // White smoke
+                'rgba(220, 255, 220, 1)',      // Light green tint
+                'rgba(255, 255, 230, 1)',      // Light yellow tint
+                'rgba(240, 240, 255, 1)',      // Light blue tint
+            ]
+        };
+        
+        // ============ RAIN CONFIGURATION ============
+        // Bud images
+        const budImages = [
+            'https://i.imgur.com/9MIRkig.png',
+            'https://i.imgur.com/ggfyOEs.png',
+            'https://i.imgur.com/fSgTMOt.png',
+            'https://i.imgur.com/dHAvPGk.png'
+        ];
+        
+        // Color variation classes
+        const colorVariations = [
+            'green-tint',
+            'purple-tint',
+            'white-tint',
+            'light-green-tint',
+            'blue-tint'
+        ];
+        
+        // Rainstorm configuration
+        const rainConfig = {
+            maxBuds: 80,            // Maximum number of buds on screen
+            spawnInterval: 80,      // Base milliseconds between spawning (lower = more buds)
+            fallDurationBase: 5000, // Base fall duration in ms
+            fallDurationVariance: 3000, // Added randomness to fall duration
+            budSizeMin: 15,        // Minimum bud size (0.2x original)
+            budSizeMax: 80,        // Maximum bud size (1.1x original)
+            smokeParticlesPerBud: 1, // Fewer smoke particles for performance
+            windStrength: 100,     // Maximum horizontal drift
+            windDirection: 1,      // 1 = right, -1 = left
+            burstFrequency: 8000,  // How often bursts of buds occur (ms)
+            burstDuration: 1000,   // How long a burst lasts (ms)
+            burstIntensity: 3      // How many times more buds during burst
+        };
+        
+        // Smoke configuration
+        const budSmokeSizes = { min: 5, max: 15 };
+        const budSmokeDuration = { min: 1000, max: 3000 };
+        
+        let currentBurstMode = false;
+        
+        // ============ CHARACTERS CONFIGURATION ============
+        // Character images
+        const characterImages = [
+            'https://i.imgur.com/5ERtRX1.png',
+            'https://i.imgur.com/DqbNFY7.png',
+            'https://i.imgur.com/Y0Xqt3v.png',
+            'https://i.imgur.com/cBblxi1.png',
+            'https://i.imgur.com/OFKbN24.png',
+            'https://i.imgur.com/UvqFUAe.png' // New image added
+        ];
+        
+        // Character animation configuration
+        const characterConfig = {
+            minSize: 180,         // Minimum image size
+            maxSize: 260,         // Maximum image size
+            duration: {           // How long the full animation takes (4-10 seconds)
+                min: 4000, 
+                max: 10000
+            },
+            spawnInterval: {      // Time between spawning new characters
+                min: 2000,
+                max: 6000
+            },
+            visibleHeight: 0.8,   // Portion of the image that is visible (0.8 = 80%)
+            positions: 9,         // Number of possible horizontal positions
+            positionPadding: 0.1, // 10% padding from edges
+            maxCharacters: 3      // Maximum number of characters on screen at once
+        };
+        
+        // Track which characters are currently on screen
+        const activeCharacters = new Set();
+        // Count of characters currently on screen
+        let activeCharacterCount = 0;
+        
+        // ============ SHARED VARIABLES ============
+        const container = document.getElementById('animation-container');
+        const smokeContainer = document.getElementById('smoke-container');
+        let containerWidth = window.innerWidth;
+        let containerHeight = window.innerHeight;
+
+        // ============ UTILITY FUNCTIONS ============
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        function getRandomFloat(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+        
+        // ============ BACKGROUND SMOKE FUNCTIONS ============
+        function createBackgroundSmoke() {
+            const smoke = document.createElement('div');
+            smoke.className = 'smoke';
+            
+            // Random size
+            const size = getRandomInt(smokeConfig.minSize, smokeConfig.maxSize);
+            
+            // Random position anywhere on screen
+            const xPos = getRandomInt(-size/3, containerWidth - size/2);
+            const yPos = getRandomInt(-size/3, containerHeight - size/2);
+            
+            // Random drift direction
+            const xDrift = getRandomInt(-smokeConfig.driftRange, smokeConfig.driftRange);
+            const yDrift = getRandomInt(-smokeConfig.driftRange, smokeConfig.driftRange);
+            
+            // Random opacity
+            const maxOpacity = getRandomFloat(smokeConfig.minOpacity, smokeConfig.maxOpacity);
+            
+            // Random duration
+            const duration = getRandomInt(smokeConfig.minDuration, smokeConfig.maxDuration);
+            
+            // Random color
+            const colorIndex = getRandomInt(0, smokeConfig.smokeColors.length - 1);
+            
+            // Set styles
+            smoke.style.width = `${size}px`;
+            smoke.style.height = `${size}px`;
+            smoke.style.left = `${xPos}px`;
+            smoke.style.top = `${yPos}px`;
+            smoke.style.background = `radial-gradient(circle, ${smokeConfig.smokeColors[colorIndex]} 0%, rgba(255, 255, 255, 0) 70%)`;
+            
+            // Set animation variables
+            smoke.style.setProperty('--x-drift', `${xDrift}px`);
+            smoke.style.setProperty('--y-drift', `${yDrift}px`);
+            smoke.style.setProperty('--max-opacity', maxOpacity);
+            smoke.style.animation = `smokeFloat ${duration}ms ease-in-out forwards`;
+            
+            smokeContainer.appendChild(smoke);
+            
+            // Remove smoke after animation completes
+            setTimeout(() => {
+                if (smoke && smoke.parentNode) {
+                    smoke.remove();
+                }
+            }, duration + 100);
+        }
+        
+        // Maintain a constant number of smoke elements
+        function maintainSmokeCount() {
+            const currentCount = document.querySelectorAll('.smoke').length;
+            const neededSmoke = smokeConfig.count - currentCount;
+            
+            if (neededSmoke > 0) {
+                for (let i = 0; i < neededSmoke; i++) {
+                    createBackgroundSmoke();
+                }
+            }
+        }
+        
+        // ============ RAIN FUNCTIONS ============
+        // Use exponential distribution to favor smaller buds (more realistic)
+        function getWeightedSize() {
+            // Exponential distribution favoring smaller values
+            const exponential = -Math.log(1 - Math.random()) / 1.5;
+            // Map to our size range but cap at max
+            const normalizedValue = exponential / 3; // Normalize to roughly 0-1 range
+            const size = rainConfig.budSizeMin + normalizedValue * (rainConfig.budSizeMax - rainConfig.budSizeMin);
+            return Math.min(size, rainConfig.budSizeMax);
+        }
+        
+        function createBud() {
+            if (document.querySelectorAll('.bud').length >= rainConfig.maxBuds) return;
+            
+            const bud = document.createElement('div');
+            bud.className = 'bud';
+            
+            // Random properties
+            const size = getWeightedSize();
+            const xPos = getRandomInt(0, containerWidth - size/2);
+            
+            // Parallax effect - smaller buds fall slower (appear further away)
+            const sizeRatio = (size - rainConfig.budSizeMin) / (rainConfig.budSizeMax - rainConfig.budSizeMin);
+            const speedFactor = 0.7 + (sizeRatio * 0.6); // 0.7-1.3x speed based on size
+            
+            const baseDuration = rainConfig.fallDurationBase / speedFactor;
+            const duration = getRandomInt(
+                baseDuration - rainConfig.fallDurationVariance/2, 
+                baseDuration + rainConfig.fallDurationVariance/2
+            );
+            
+            const imageIndex = getRandomInt(0, budImages.length - 1);
+            const rotation = getRandomInt(-360, 360);
+            
+            // Wind effect - horizontal drift
+            const windDrift = getRandomInt(-rainConfig.windStrength/2, rainConfig.windStrength) * rainConfig.windDirection;
+            
+            // Depth effect with opacity
+            const opacity = 0.85 + (sizeRatio * 0.15); // 0.85-1.0 opacity based on size
+            
+            // Z-index for layering effect - larger buds in front
+            const zIndex = Math.floor(sizeRatio * 30) + 10; // 10-40 z-index based on size
+            
+            // Set styles
+            bud.style.width = `${size}px`;
+            bud.style.height = `${size}px`;
+            bud.style.left = `${xPos}px`;
+            bud.style.backgroundImage = `url(${budImages[imageIndex]})`;
+            bud.style.zIndex = zIndex;
+            bud.classList.add(colorVariations[getRandomInt(0, colorVariations.length - 1)]); // Add color variation
+            
+            // Set animation variables
+            bud.style.setProperty('--wind-drift', `${windDrift}px`);
+            bud.style.setProperty('--rotation', `${rotation}deg`);
+            bud.style.setProperty('--end-opacity', `${opacity}`);
+            bud.style.animation = `fall ${duration}ms ease-in forwards`;
+            
+            container.appendChild(bud);
+            
+            // Generate smoke particles for larger buds only
+            if (size > rainConfig.budSizeMax * 0.6 && Math.random() > 0.7) {
+                createBudSmokeParticles(bud, size, xPos);
+            }
+            
+            // Remove bud after animation completes
+            setTimeout(() => {
+                if (bud && bud.parentNode) {
+                    bud.remove();
+                }
+            }, duration + 100);
+        }
+        
+        function createBudSmokeParticles(bud, budSize, xPos) {
+            for (let i = 0; i < rainConfig.smokeParticlesPerBud; i++) {
+                setTimeout(() => {
+                    const smoke = document.createElement('div');
+                    smoke.className = 'smoke-particle';
+                    
+                    // Get current bud position (it's falling)
+                    const budRect = bud.getBoundingClientRect();
+                    const yPos = budRect.top + budSize/2;
+                    
+                    // Random properties
+                    const smokeSize = getRandomInt(budSmokeSizes.min, budSmokeSizes.max);
+                    const smokeDurationTime = getRandomInt(budSmokeDuration.min, budSmokeDuration.max);
+                    
+                    // Random movement direction for smoke
+                    const xMove = getRandomInt(-30, 30);
+                    const yMove = getRandomInt(-10, -40);
+                    
+                    // Set styles
+                    smoke.style.width = `${smokeSize}px`;
+                    smoke.style.height = `${smokeSize}px`;
+                    smoke.style.left = `${budRect.left + budSize/2}px`;
+                    smoke.style.top = `${yPos}px`;
+                    smoke.style.zIndex = 5;
+                    smoke.style.setProperty('--x-move', `${xMove}px`);
+                    smoke.style.setProperty('--y-move', `${yMove}px`);
+                    smoke.style.animation = `smoke ${smokeDurationTime}ms ease-out forwards`;
+                    
+                    container.appendChild(smoke);
+                    
+                    // Remove smoke after animation
+                    setTimeout(() => {
+                        if (smoke && smoke.parentNode) {
+                            smoke.remove();
+                        }
+                    }, smokeDurationTime);
+                }, getRandomInt(0, 500)); // Staggered smoke creation
+            }
+        }
+        
+        // Create bursts of buds periodically to simulate rain gusts
+        function startBurstMode() {
+            if (currentBurstMode) return;
+            currentBurstMode = true;
+            
+            // Save current spawn interval
+            const originalInterval = rainConfig.spawnInterval;
+            
+            // Increase spawn rate for burst duration
+            const burstInterval = rainConfig.spawnInterval / rainConfig.burstIntensity;
+            
+            // Create more buds during burst
+            const burstSpawnId = setInterval(() => {
+                for (let i = 0; i < 3; i++) {
+                    createBud();
+                }
+            }, burstInterval);
+            
+            // Reset after burst duration
+            setTimeout(() => {
+                clearInterval(burstSpawnId);
+                currentBurstMode = false;
+            }, rainConfig.burstDuration);
+        }
+        
+        // ============ CHARACTER FUNCTIONS ============
+        // Get a character that isn't currently on screen
+        function getUniqueCharacter() {
+            // Create array of available characters (not currently active)
+            const availableCharacters = characterImages.filter((_, index) => !activeCharacters.has(index));
+            
+            // If all are active, just pick a random one
+            if (availableCharacters.length === 0) {
+                return getRandomInt(0, characterImages.length - 1);
+            }
+            
+            // Pick a random available character
+            const randomIndex = getRandomInt(0, availableCharacters.length - 1);
+            return characterImages.indexOf(availableCharacters[randomIndex]);
+        }
+        
+        function createCharacter() {
+            // Check if we're at the maximum allowed characters
+            if (activeCharacterCount >= characterConfig.maxCharacters) {
+                // Try again later
+                setTimeout(checkAndCreateCharacter, 1000);
+                return;
+            }
+            
+            // Get a unique character index
+            const imageIndex = getUniqueCharacter();
+            
+            // Track this character as active
+            activeCharacters.add(imageIndex);
+            activeCharacterCount++;
+            
+            const characterEl = document.createElement('div');
+            characterEl.className = 'character';
+            characterEl.dataset.characterIndex = imageIndex; // Store the index for cleanup
+            
+            // Random sizing
+            const size = getRandomInt(characterConfig.minSize, characterConfig.maxSize);
+            
+            // Random position along bottom (with padding)
+            const usableWidth = containerWidth * (1 - 2 * characterConfig.positionPadding);
+            const startPadding = containerWidth * characterConfig.positionPadding;
+            const xPos = getRandomInt(startPadding, startPadding + usableWidth);
+            
+            // Random vertical offset for variability
+            const verticalOffset = getRandomInt(-10, 10);
+            
+            // Determine exit direction
+            // Characters on left side tend to exit right, characters on right side tend to exit left
+            // This creates more natural movement and less crossing in the middle
+            const middlePoint = containerWidth / 2;
+            let exitDirection;
+            
+            if (xPos < middlePoint - 200) {
+                // Left side - 80% chance to exit right
+                exitDirection = Math.random() < 0.8 ? 'Right' : 'Left';
+            } else if (xPos > middlePoint + 200) {
+                // Right side - 80% chance to exit left
+                exitDirection = Math.random() < 0.8 ? 'Left' : 'Right';
+            } else {
+                // Center - 50/50 chance
+                exitDirection = Math.random() > 0.5 ? 'Right' : 'Left';
+            }
+            
+            // Random duration between min and max
+            const animDuration = getRandomInt(characterConfig.duration.min, characterConfig.duration.max);
+            
+            // Set styles
+            characterEl.style.width = `${size}px`;
+            characterEl.style.height = `${size}px`;
+            characterEl.style.left = `${xPos}px`;
+            characterEl.style.marginLeft = `-${size/2}px`; // Center horizontally
+            characterEl.style.marginBottom = `${verticalOffset}px`;
+            characterEl.style.backgroundImage = `url(${characterImages[imageIndex]})`;
+            
+            // Apply animation
+            characterEl.style.animation = `popUpAndLeave${exitDirection} ${animDuration}ms ease-in-out forwards`;
+            
+            // Add to container
+            container.appendChild(characterEl);
+            
+            // Remove element after animation completes and update tracking
+            setTimeout(() => {
+                if (characterEl && characterEl.parentNode) {
+                    characterEl.remove();
+                    activeCharacters.delete(imageIndex);
+                    activeCharacterCount--;
+                    
+                    // After a character leaves, check if we can create a new one
+                    checkAndCreateCharacter();
+                }
+            }, animDuration + 100);
+        }
+        
+        // Check if we can create a new character and do so if possible
+        function checkAndCreateCharacter() {
+            // Only create a new character if we're below the max
+            if (activeCharacterCount < characterConfig.maxCharacters) {
+                // Schedule next character after random interval
+                setTimeout(createCharacter, getRandomInt(
+                    characterConfig.spawnInterval.min, 
+                    characterConfig.spawnInterval.max
+                ));
+            } else {
+                // Try again later
+                setTimeout(checkAndCreateCharacter, 1000);
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            containerWidth = window.innerWidth;
+            containerHeight = window.innerHeight;
+        });
+        
+        // ============ STARTUP ============
+        // Preload images for smoother animation
+        function preloadImages() {
+            // Preload bud images
+            budImages.forEach(src => {
+                const img = new Image();
+                img.src = src;
+            });
+            
+            // Preload character images
+            characterImages.forEach(src => {
+                const img = new Image();
+                img.src = src;
+            });
+        }
+        
+        // Initialize background smoke
+        function startBackgroundSmoke() {
+            // Create initial set of smoke elements
+            for (let i = 0; i < smokeConfig.count; i++) {
+                setTimeout(() => {
+                    createBackgroundSmoke();
+                }, i * 400);
+            }
+            
+            // Maintain smoke count at regular intervals
+            setInterval(maintainSmokeCount, smokeConfig.spawnInterval);
+        }
+        
+        // Initialize rain animation
+        function startRainAnimation() {
+            // Create initial set of buds
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    createBud();
+                }, i * 100);
+            }
+            
+            // Continue spawning at interval
+            setInterval(() => {
+                createBud();
+            }, rainConfig.spawnInterval);
+            
+            // Set up periodic bursts
+            setInterval(startBurstMode, rainConfig.burstFrequency);
+        }
+        
+        // Start everything
+        window.onload = () => {
+            preloadImages();
+            
+            // Start background smoke first
+            startBackgroundSmoke();
+            
+            // Then rain
+            startRainAnimation();
+            
+            // Start with 1-3 characters with a slight delay
+            setTimeout(() => {
+                // Start with just 1 character
+                createCharacter();
+                
+                // Maybe add a second after a bit
+                if (Math.random() > 0.3) {
+                    setTimeout(createCharacter, 2000);
+                    
+                    // And maybe a third
+                    if (Math.random() > 0.5) {
+                        setTimeout(createCharacter, 4000);
+                    }
+                }
+            }, 1500);
+        };
+    </script>
+</body>
+</html>

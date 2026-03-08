@@ -1,0 +1,74 @@
+{
+  "name": "THC Dope Budz",
+  "version": "1.0.0",
+  "description": "Web3 Cannabis Trading Game with Solana Blockchain Integration",
+  "author": "THC Labz",
+  "category": "games",
+  "subcategory": "strategy",
+  "tags": ["web3", "solana", "cannabis", "trading", "nft", "crypto", "strategy"],
+  "icon": "/attached_assets/thclogo.png",
+  "screenshot": "/attached_assets/screenshot-1752198634036.png",
+  "main": "puter-deployment.js",
+  "type": "web",
+  "appId": "app-8e279a43-403f-4783-a3ca-e1ea8f74b228",
+  "permissions": [
+    "wallet.connect",
+    "blockchain.read",
+    "storage.local",
+    "network.request"
+  ],
+  "web3": {
+    "supported": true,
+    "networks": ["solana"],
+    "wallets": ["phantom", "solflare", "backpack", "magic-eden", "coinbase", "glow"],
+    "tokens": ["BUDZ", "GBUX", "THC LABZ"],
+    "features": [
+      "nft-detection",
+      "token-swapping",
+      "real-time-balances",
+      "achievement-rewards"
+    ]
+  },
+  "game": {
+    "type": "strategy",
+    "players": "single",
+    "duration": "45-days",
+    "difficulty": "medium",
+    "achievements": 70,
+    "rewards": {
+      "type": "cryptocurrency",
+      "tokens": ["BUDZ", "GBUX", "THC LABZ"],
+      "maxRewards": 1400,
+      "leaderboard": true
+    }
+  },
+  "features": {
+    "web3Integration": true,
+    "phantomBrowser": true,
+    "nftGating": true,
+    "aiAssistant": true,
+    "dynamicMusic": true,
+    "mobileOptimized": true,
+    "achievements": 70,
+    "leaderboards": true,
+    "realCrypto": true
+  },
+  "requirements": {
+    "solanaWallet": "recommended",
+    "growerNFT": "optional",
+    "browser": ["chrome", "firefox", "safari", "phantom", "brave"],
+    "mobile": true
+  },
+  "urls": {
+    "game": "/game",
+    "health": "/health",
+    "api": "/api"
+  },
+  "puter": {
+    "compatible": true,
+    "version": "1.0",
+    "optimized": true,
+    "webWorker": false,
+    "offline": false
+  }
+}

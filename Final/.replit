@@ -1,0 +1,27 @@
+run = "npm install && npm run dev"
+main = "index.html"
+hidden = [".config", "package-lock.json", "tsconfig.json"]
+modules = ["nodejs-20", "web"]
+
+[nix]
+channel = "stable-24_05"
+
+[unitTest]
+language = "nodejs"
+
+[deployment]
+run = ["sh", "-c", "npm run build && npm start"]
+deploymentTarget = "cloudrun"
+ignorePorts = false
+
+[languages]
+
+[languages.typescript]
+pattern = "**/{*.ts,*.js,*.tsx,*.jsx}"
+
+[languages.typescript.languageServer]
+start = "typescript-language-server --stdio"
+
+[env]
+NODE_ENV = "production"
+PORT = "5000"

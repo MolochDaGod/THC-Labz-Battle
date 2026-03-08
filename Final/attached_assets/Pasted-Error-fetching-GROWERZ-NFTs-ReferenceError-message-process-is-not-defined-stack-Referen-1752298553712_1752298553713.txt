@@ -1,0 +1,52 @@
+Error fetching GROWERZ NFTs: 
+ReferenceError {}
+message: "process is not defined"
+stack: "ReferenceError: process is not defined↵ at fetchGrowerNFTs (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/src/components/ThePlugAssistant.tsx:33:107)↵ at https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/src/components/ThePlugAssistant.tsx:162:7↵ at commitHookEffectListMount (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:16915:34)↵ at commitPassiveMountOnFiber (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:18156:19)↵ at commitPassiveMountEffects_complete (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:18129:17)↵ at commitPassiveMountEffects_begin (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:18119:15)↵ at commitPassiveMountEffects (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:18109:11)↵ at flushPassiveEffectsImpl (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:19490:11)↵ at flushPassiveEffects (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:19447:22)↵ at commitRootImpl (https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=c3f6e1da:19416:13)"
+get stack: ƒ ()
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+apply: ƒ apply()
+arguments: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get arguments: ƒ get arguments()
+set arguments: ƒ set arguments()
+bind: ƒ bind()
+call: ƒ call()
+caller: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get caller: ƒ get caller()
+set caller: ƒ set caller()
+constructor: ƒ Function()
+length: 0
+name: ""
+toString: ƒ toString()
+Symbol(Symbol.hasInstance): undefined
+[[Prototype]]: Object
+set stack: ƒ ()
+[[Prototype]]: Object
+
+Error fetching GROWERZ NFTs: 
+SyntaxError {}
+message: "Unexpected token '<', "<html lang"... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<html lang"... is not valid JSON"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+Error fetching GROWERZ NFTs: 
+SyntaxError {}
+message: "Unexpected token '<', "<html lang"... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<html lang"... is not valid JSON"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+Error fetching GROWERZ NFTs: 
+SyntaxError {}
+message: "Unexpected token '<', "<html lang"... is not valid JSON"
+stack: "SyntaxError: Unexpected token '<', "<html lang"... is not valid JSON"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+Error fetching GROWERZ NFTs: 
+SyntaxError {}

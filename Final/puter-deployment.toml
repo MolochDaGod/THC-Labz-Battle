@@ -1,0 +1,57 @@
+# Puter Deployment Configuration for THC Dope Budz
+# Optimized for Puter platform deployment with Web3 wallet integration
+
+[build]
+command = "npm install && npm run build"
+publish = "."
+main = "index.html"
+
+[build.environment]
+NODE_VERSION = "20"
+NPM_VERSION = "10"
+
+[web3]
+wallet_support = ["phantom", "solflare", "backpack", "glow"]
+auto_connect = true
+network = "mainnet-beta"
+
+[features]
+server_side_wallets = true
+achievement_system = true
+ai_assistant = true
+nft_detection = true
+token_integration = true
+
+[puter]
+app_name = "THC Dope Budz"
+description = "Cannabis trading simulation with Web3 integration"
+category = "games"
+public = true
+domains = ["thc-dope-budz"]
+
+[security]
+cors_enabled = true
+iframe_allowed = true
+wallet_permissions = ["connect", "sign_transaction"]
+
+[database]
+provider = "neon"
+auto_migrate = true
+fallback_enabled = true
+
+[api]
+base_url = "/api"
+endpoints = [
+  "/health",
+  "/wallet/*",
+  "/achievements/*", 
+  "/ai-assistant/*",
+  "/nft/*",
+  "/leaderboard"
+]
+
+[static]
+files = [
+  "puter-wallet-adapter.js",
+  "attached_assets/*"
+]

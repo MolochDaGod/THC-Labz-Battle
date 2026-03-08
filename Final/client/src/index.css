@@ -1,0 +1,546 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* LEMON MILK Font Family */
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-Light_1753699232906.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-LightItalic_1753699232907.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-Regular_1753699232902.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-RegularItalic_1753699232903.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-Medium_1753699232901.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-MediumItalic_1753699232902.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-Bold_1753699232905.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LEMONMILK-BoldItalic_1753699232906.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Thumbs Down Font for Body Text */
+@font-face {
+  font-family: 'Thumbs Down';
+  src: url('/fonts/thumbs-down.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Smoke Animation CSS - Mobile Optimized */
+.smoke-effect {
+  position: fixed;
+  pointer-events: none;
+  font-size: 18px;
+  z-index: 999;
+  animation: smokeFloat 2s ease-out forwards;
+}
+
+/* Larger smoke effect on bigger screens */
+@media (min-width: 768px) {
+  .smoke-effect {
+    font-size: 24px;
+  }
+}
+
+@keyframes smokeFloat {
+  0% {
+    opacity: 0.8;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.5) rotate(180deg) translateY(-20px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2) rotate(360deg) translateY(-40px);
+  }
+}
+
+/* Smoke Animation */
+@keyframes smokeRise {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, -50px) scale(1.5);
+  }
+}
+
+/* Thumbs Down Header and Title Classes */
+/* Mobile Touch Targets - Ensure minimum 44px touch targets */
+.mobile-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+  padding: 8px 12px;
+}
+
+@media (max-width: 768px) {
+  .mobile-touch-target {
+    min-height: 48px; 
+    min-width: 48px;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+}
+
+/* Enhanced spacing for better UX */
+.enhanced-game-spacing {
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+@media (min-width: 768px) {
+  .enhanced-game-spacing {
+    gap: 16px;
+    padding: 16px 24px;
+  }
+}
+
+/* Safe Area Support for mobile devices */
+.safe-area-padding {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent zoom on input focus for mobile */
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+@layer components {
+  .thumbs-down-title {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  
+  .thumbs-down-header {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  
+  .thumbs-down-subheader {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  
+  .thumbs-down-label {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  
+  /* Apply Thumbs Down to all headings globally */
+  h1, h2, h3, h4, h5, h6,
+  .text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl,
+  .font-bold, .font-extrabold, .font-black {
+    font-family: 'Thumbs Down', 'Arial', sans-serif !important;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  
+  /* Game-specific title classes */
+  .game-title {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .game-header {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  
+  .game-tab {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  
+  .game-button {
+    font-family: 'Thumbs Down', 'Arial', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  
+  /* Apply LEMON MILK to all body text */
+  body, p, span, div, input, textarea, select, label,
+  .text-sm, .text-base, .text-lg,
+  button:not(.game-button):not(.lemon-milk-title):not(.lemon-milk-header) {
+    font-family: 'LEMON MILK', 'Arial Black', sans-serif !important;
+  }
+  
+  /* LEMON MILK body text classes */
+  .lemon-milk-text {
+    font-family: 'LEMON MILK', 'Arial Black', sans-serif;
+  }
+  
+  .lemon-milk-body {
+    font-family: 'LEMON MILK', 'Arial Black', sans-serif;
+    line-height: 1.6;
+  }
+  
+  .lemon-milk-label {
+    font-family: 'LEMON MILK', 'Arial Black', sans-serif;
+    font-weight: normal;
+  }
+  
+  .lemon-milk-button {
+    font-family: 'LEMON MILK', 'Arial Black', sans-serif;
+    font-weight: normal;
+  }
+}
+
+/* Enhanced mobile-responsive CSS classes */
+@layer utilities {
+  /* Device-specific layouts */
+  .mobile-layout {
+    @apply text-sm;
+  }
+  
+  .tablet-layout {
+    @apply text-base;
+  }
+  
+  .desktop-layout {
+    @apply text-lg;
+  }
+  
+  /* Touch-friendly interactions */
+  .touch-device button,
+  .touch-device .button {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+  
+  /* High DPI display optimizations */
+  .high-dpi {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* Orientation-specific styles */
+  .landscape-mode {
+    @apply flex-row;
+  }
+  
+  .portrait-mode {
+    @apply flex-col;
+  }
+  
+  /* Screen size responsive classes */
+  .small-screen .game-button {
+    @apply text-xs px-2 py-1;
+  }
+  
+  .medium-screen .game-button {
+    @apply text-sm px-3 py-2;
+  }
+  
+  .large-screen .game-button {
+    @apply text-base px-4 py-2;
+  }
+  
+  /* Enhanced mobile game UI */
+  .mobile-game-ui {
+    @apply space-y-2 p-2;
+  }
+  
+  .mobile-game-ui .stat-card {
+    @apply p-2 text-sm;
+  }
+  
+  .mobile-game-ui .action-button {
+    @apply w-full py-3 text-base font-semibold;
+  }
+  
+  /* Tablet optimizations */
+  .tablet-game-ui {
+    @apply space-y-3 p-4;
+  }
+  
+  .tablet-game-ui .stat-card {
+    @apply p-3 text-base;
+  }
+
+  /* Enhanced Alert and Event Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+    }
+    to {
+      opacity: 1;
+      backdrop-filter: blur(4px);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) translateY(-50px);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05) translateY(0px);
+    }
+    70% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes progressBar {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 0 5px #10b981, 0 0 10px #10b981, 0 0 15px #10b981;
+    }
+    50% {
+      box-shadow: 0 0 10px #10b981, 0 0 20px #10b981, 0 0 30px #10b981;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out 0.3s both;
+  }
+
+  .animate-progress-bar {
+    animation: progressBar 8s linear forwards;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+  
+  /* Desktop optimizations */
+  .desktop-game-ui {
+    @apply space-y-4 p-6;
+  }
+  
+  .desktop-game-ui .stat-card {
+    @apply p-4 text-lg;
+  }
+  
+  /* Safe area support for notched devices */
+  .safe-area-padding {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+@font-face {
+  font-family: 'ThumbsDown';
+  src: url('/fonts/thumbs-down.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LemonMilk';
+  src: url('/fonts/lemonmilk-regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Improve touch targets */
+  button, input, textarea, select {
+    min-height: 44px;
+  }
+  
+  /* Optimize scrolling for mobile */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Reduce font sizes on very small screens */
+  @media (max-width: 375px) {
+    html {
+      font-size: 14px;
+    }
+  }
+}
+
+/* Touch-friendly interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Improve form inputs on mobile */
+input[type="number"] {
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Prevent zoom on input focus */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Wispy Smoke Animation */
+@keyframes smokeWisp {
+  0% {
+    transform: translateY(0px) translateX(0px) scale(0.8) rotate(0deg);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translateY(-20px) translateX(5px) scale(1.0) rotate(45deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-50px) translateX(-3px) scale(1.3) rotate(90deg);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translateY(-80px) translateX(8px) scale(1.6) rotate(135deg);
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(-120px) translateX(-2px) scale(2.0) rotate(180deg);
+    opacity: 0;
+  }
+}

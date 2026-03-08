@@ -1,0 +1,222 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="THC Dope Warz" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <title>THC Dope Warz</title>
+    
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- Basic error suppression for extension conflicts -->
+    <script>
+      // Simple error suppression to prevent extension conflicts
+      (function() {
+        'use strict';
+        
+        function initializeProtection() {
+          console.log('🛡️ THC Labz - Basic protection initialized');
+          
+          // Suppress common extension errors
+          const originalErrorHandler = window.onerror;
+          window.onerror = function(message, source, lineno, colno, error) {
+            const msg = String(message);
+            if (msg.includes('evmAsk') || 
+                msg.includes('Cannot redefine property') || 
+                msg.includes('Could not establish connection') ||
+                msg.includes('Receiving end does not exist') ||
+                msg.includes('contentScript.js')) {
+              console.log('🛡️ Suppressed extension error');
+              return true;
+            }
+            return originalErrorHandler ? originalErrorHandler(message, source, lineno, colno, error) : false;
+          };
+          
+          window.addEventListener('error', function(e) {
+            if (e.message && (
+              e.message.includes('evmAsk') || 
+              e.message.includes('Cannot redefine property') ||
+              e.message.includes('Could not establish connection') ||
+              e.message.includes('Receiving end does not exist') ||
+              e.message.includes('contentScript.js')
+            )) {
+              console.log('🛡️ Suppressed extension error');
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return false;
+            }
+          }, true);
+          
+          window.addEventListener('unhandledrejection', function(e) {
+            const reason = String(e.reason);
+            if (reason.includes('evmAsk') || 
+                reason.includes('Could not establish connection')) {
+              console.log('🛡️ Suppressed unhandled rejection');
+              e.preventDefault();
+            }
+          });
+          
+          console.log('🛡️ THC Labz - Protection system active');
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeProtection, 100);
+          });
+        } else {
+          setTimeout(initializeProtection, 100);
+        }
+      })();
+    </script>
+
+    
+    <style>
+      /* Reset and base styles for all devices */
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        min-height: 100vh;
+        min-height: 100dvh; /* Dynamic viewport height for mobile */
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        -ms-touch-action: manipulation;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        background-color: #000000;
+      }
+      
+      /* iOS Safari specific fixes */
+      @supports (-webkit-touch-callout: none) {
+        html, body {
+          height: -webkit-fill-available;
+          min-height: -webkit-fill-available;
+        }
+      }
+      
+      #root {
+        width: 100%;
+        height: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+      }
+      
+      /* Canvas and 3D content optimization */
+      canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        image-rendering: optimizeSpeed;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: optimize-contrast;
+      }
+      
+      /* Mobile-specific optimizations */
+      @media (max-width: 768px) {
+        html {
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+        }
+        
+        body {
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: none;
+        }
+      }
+      
+      /* High DPI display optimization */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        canvas {
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
+        }
+      }
+      
+      /* Landscape orientation optimization */
+      @media (orientation: landscape) and (max-height: 500px) {
+        html, body {
+          overflow: hidden;
+        }
+      }
+      
+      /* Prevent zoom on input focus (iOS) */
+      input, textarea, select {
+        font-size: 16px !important;
+        -webkit-appearance: none;
+        border-radius: 0;
+      }
+      
+      /* Android Chrome address bar handling */
+      @media screen and (max-width: 768px) {
+        html {
+          height: calc(100vh + env(keyboard-inset-height, 0px));
+        }
+      }
+      
+      /* Enhanced mobile device support */
+      @media screen and (max-width: 375px) {
+        body {
+          font-size: 14px;
+        }
+        
+        /* Smaller buttons for tiny screens */
+        button {
+          min-height: 44px;
+          padding: 8px 12px;
+        }
+      }
+      
+      /* Tablet specific optimizations */
+      @media screen and (min-width: 768px) and (max-width: 1024px) {
+        body {
+          font-size: 16px;
+        }
+      }
+      
+      /* High resolution displays */
+      @media screen and (-webkit-min-device-pixel-ratio: 3) {
+        * {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+      }
+      
+      /* Notch support for modern phones */
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: max(12px, env(safe-area-inset-left));
+          padding-right: max(12px, env(safe-area-inset-right));
+          padding-top: max(0px, env(safe-area-inset-top));
+          padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+
+# THC Labz Dope Budz - Replit Deployment Requirements
+
+## Project Overview
+Implement a fully functional "Drug Wars" style game called "Dope Budz" for THC Labz with the following core features:
+- Web3 wallet integration via Crossmint
+- 45-day gameplay cycles with high score leaderboard
+- Server-side wallet management
+- AI agent system for batch transactions
+- User authentication with multiple login options
+- Token rewards system (BUDZ tokens)
+
+## Critical Fixes
+
+### 1. Wallet System
+- Replace all "demo_" wallets with real server-side wallets
+- Ensure Crossmint certificate issue is resolved
+- Verify CROSSMINT_SERVER_API_KEY is properly configured
+- Add certificate bypass handling in wallet creation routes
+
+### 2. Authentication System
+- Implement multi-auth login support:
+  - SOL wallet authentication (priority - ensure this works)
+  - Email authentication
+  - Phone number authentication
+  - Discord authentication (optional)
+- Each user should have a unified profile accessible via any login method
+
+### 3. AI Agent Wallet
+- Create dedicated AI agent wallet for "Grench AI"
+- Configure for low-cost batch interactions with all server-side wallets
+- Initialize AI Agent wallet system on startup
+
+### 4. Game Mechanics
+- Implement complete 45-day gameplay cycle
+- Add "die trying" failure conditions
+- Store final score as high score
+- Ensure users can only have one score on the leaderboard at a time
+- Allow new attempts once user is removed from daily leaderboard
+
+### 5. Leaderboard & Rewards
+- Implement daily leaderboard wipe
+- Setup top 10 payout system for BUDZ tokens
+- Automate rewards to user server-side wallets
+- Create weekly rewards routes
+
+### 6. NFT Integration
+- Add capability to pull wallet NFTs of "Growerz"
+- Integrate NFT ownership with gameplay advantages
+
+## Deployment Configuration
+- Enable all required environment variables
+- Configure proper production settings
+- Ensure all routes and processes are correctly set up
+- Optimize memory usage
+- Include proper error handling and logging
+
+## Final Verification Steps
+1. Test SOL wallet authentication
+2. Verify server-side wallet creation
+3. Confirm AI agent wallet functionality
+4. Run through complete 45-day gameplay cycle
+5. Test leaderboard and reward distribution
+6. Check all authentication methods
+7. Verify NFT detection and integration
+
+Please implement all required components and ensure the application is fully functional and error-free for production deployment.

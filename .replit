@@ -1,0 +1,47 @@
+modules = ["nodejs-20", "bash", "web", "python-3.11", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+deploymentTarget = "cloudrun"
+run = ["sh", "-c", "npm start"]
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Game"
+
+[[workflows.workflow]]
+name = "Start Game"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[agent]
+integrations = ["javascript_notion:1.0.0", "javascript_openai:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+GAME_DATABASE_URL = "postgresql://postgres:password@helium/heliumdb?sslmode=disable"

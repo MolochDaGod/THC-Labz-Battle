@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THC GROWERZ Collection - Authentic NFT Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 50%, #2d5016 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #b8d4a6;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #7dc142;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px 20px;
+            border: 2px solid #4a7c59;
+            border-radius: 25px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus {
+            border-color: #7dc142;
+            box-shadow: 0 0 15px rgba(125, 193, 66, 0.3);
+        }
+
+        .search-bar::placeholder {
+            color: #888;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sort-select, .rarity-filter {
+            padding: 10px 15px;
+            border: 1px solid #4a7c59;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.5rem;
+            color: #7dc142;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0% { content: '...'; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+
+        .error {
+            text-align: center;
+            padding: 30px;
+            font-size: 1.1rem;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .error .solution {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(125, 193, 66, 0.1);
+            border: 1px solid rgba(125, 193, 66, 0.3);
+            border-radius: 8px;
+            color: #7dc142;
+            font-size: 1rem;
+        }
+
+        .nft-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        .nft-card {
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nft-card:hover {
+            border-color: #7dc142;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(125, 193, 66, 0.2);
+        }
+
+        .nft-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #7dc142, #4a7c59, #7dc142);
+        }
+
+        .nft-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .nft-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .nft-rank {
+            font-size: 1.1rem;
+            color: #7dc142;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .nft-traits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .trait-tag {
+            background: rgba(125, 193, 66, 0.2);
+            color: #7dc142;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(125, 193, 66, 0.3);
+        }
+
+        .rarity-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .rarity-legendary { background: #ffd700; color: #000; }
+        .rarity-epic { background: #9966cc; color: #fff; }
+        .rarity-rare { background: #0066ff; color: #fff; }
+        .rarity-uncommon { background: #00aa00; color: #fff; }
+        .rarity-common { background: #666; color: #fff; }
+
+        .results-count {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            color: #7dc142;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-bar {
+                min-width: auto;
+            }
+            
+            .nft-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+            
+            .stats {
+                gap: 15px;
+            }
+            
+            .stat-item {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌿 THC GROWERZ Collection</h1>
+            <p>Authentic NFT Database powered by HowRare.is</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalNFTs">-</div>
+                    <div class="stat-label">Total NFTs</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="displayedNFTs">-</div>
+                    <div class="stat-label">Displayed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="uniqueTraits">-</div>
+                    <div class="stat-label">Trait Types</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input 
+                type="text" 
+                class="search-bar" 
+                id="searchInput" 
+                placeholder="Search NFTs by name, rank, or traits..."
+            />
+            <div class="filter-controls">
+                <select class="sort-select" id="sortSelect">
+                    <option value="rank">Sort by Rank</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="id">Sort by ID</option>
+                </select>
+                <select class="rarity-filter" id="rarityFilter">
+                    <option value="">All Rarities</option>
+                    <option value="legendary">Legendary (1-50)</option>
+                    <option value="epic">Epic (51-200)</option>
+                    <option value="rare">Rare (201-500)</option>
+                    <option value="uncommon">Uncommon (501-1000)</option>
+                    <option value="common">Common (1000+)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading">
+            Loading THC GROWERZ collection from HowRare.is
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+
+        <div class="results-count" id="resultsCount" style="display: none;"></div>
+
+        <div class="nft-grid" id="nftGrid"></div>
+    </div>
+
+    <script>
+        class THCGrowerZCollection {
+            constructor() {
+                this.allNFTs = [];
+                this.filteredNFTs = [];
+                this.init();
+            }
+
+            async init() {
+                await this.loadCollection();
+                this.setupEventListeners();
+                this.renderNFTs();
+                this.updateStats();
+            }
+
+            async loadCollection() {
+                try {
+                    console.log('🔍 Loading THC GROWERZ collection...');
+                    
+                    // First try to use a CORS proxy service
+                    let data = null;
+                    const apiUrl = 'https://api.howrare.is/v0.1/collections/the_growerz/';
+                    
+                    try {
+                        // Method 1: AllOrigins proxy (most reliable)
+                        console.log('🔄 Trying AllOrigins proxy...');
+                        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+                        const response = await fetch(proxyUrl);
+                        
+                        if (response.ok) {
+                            const proxyData = await response.json();
+                            data = JSON.parse(proxyData.contents);
+                            console.log('✅ AllOrigins proxy successful');
+                        }
+                    } catch (error) {
+                        console.log('⚠️ AllOrigins proxy failed:', error.message);
+                    }
+                    
+                    // Method 2: Try CORS-anywhere if AllOrigins fails
+                    if (!data) {
+                        try {
+                            console.log('🔄 Trying CORS-anywhere proxy...');
+                            const corsUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+                            const response = await fetch(corsUrl);
+                            
+                            if (response.ok) {
+                                data = await response.json();
+                                console.log('✅ CORS-anywhere proxy successful');
+                            }
+                        } catch (error) {
+                            console.log('⚠️ CORS-anywhere proxy failed:', error.message);
+                        }
+                    }
+                    
+                    // Method 3: Direct API call (may fail due to CORS)
+                    if (!data) {
+                        try {
+                            console.log('🔄 Trying direct API call...');
+                            const response = await fetch(apiUrl, {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            if (response.ok) {
+                                data = await response.json();
+                                console.log('✅ Direct API call successful');
+                            }
+                        } catch (error) {
+                            console.log('⚠️ Direct API call failed:', error.message);
+                        }
+                    }
+                    
+                    // If all methods fail, show detailed error
+                    if (!data) {
+                        throw new Error('Unable to fetch data from HowRare.is API due to CORS restrictions');
+                    }
+                    
+                    if (!data.result || !data.result.data || !data.result.data.items) {
+                        throw new Error('Invalid API response structure');
+                    }
+
+                    this.allNFTs = data.result.data.items.map(nft => ({
+                        ...nft,
+                        rarity: this.getRarityTier(nft.rank || nft.id)
+                    }));
+
+                    this.filteredNFTs = [...this.allNFTs];
+                    
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    console.log(`✅ Loaded ${this.allNFTs.length} authentic NFTs`);
+
+                } catch (error) {
+                    console.error('❌ Error loading collection:', error);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    
+                    const errorHtml = `
+                        <h3>Unable to Load THC GROWERZ Collection</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <div class="solution">
+                            <h4>💡 Solutions:</h4>
+                            <p><strong>Option 1:</strong> Visit the collection directly at <a href="https://howrare.is/the_growerz" target="_blank" style="color: #7dc142;">howrare.is/the_growerz</a></p>
+                            <p><strong>Option 2:</strong> Enable CORS by installing a browser extension like "CORS Unblock" and refresh this page</p>
+                            <p><strong>Option 3:</strong> Ask your website administrator to add CORS headers to allow API access</p>
+                            <p><strong>Note:</strong> This is a common issue when accessing external APIs from browser-based applications due to security restrictions.</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('errorMessage').innerHTML = errorHtml;
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            }
+
+            getRarityTier(rank) {
+                if (rank <= 50) return 'legendary';
+                if (rank <= 200) return 'epic';
+                if (rank <= 500) return 'rare';
+                if (rank <= 1000) return 'uncommon';
+                return 'common';
+            }
+
+            setupEventListeners() {
+                const searchInput = document.getElementById('searchInput');
+                const sortSelect = document.getElementById('sortSelect');
+                const rarityFilter = document.getElementById('rarityFilter');
+
+                searchInput.addEventListener('input', () => this.handleSearch());
+                sortSelect.addEventListener('change', () => this.handleSort());
+                rarityFilter.addEventListener('change', () => this.handleFilter());
+            }
+
+            handleSearch() {
+                const query = document.getElementById('searchInput').value.toLowerCase();
+                
+                if (!query.trim()) {
+                    this.filteredNFTs = [...this.allNFTs];
+                } else {
+                    this.filteredNFTs = this.allNFTs.filter(nft => 
+                        nft.name.toLowerCase().includes(query) ||
+                        nft.rank.toString().includes(query) ||
+                        nft.attributes.some(attr => 
+                            attr.value.toLowerCase().includes(query) ||
+                            attr.name.toLowerCase().includes(query)
+                        )
+                    );
+                }
+                
+                this.handleSort();
+                this.renderNFTs();
+                this.updateStats();
+            }
+
+            handleSort() {
+                const sortBy = document.getElementById('sortSelect').value;
+                
+                this.filteredNFTs.sort((a, b) => {
+                    switch (sortBy) {
+                        case 'rank':
+                            return a.rank - b.rank;
+                        case 'name':
+                            return a.name.localeCompare(b.name);
+                        case 'id':
+                            return a.id - b.id;
+                        default:
+                            return a.rank - b.rank;
+                    }
+                });
+            }
+
+            handleFilter() {
+                const rarity = document.getElementById('rarityFilter').value;
+                
+                if (!rarity) {
+                    this.handleSearch();
+                    return;
+                }
+
+                const baseFiltered = document.getElementById('searchInput').value.trim() 
+                    ? this.allNFTs.filter(nft => {
+                        const query = document.getElementById('searchInput').value.toLowerCase();
+                        return nft.name.toLowerCase().includes(query) ||
+                               nft.rank.toString().includes(query) ||
+                               nft.attributes.some(attr => 
+                                   attr.value.toLowerCase().includes(query) ||
+                                   attr.name.toLowerCase().includes(query)
+                               );
+                      })
+                    : this.allNFTs;
+
+                this.filteredNFTs = baseFiltered.filter(nft => nft.rarity === rarity);
+                this.handleSort();
+                this.renderNFTs();
+                this.updateStats();
+            }
+
+            renderNFTs() {
+                const grid = document.getElementById('nftGrid');
+                const resultsCount = document.getElementById('resultsCount');
+                
+                if (this.filteredNFTs.length === 0) {
+                    grid.innerHTML = '<div class="error">No NFTs found matching your criteria.</div>';
+                    resultsCount.style.display = 'none';
+                    return;
+                }
+
+                resultsCount.textContent = `Showing ${this.filteredNFTs.length} of ${this.allNFTs.length} NFTs`;
+                resultsCount.style.display = 'block';
+
+                grid.innerHTML = this.filteredNFTs.map(nft => `
+                    <div class="nft-card" onclick="window.open('https://howrare.is/the_growerz/${nft.id}', '_blank')">
+                        <div class="rarity-badge rarity-${nft.rarity}">
+                            ${nft.rarity}
+                        </div>
+                        <img 
+                            class="nft-image" 
+                            src="${nft.image}" 
+                            alt="${nft.name}"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        />
+                        <div class="nft-image" style="display: none;">
+                            Image not available
+                        </div>
+                        <div class="nft-name">${nft.name}</div>
+                        <div class="nft-rank">Rank #${nft.rank}</div>
+                        <div class="nft-traits">
+                            ${nft.attributes.slice(0, 4).map(attr => 
+                                `<span class="trait-tag">${attr.name}: ${attr.value}</span>`
+                            ).join('')}
+                            ${nft.attributes.length > 4 ? `<span class="trait-tag">+${nft.attributes.length - 4} more</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                document.getElementById('totalNFTs').textContent = this.allNFTs.length.toLocaleString();
+                document.getElementById('displayedNFTs').textContent = this.filteredNFTs.length.toLocaleString();
+                
+                const uniqueTraits = new Set();
+                this.allNFTs.forEach(nft => {
+                    nft.attributes.forEach(attr => uniqueTraits.add(attr.name));
+                });
+                document.getElementById('uniqueTraits').textContent = uniqueTraits.size;
+            }
+        }
+
+        // Initialize the collection viewer when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new THCGrowerZCollection();
+        });
+    </script>
+</body>
+</html>

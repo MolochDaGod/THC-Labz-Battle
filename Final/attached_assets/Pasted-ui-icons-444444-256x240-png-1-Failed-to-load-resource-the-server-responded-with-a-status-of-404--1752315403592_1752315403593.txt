@@ -1,0 +1,124 @@
+ui-icons_444444_256x240.png:1  Failed to load resource: the server responded with a status of 404 ()
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+bundle.min.js:2 Uncaught (in promise) Object
+arweave.net/135AXJYbf2dbsra4MV1BofFJMyRzmmCsFiYHrWNXomGT:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/28JFWbBYMAwW1GUiRh2d5maaiPLx66t35CqbncbvrxwJ:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/217BpNRPUJvCSYGTyW4csm6t7M5oFM6zvKuHgYCtZak2:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/22tNg5Xen2j9KiYJCXFYx8qteaVZPbQPYT9GqetiTY3n:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/28fAHfkzNBkF6gLsSL7D5dMxREqGYxswZQoRiFTfLDkz:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/22xCaxsnJHVAr5pQjUyaBrgsXkEP5FT7vJZEbPca6y9v:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/26UhTiPDnqMMJUGfppxUb941rCdiuNzoqA6CMn62kokQ:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/29cf91EaNqLunCchfnbHjbo5mvq5RzekoeJkDP9wXAmh:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/14QMKHuvX4ZZgEPuVzkV6HAXPBFLjMreCTR4hPvyGCPr:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/213YjU9fW5wR64HTWhGoQEPtDKfcqia6n8KbMDzr6Zdj:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/28DJRqaqzzDzDxuqaDvHqaJisFu7ywJQqK23ZMgxf4pN:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/25tmQ4eQH9kqrogyRhdz2zACB8LPCzr17KjPkzXqBYSF:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/281Hec7WGfNtkZqTHu2bJJr8ThXMtTaB21B3VNLqYN9F:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/292ewyLZNux1FD7ZpnxnvqXdhUS2DDJj3gqAy3G9McPj:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/148PR1Fe5YDucsR1eWjLyfovG8HjXwARdUvpM2VDEL11:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/22CX28DWYV7CZkTrbtFDtKfS8xZLQNe5dhAagq7DbCTb:1  Failed to load resource: the server responded with a status of 404 ()
+arweave.net/14dHBCQcb9pi4KhTcnBH3GXSS1iVL5cuU75NZ3pbJ1m6:1  Failed to load resource: the server responded with a status of 404 ()
+2xasengue3ubcggbporlfr2vpjcwvbv22gxrxbtx2kla3n4ezcsa.arweave.net/1cEiNNQm6BEYwXuissdVekVqhrrRrxuGd9KWDbeEyKT:1  Failed to load resource: the server responded with a status of 404 ()
+2rkxm4t5jwbzh4tde5lk7godh665sxflls7qjfhtg6ffgbrvcbxq.arweave.net/1FV2cn1Ng5PyYydWr5nDP73ZXKtcvwSU8zeKUwY1EG8:1  Failed to load resource: the server responded with a status of 404 ()
+2xkvqmbkuiyax4xf2mqhwlqzrlv3ybi3damjzx5zsfyj2qvjbzaq.arweave.net/1dVYMCqiMAvy5dMgey4Ziuu8BRsYGJzfuZFwnUKpDkE:1  Failed to load resource: the server responded with a status of 404 ()
+Refused to frame 'https://verify.walletconnect.com/' because an ancestor violates the following Content Security Policy directive: "frame-ancestors https://*.www.meteora.ag https://www.meteora.ag https://localhost:* http://localhost:* https://*.localhost:* http://*.localhost:* https://127.0.0.1:* http://127.0.0.1:*".
+
+Refused to frame 'https://verify.walletconnect.org/' because an ancestor violates the following Content Security Policy directive: "frame-ancestors https://*.www.meteora.ag https://www.meteora.ag https://localhost:* http://localhost:* https://*.localhost:* http://*.localhost:* https://127.0.0.1:* http://127.0.0.1:*".
+

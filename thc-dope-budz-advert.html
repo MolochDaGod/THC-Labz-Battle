@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THC Dope Budz - Ultimate Cannabis Trading Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+        }
+        
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d4f3c 50%, #1a1a1a 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="cannabis" patternUnits="userSpaceOnUse" width="20" height="20"><path d="M10 2L12 8L10 14L8 8Z" fill="rgba(255,255,255,0.03)"/></pattern></defs><rect width="100" height="100" fill="url(%23cannabis)"/></svg>');
+            opacity: 0.1;
+        }
+        
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .tagline {
+            font-size: 18px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            padding: 40px;
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            padding: 2px;
+            background: linear-gradient(45deg, #00ff88, #0d4f3c);
+            border-radius: 15px;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            -webkit-mask-composite: xor;
+        }
+        
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: #0d4f3c;
+        }
+        
+        .feature-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+        }
+        
+        .feature-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .stats-section {
+            background: #1a1a1a;
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            color: #00ff88;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+        
+        .instructions-section {
+            padding: 40px;
+            background: white;
+        }
+        
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #1a1a1a;
+        }
+        
+        .instruction-steps {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .step-number {
+            background: linear-gradient(45deg, #00ff88, #0d4f3c);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .step-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+        
+        .step-content p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        .cta-section {
+            background: linear-gradient(135deg, #0d4f3c 0%, #1a1a1a 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00ff88, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: #1a1a1a;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 20px 10px;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .wallet-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer {
+            background: #0a0a0a;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        @media print {
+            body { background: white; }
+            .page { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="logo">THC DOPE BUDZ</h1>
+            <p class="tagline">The Ultimate Web3 Cannabis Trading Empire</p>
+            <p style="font-size: 14px; opacity: 0.8;">Real Solana Integration • NFT-Gated AI • Earn BUDZ Tokens</p>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🏆</div>
+                <h3 class="feature-title">50 Achievement System</h3>
+                <p class="feature-desc">Unlock achievements and earn up to 1,250 BUDZ tokens per game round. Track your progress and dominate the leaderboards.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">AI Assistant</h3>
+                <p class="feature-desc">NFT-gated AI companion provides market intelligence, trading advice, and strategic guidance for maximum profits.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <h3 class="feature-title">45-Day Cycles</h3>
+                <p class="feature-desc">Complete economic simulation with city-based trading across multiple locations. Plan your empire expansion carefully.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3 class="feature-title">Real Token Rewards</h3>
+                <p class="feature-desc">Earn genuine BUDZ, GBUX, and THC LABZ tokens. Weekly rewards for top 10 players with automated distribution.</p>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <h2 class="section-title" style="color: white;">Game Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">50</span>
+                    <div class="stat-label">Achievements</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">45</span>
+                    <div class="stat-label">Day Cycles</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">1,250</span>
+                    <div class="stat-label">Max BUDZ/Round</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">10</span>
+                    <div class="stat-label">Weekly Winners</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Section -->
+        <div class="instructions-section">
+            <h2 class="section-title">Quick Start Guide</h2>
+            <div class="instruction-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Connect Your Wallet</h4>
+                        <p>Use Phantom, Solflare, or any Solana wallet. Server-side wallet creation available for new users.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Choose Your City</h4>
+                        <p>Start in your preferred city and analyze market prices for different cannabis strains.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Buy Low, Sell High</h4>
+                        <p>Purchase products when prices are low and travel to cities with higher demand.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Manage Resources</h4>
+                        <p>Monitor your health, debt, and reputation. Visit hospitals, banks, and build your network.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>Unlock Achievements</h4>
+                        <p>Complete challenges to earn BUDZ tokens. Each achievement rewards 25 BUDZ instantly.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h4>Climb Leaderboards</h4>
+                        <p>Submit high scores and compete for weekly rewards. Top 10 players earn automated BUDZ payouts.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2 class="cta-title">Ready to Build Your Empire?</h2>
+            <p style="margin-bottom: 20px;">Join thousands of players earning real crypto rewards</p>
+            
+            <div class="wallet-info">
+                <h4 style="margin-bottom: 15px;">🔗 Supported Wallets & Features</h4>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; text-align: left;">
+                    <div>
+                        <strong>Wallet Support:</strong><br>
+                        • Phantom • Solflare • Backpack<br>
+                        • Email/Phone OTP • Discord OAuth
+                    </div>
+                    <div>
+                        <strong>Token Integration:</strong><br>
+                        • BUDZ • GBUX • THC LABZ<br>
+                        • Live balance fetching • Real rewards
+                    </div>
+                </div>
+            </div>
+            
+            <a href="#" class="cta-button">PLAY NOW</a>
+            <a href="#" class="cta-button" style="background: transparent; border: 2px solid #00ff88; color: #00ff88;">VIEW DEMO</a>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>THC Dope Budz</strong> • Built on Solana • Web3 Gaming Revolution</p>
+            <p>Real blockchain integration • Authentic token rewards • NFT-gated features</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Experience the future of cannabis trading simulation with genuine cryptocurrency rewards</p>
+        </div>
+    </div>
+</body>
+</html>

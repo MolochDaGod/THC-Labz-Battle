@@ -1,0 +1,14 @@
+AI Agent Wallet Configuration
+==============================
+
+Wallet Address: ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65
+Seed Phrase: dream chest village mango summer transfer prefer whip jeans head pond firm
+
+This wallet is used by the Grench AI system for:
+- Token swap processing and validation
+- Automated reward distribution 
+- Transaction fee collection and management
+- Security analysis and fraud prevention
+
+Configuration Date: July 12, 2025
+Last Updated: July 12, 2025

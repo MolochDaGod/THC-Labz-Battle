@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THC DOPE BUDZ - Cross Domain Integration Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0d4f3c 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 16px;
+            padding: 40px;
+            backdrop-filter: blur(16px);
+        }
+        
+        .title {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .wallet-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.5);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .wallet-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid;
+        }
+        
+        .success {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .info {
+            background: rgba(0, 136, 255, 0.1);
+            border-color: #0088ff;
+            color: #0088ff;
+        }
+        
+        .code {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">THC DOPE BUDZ</h1>
+        <p class="description">
+            Cross-Domain Integration Test for THC CLASH
+        </p>
+        
+        <div class="test-section">
+            <h3 style="margin-bottom: 15px; color: #00ff88;">Test Cross-Domain User Transfer</h3>
+            <p style="margin-bottom: 15px; font-size: 0.9em; opacity: 0.8;">
+                This simulates a user coming from THC DOPE BUDZ to THC CLASH with their wallet information.
+            </p>
+            
+            <input 
+                type="text" 
+                class="wallet-input" 
+                id="walletInput" 
+                placeholder="Enter Solana wallet address (optional - will use test wallet if empty)"
+                value="98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK"
+            />
+            
+            <button class="btn" onclick="redirectToTHCClash()">
+                🎮 Play THC CLASH
+            </button>
+        </div>
+        
+        <div class="test-section">
+            <h3 style="margin-bottom: 15px; color: #00cc66;">Integration Details</h3>
+            <p style="font-size: 0.9em; line-height: 1.6; opacity: 0.9;">
+                When you click "Play THC CLASH", you'll be redirected with URL parameters:<br><br>
+                <span class="code">?source=dopebudz&wallet={address}&token={userToken}</span><br><br>
+                This will trigger the cross-domain user reception system in THC CLASH.
+            </p>
+        </div>
+        
+        <div id="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        function redirectToTHCClash() {
+            const walletInput = document.getElementById('walletInput');
+            const wallet = walletInput.value.trim() || '98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK';
+            const userToken = 'test_token_' + Date.now();
+            
+            // Show status
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = `
+                <strong>🔗 Redirecting to THC CLASH...</strong><br>
+                Wallet: <span class="code">${wallet}</span><br>
+                Source: <span class="code">dopebudz</span><br>
+                Token: <span class="code">${userToken}</span>
+            `;
+            
+            // Construct the URL with parameters
+            const baseUrl = window.location.origin;
+            const redirectUrl = `${baseUrl}/?source=dopebudz&wallet=${encodeURIComponent(wallet)}&token=${encodeURIComponent(userToken)}`;
+            
+            console.log('🔗 Redirecting to:', redirectUrl);
+            
+            // Redirect after a short delay to show the status
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 2000);
+        }
+        
+        // Test API endpoint
+        async function testReferralTracking() {
+            try {
+                const response = await fetch('/api/track-referral', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        wallet: '98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK',
+                        source: 'dopebudz',
+                        timestamp: new Date().toISOString(),
+                        token: 'test_token_' + Date.now()
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('✅ Referral tracking test result:', data);
+                
+                const statusDiv = document.getElementById('status');
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    <strong>✅ API Test Successful</strong><br>
+                    Response: <span class="code">${JSON.stringify(data, null, 2)}</span>
+                `;
+            } catch (error) {
+                console.error('❌ API test failed:', error);
+                const statusDiv = document.getElementById('status');
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>❌ API Test Failed</strong><br>
+                    Error: <span class="code">${error.message}</span>
+                `;
+            }
+        }
+        
+        console.log('🧪 Cross-domain integration test ready');
+        console.log('🔗 Current URL:', window.location.href);
+    </script>
+</body>
+</html>

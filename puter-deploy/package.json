@@ -1,0 +1,46 @@
+{
+  "name": "thc-dope-budz-puter",
+  "version": "1.0.0",
+  "description": "THC Dope Budz - Web3 Cannabis Trading Game for Puter App",
+  "main": "simple-puter-server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node puter-deployment.js",
+    "dev": "node puter-deployment.js",
+    "puter": "NODE_ENV=puter node puter-deployment.js",
+    "build": "echo 'No build required for Puter deployment'",
+    "test": "echo 'Tests not implemented yet'"
+  },
+  "keywords": [
+    "puter",
+    "web3",
+    "solana",
+    "cannabis",
+    "trading",
+    "game",
+    "nft",
+    "crypto",
+    "phantom",
+    "blockchain"
+  ],
+  "author": "THC Labz",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "puter": {
+    "compatible": true,
+    "version": "1.0",
+    "category": "games",
+    "web3": true,
+    "permissions": [
+      "wallet.connect",
+      "blockchain.read",
+      "storage.local"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

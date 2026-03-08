@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#ef4444"/>
+  <rect width="64" height="64" rx="16" fill="url(#rg)" opacity="0.4"/>
+  <defs>
+    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 8 C32 8 44 14 44 30 L44 42 L32 48 L20 42 L20 30 C20 14 32 8 32 8Z" fill="#fca5a5" stroke="#7f1d1d" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M32 8 C32 8 44 14 44 30 L44 42 L32 48 L32 8Z" fill="#f87171" stroke="none"/>
+  <ellipse cx="32" cy="26" rx="6" ry="7" fill="#93c5fd" stroke="#1e40af" stroke-width="2"/>
+  <ellipse cx="32" cy="26" rx="3" ry="4" fill="#dbeafe"/>
+  <path d="M20 38 L12 44 L16 52 L20 44Z" fill="#fb923c" stroke="#7c2d12" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M44 38 L52 44 L48 52 L44 44Z" fill="#fb923c" stroke="#7c2d12" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M27 44 C27 44 25 50 22 54 L32 52 L42 54 C39 50 37 44 37 44Z" fill="#fbbf24" stroke="#92400e" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M29 44 C29 44 28 49 27 53 L32 52 L37 53 C36 49 35 44 35 44Z" fill="#f97316" stroke="none"/>
+</svg>

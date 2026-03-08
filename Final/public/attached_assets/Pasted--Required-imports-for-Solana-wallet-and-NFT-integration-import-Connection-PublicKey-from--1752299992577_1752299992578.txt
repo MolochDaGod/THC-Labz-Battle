@@ -1,0 +1,335 @@
+
+// Required imports for Solana wallet and NFT integration
+import { Connection, PublicKey } from '@solana/web3.js';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useState, useEffect } from 'react';
+import { Metaplex } from '@metaplex-foundation/js';
+
+// The Growerz NFT collection ID
+const GROWERZ_COLLECTION_ID = 'D8bd7Mmev6nopizftEhn6UqFZ7xNKuy6XmM5u3Q78KuD';
+
+// Component to handle NFT retrieval and display for The Plug assistant
+const ThePlugAssistant = ({ onNftSelected, gameState }) => {
+  const { publicKey, connected } = useWallet();
+  const [nfts, setNfts] = useState([]);
+  const [selectedNft, setSelectedNft] = useState(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  // Get the Solana connection
+  const connection = new Connection(
+    process.env.REACT_APP_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+  );
+  
+  // Initialize Metaplex
+  const metaplex = new Metaplex(connection);
+  
+  // Load NFTs from user's wallet
+  const loadNfts = async () => {
+    if (!connected || !publicKey) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch all NFTs for the connected wallet
+      const myNfts = await metaplex
+        .nfts()
+        .findAllByOwner({ owner: publicKey });
+      
+      // Filter for Growerz collection NFTs
+      const growerNfts = await Promise.all(
+        myNfts.map(async (nft) => {
+          try {
+            // Skip if no collection or metadata
+            if (!nft.collection?.address) return null;
+            
+            // Check if NFT belongs to Growerz collection
+            const collectionAddress = nft.collection.address.toString();
+            if (collectionAddress === GROWERZ_COLLECTION_ID) {
+              // Get full metadata with image URL
+              const metadata = await metaplex.nfts().load({ metadata: nft });
+              return {
+                mint: nft.address.toString(),
+                name: metadata.name,
+                image: metadata.json?.image || '',
+                attributes: metadata.json?.attributes || [],
+                // Get temperature attribute for AI personality adjustment
+                temperature: metadata.json?.attributes?.find(attr => 
+                  attr.trait_type === 'Temperature' || attr.trait_type === 'Mood'
+                )?.value || 'neutral'
+              };
+            }
+            return null;
+          } catch (error) {
+            console.error("Error processing NFT:", error);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out nulls and set to state
+      const validGrowerNfts = growerNfts.filter(nft => nft !== null);
+      setNfts(validGrowerNfts);
+      
+      // Load previously selected NFT from localStorage if available
+      const savedNft = localStorage.getItem('selectedPlugNft');
+      if (savedNft) {
+        try {
+          const parsed = JSON.parse(savedNft);
+          // Verify if the saved NFT is still in wallet
+          const stillOwned = validGrowerNfts.find(nft => nft.mint === parsed.mint);
+          if (stillOwned) {
+            setSelectedNft(parsed);
+            onNftSelected(parsed);
+          }
+        } catch (e) {
+          console.error("Error loading saved NFT:", e);
+        }
+      }
+      
+    } catch (error) {
+      console.error("Error loading NFTs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Load NFTs when wallet connects
+  useEffect(() => {
+    if (connected) {
+      loadNfts();
+    } else {
+      setNfts([]);
+    }
+  }, [connected, publicKey]);
+  
+  // Handle NFT selection
+  const handleSelectNft = (nft) => {
+    setSelectedNft(nft);
+    setIsSelecting(false);
+    
+    // Save selection to localStorage
+    localStorage.setItem('selectedPlugNft', JSON.stringify(nft));
+    
+    // Notify parent component
+    onNftSelected(nft);
+  };
+  
+  // Toggle NFT selection interface
+  const toggleSelection = () => {
+    setIsSelecting(!isSelecting);
+  };
+  
+  // Show fallback Grench image if no NFTs available
+  const showFallbackImage = connected && nfts.length === 0 && !loading;
+  
+  return (
+    <div className="the-plug-container">
+      {/* Floating button in bottom right with selected NFT or default image */}
+      <button 
+        className="plug-button"
+        onClick={toggleSelection}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          borderRadius: '50%',
+          width: '60px',
+          height: '60px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+          border: 'none',
+          cursor: 'pointer',
+          zIndex: 1000,
+          overflow: 'hidden'
+        }}
+      >
+        {selectedNft ? (
+          <img 
+            src={selectedNft.image} 
+            alt="The Plug" 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : showFallbackImage ? (
+          <img 
+            src="/images/grench.png" 
+            alt="Grench" 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <div style={{ fontSize: '24px' }}>🔌</div>
+        )}
+      </button>
+      
+      {/* NFT Selection Modal */}
+      {isSelecting && (
+        <div className="nft-selection-modal">
+          <div className="modal-content">
+            <h3>Choose Your Plug Assistant</h3>
+            
+            {!connected && (
+              <div className="connect-wallet-container">
+                <p>Connect your wallet to use your GROWERZ NFTs</p>
+                <WalletMultiButton />
+              </div>
+            )}
+            
+            {connected && loading && <p>Loading your GROWERZ NFTs...</p>}
+            
+            {connected && !loading && nfts.length === 0 && (
+              <div>
+                <p>No GROWERZ NFTs found in your wallet.</p>
+                <p>Using Grench as your assistant.</p>
+                <img 
+                  src="/images/grench.png" 
+                  alt="Grench" 
+                  style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                  onClick={() => {
+                    // Set Grench as the fallback
+                    const grench = { 
+                      mint: 'grench',
+                      name: 'Grench',
+                      image: '/images/grench.png',
+                      temperature: 'neutral'
+                    };
+                    handleSelectNft(grench);
+                  }}
+                />
+              </div>
+            )}
+            
+            {connected && !loading && nfts.length > 0 && (
+              <div className="nft-grid">
+                {nfts.map(nft => (
+                  <div 
+                    key={nft.mint} 
+                    className={`nft-item ${selectedNft?.mint === nft.mint ? 'selected' : ''}`}
+                    onClick={() => handleSelectNft(nft)}
+                  >
+                    <img src={nft.image} alt={nft.name} />
+                    <p>{nft.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <button onClick={() => setIsSelecting(false)}>Close</button>
+          </div>
+        </div>
+      )}
+      
+      {/* The Plug AI Assistant Dialog (appears when clicked) */}
+      {selectedNft && (
+        <ThePlugAiDialog 
+          nft={selectedNft} 
+          gameState={gameState}
+          visible={isPlugDialogVisible}
+          onClose={() => setPlugDialogVisible(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// The Plug AI Dialog component for conversational interface
+const ThePlugAiDialog = ({ nft, gameState, visible, onClose }) => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  
+  // Initialize with welcome message
+  useEffect(() => {
+    if (visible && messages.length === 0) {
+      // Initial message based on NFT temperature/personality
+      let welcomeMessage;
+      switch(nft.temperature) {
+        case 'cool':
+          welcomeMessage = "Hey, I'm your Plug. What's the move today?";
+          break;
+        case 'hot':
+          welcomeMessage = "Yo! Ready to make some serious cash in these streets?";
+          break;
+        default:
+          welcomeMessage = "Hey there, I'm The Plug. Need some advice for your next move?";
+      }
+      
+      setMessages([
+        { type: 'assistant', text: welcomeMessage }
+      ]);
+    }
+  }, [visible, nft]);
+  
+  // Send message to The Plug AI
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    
+    // Add user message
+    const newMessages = [
+      ...messages,
+      { type: 'user', text: input }
+    ];
+    setMessages(newMessages);
+    setInput('');
+    
+    // Simulate AI response based on game context
+    // In a real implementation, this would connect to your AI service
+    setTimeout(() => {
+      let response;
+      
+      // Generate contextual response based on game state
+      if (input.toLowerCase().includes('mission')) {
+        response = `I've got a special mission for you. Head to ${gameState.availableCities[Math.floor(Math.random() * gameState.availableCities.length)]} and pick up some premium REGZ. The profit margins there are fire right now.`;
+      } else if (input.toLowerCase().includes('price') || input.toLowerCase().includes('market')) {
+        response = "Market's been shifting. Keep an eye on prices in Detroit and New Orleans - heard there might be some movement there soon.";
+      } else if (input.toLowerCase().includes('advice') || input.toLowerCase().includes('tip')) {
+        response = "Pro tip: Always keep at least 20% of your cash on hand for unexpected opportunities. The streets are unpredictable.";
+      } else {
+        // Default responses
+        const defaultResponses = [
+          "Keep building your empire. These 45 days gonna fly by.",
+          "Stay smart out there. Cops been active in Oakland lately.",
+          "I'm always here if you need advice on your next move.",
+          "Remember - buy low, sell high. That's how we win this game."
+        ];
+        response = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+      }
+      
+      setMessages(prev => [...prev, { type: 'assistant', text: response }]);
+    }, 1000);
+  };
+  
+  if (!visible) return null;
+  
+  return (
+    <div className="plug-dialog">
+      <div className="dialog-header">
+        <img src={nft.image} alt="The Plug" className="dialog-avatar" />
+        <h3>The Plug</h3>
+        <button onClick={onClose}>×</button>
+      </div>
+      
+      <div className="dialog-messages">
+        {messages.map((msg, index) => (
+          <div key={index} className={`message ${msg.type}`}>
+            {msg.text}
+          </div>
+        ))}
+      </div>
+      
+      <div className="dialog-input">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Talk to The Plug..."
+          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+        />
+        <button onClick={sendMessage}>Send</button>
+      </div>
+    </div>
+  );
+};
+
+export default ThePlugAssistant;

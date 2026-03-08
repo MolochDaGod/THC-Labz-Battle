@@ -1,0 +1,50 @@
+# Production Deployment Configuration for THC Labz Dope Budz
+[deployment]
+build = ["npm", "install"]
+run = ["node", "start-deployment.js"]
+
+[env]
+NODE_ENV = "development"
+GENERATE_SOURCEMAP = "false"
+PORT = "5000"
+
+[build]
+include = [
+  "dist/",
+  "node_modules/",
+  "package.json",
+  "package-lock.json",
+  "production-ready.js",
+  "start-deployment.js",
+  "client/",
+  "server/",
+  "shared/",
+  "attached_assets/",
+  "vite.config.ts",
+  "tailwind.config.ts",
+  "postcss.config.js",
+  "tsconfig.json",
+  "drizzle.config.ts"
+]
+
+exclude = [
+  ".git/",
+  "*.md",
+  "*.log",
+  ".env.local",
+  ".env.development",
+  "dev-*",
+  "test-*",
+  "quick-deploy.sh",
+  "simple-deploy.sh",
+  ".replit",
+  ".breakpoints"
+]
+
+[deployment.health]
+path = "/health"
+timeout = "10s"
+
+[deployment.readiness] 
+path = "/ready"
+timeout = "5s"

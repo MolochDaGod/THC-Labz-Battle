@@ -1,0 +1,5399 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { MapPin, Briefcase, AlertTriangle, Shield, DollarSign, Users, Calendar, TrendingUp, TrendingDown, Clock, HardHat, Zap, Target, Eye, Truck, Star, CreditCard, Menu, X } from 'lucide-react';
+import PhysicsRenderer from './PhysicsRenderer';
+import AdminPanel from './AdminPanel';
+import ThePlugAssistant from './ThePlugAssistant';
+import UserProfileAuth from './UserProfileAuth';
+import NFTMarketplace from './NFTMarketplace';
+import { ProfitAssistant } from './ProfitAssistant';
+import { AchievementDisplay } from './AchievementDisplay';
+
+import { createBouncyMoney, createBouncyDrug, shakeScreen } from '../lib/physics';
+import { useAudio } from '../lib/stores/useAudio';
+
+// GROWERZ NFTs Display Component
+interface NFT {
+  mint: string;
+  name: string;
+  image: string;
+  description: string;
+  attributes: Array<{
+    trait_type: string;
+    value: string;
+  }>;
+}
+
+interface GrowerNFTsDisplayProps {
+  walletAddress: string | null;
+}
+
+function GrowerNFTsDisplay({ walletAddress }: GrowerNFTsDisplayProps) {
+  const [nfts, setNfts] = useState<NFT[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedNft, setSelectedNft] = useState<string | null>(null);
+
+  const fetchNFTs = async () => {
+    if (!walletAddress) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/nft/growerz/${walletAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.nfts) {
+          setNfts(data.nfts);
+        } else {
+          setNfts([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching NFTs:', error);
+      setNfts([]);
+    }
+    setLoading(false);
+  };
+
+  // Load selected NFT from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('selectedPlugNft');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSelectedNft(parsed.mint);
+      } catch (e) {
+        console.error('Error loading saved NFT selection:', e);
+      }
+    }
+  }, []);
+
+  // Handle NFT selection for The Plug avatar
+  const handleNftSelect = (nft: NFT) => {
+    setSelectedNft(nft.mint);
+    
+    // Save to localStorage for persistence
+    const nftData = {
+      mint: nft.mint,
+      name: nft.name,
+      image: nft.image,
+      attributes: nft.attributes
+    };
+    localStorage.setItem('selectedPlugNft', JSON.stringify(nftData));
+    
+    // Trigger custom event to notify The Plug component
+    window.dispatchEvent(new CustomEvent('plugAvatarChanged', { 
+      detail: nftData 
+    }));
+    
+    console.log('🎨 Selected NFT for The Plug avatar:', nft.name);
+  };
+
+  useEffect(() => {
+    fetchNFTs();
+  }, [walletAddress]);
+
+  if (loading) {
+    return <div className="text-gray-400 text-sm">Loading NFTs...</div>;
+  }
+
+  if (nfts.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-gray-400 text-sm mb-2">No GROWERZ NFTs found</p>
+        <p className="text-xs text-gray-500">
+          Own THC LABZ GROWERZ collection NFTs to customize your AI assistant
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="text-sm text-gray-400">
+        Found {nfts.length} GROWERZ NFT{nfts.length !== 1 ? 's' : ''} in your wallet
+      </div>
+      <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+        {nfts.map(nft => {
+          const rarity = nft.attributes?.find(attr => attr.trait_type === 'Rarity')?.value || 'Common';
+          const strain = nft.attributes?.find(attr => attr.trait_type === 'Strain')?.value;
+          const thcLevel = nft.attributes?.find(attr => attr.trait_type === 'THC Level')?.value;
+          const isSelected = selectedNft === nft.mint;
+          
+          return (
+            <div 
+              key={nft.mint}
+              onClick={() => handleNftSelect(nft)}
+              className={`bg-gray-900 p-2 rounded border transition-all cursor-pointer ${
+                isSelected 
+                  ? 'border-green-400 bg-green-900/20 shadow-lg' 
+                  : 'border-gray-600 hover:border-green-400'
+              }`}
+            >
+              <div className="relative">
+                <img 
+                  src={nft.image} 
+                  alt={nft.name}
+                  className="w-full h-16 object-cover rounded mb-1"
+                />
+                {isSelected && (
+                  <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    ✓
+                  </div>
+                )}
+              </div>
+              <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+              <div className="flex justify-between text-xs mt-1">
+                <span className={`${
+                  rarity === 'Legendary' ? 'text-yellow-400' :
+                  rarity === 'Epic' ? 'text-purple-400' :
+                  rarity === 'Rare' ? 'text-blue-400' : 'text-gray-400'
+                }`}>
+                  {rarity}
+                </span>
+                {thcLevel && <span className="text-green-400">{thcLevel}</span>}
+              </div>
+              {strain && <div className="text-gray-400 text-xs truncate">{strain}</div>}
+              {isSelected && (
+                <div className="text-green-400 text-xs mt-1 text-center font-medium">
+                  The Plug Avatar
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <button
+        onClick={fetchNFTs}
+        className="w-full bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded text-xs transition-colors"
+      >
+        🔄 Refresh NFTs
+      </button>
+    </div>
+  );
+}
+
+// Web3 types for multiple Solana wallets
+declare global {
+  interface Window {
+    solana?: {
+      isPhantom?: boolean;
+      connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
+      disconnect(): Promise<void>;
+      isConnected: boolean;
+    };
+    phantom?: {
+      solana?: {
+        connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
+        disconnect(): Promise<void>;
+        isConnected: boolean;
+      };
+    };
+    // Magic Eden wallet
+    magicEden?: {
+      solana?: {
+        connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
+        disconnect(): Promise<void>;
+        isConnected: boolean;
+      };
+    };
+    // Solflare wallet
+    solflare?: {
+      connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
+      disconnect(): Promise<void>;
+      isConnected: boolean;
+    };
+    // Backpack wallet
+    backpack?: {
+      solana?: {
+        connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
+        disconnect(): Promise<void>;
+        isConnected: boolean;
+      };
+    };
+    // Coinbase wallet
+    coinbaseSolana?: {
+      connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
+      disconnect(): Promise<void>;
+      isConnected: boolean;
+    };
+    // Generic wallet adapter
+    walletStandard?: any;
+  }
+}
+
+interface Drug {
+  id: string;
+  name: string;
+  basePrice: number;
+  currentPrice: number;
+  owned: number;
+  totalBought: number;
+  totalSold: number;
+  totalSpent: number;
+  totalEarned: number;
+  averageBuyPrice: number;
+  highestSellPrice: number;
+  lowestBuyPrice: number;
+  traits: string[]; // THC GROWERZ traits
+}
+
+interface DopeWarsGameProps {}
+
+interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  maxLevel: number;
+  currentLevel: number;
+  icon: string;
+  prerequisites: string[];
+  category: 'dealing' | 'survival' | 'business';
+}
+
+interface GameState {
+  money: number;
+  debt: number;
+  health: number;
+  day: number;
+  currentCity: string;
+  coatSpace: number;
+  reputation: number;
+  timeLeftInDay: number; // in seconds (600 = 10 minutes)
+  isWorking: boolean;
+  workDaysLeft: number;
+  daysWorkedThisWeek: number;
+  weekStartDay: number;
+  bankAccount: number;
+  skills: Record<string, number>; // skill_id -> level
+  heat: number; // Heat level 0-5 (police attention)
+  daysInCurrentCity: number; // Track how long player stays in one city
+  recentSales: Array<{city: string, amount: number, day: number}>; // Track recent sales
+  // Game statistics
+  totalTransactions: number;
+  totalProfit: number;
+  highestDailyProfit: number;
+  citiesVisited: string[];
+  dealsCompleted: number;
+  timesRobbed: number;
+  timesArrested: number;
+  loansRepaid: number;
+  maxConcurrentDebt: number;
+  // New achievement tracking fields
+  strainsSmoked?: string[];
+  nightDeals?: number;
+  maxCitiesPerDay?: number;
+  maxHeatReached?: number;
+  bargainDeals?: number;
+  highRiskPurchases?: number;
+  aiChatCount?: number;
+  dailyCities?: string[];
+  lastDayForCityCount?: number;
+}
+
+export default function DopeWarsGame({}: DopeWarsGameProps = {}) {
+  // Dynamic Music System
+  const { initializeMusicTracks, updateMusicBasedOnGameState, switchToTrack } = useAudio();
+
+  const [gameState, setGameState] = useState<GameState>({
+    money: 0,
+    debt: 0,
+    health: 100,
+    day: 1,
+    currentCity: 'hometown',
+    coatSpace: 100,
+    reputation: 0,
+    timeLeftInDay: 600, // 10 minutes in seconds
+    isWorking: false,
+    workDaysLeft: 0,
+    daysWorkedThisWeek: 0,
+    weekStartDay: 1,
+    bankAccount: 0,
+    skills: {},
+    heat: 0, // Start with no heat
+    daysInCurrentCity: 1, // Start in hometown
+    recentSales: [], // Track recent sales
+    // Game statistics
+    totalTransactions: 0,
+    totalProfit: 0,
+    highestDailyProfit: 0,
+    citiesVisited: ['hometown'],
+    dealsCompleted: 0,
+    timesRobbed: 0,
+    timesArrested: 0,
+    loansRepaid: 0,
+    maxConcurrentDebt: 0,
+    // New achievement tracking fields
+    strainsSmoked: [] as string[],
+    nightDeals: 0,
+    maxCitiesPerDay: 0,
+    maxHeatReached: 0,
+    bargainDeals: 0,
+    highRiskPurchases: 0,
+    aiChatCount: 0,
+    dailyCities: [] as string[],
+    lastDayForCityCount: 1
+  });
+
+  const [currentView, setCurrentView] = useState<'market' | 'travel' | 'bank' | 'status' | 'work' | 'skills'>('market');
+  const [eventMessage, setEventMessage] = useState<string>('');
+  const [showEvent, setShowEvent] = useState(false);
+  const [buyAmount, setBuyAmount] = useState<Record<string, number>>({});
+  const [sellAmount, setSellAmount] = useState<Record<string, number>>({});
+  const [depositAmount, setDepositAmount] = useState<number>(0);
+  const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
+  const [debtPayAmount, setDebtPayAmount] = useState<number>(0);
+  const [loanAmount, setLoanAmount] = useState<number>(1);
+  const [physicsEnabled, setPhysicsEnabled] = useState<boolean>(true);
+  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
+  const [showGameEnd, setShowGameEnd] = useState<boolean>(false);
+  const [playerName, setPlayerName] = useState<string>('');
+  const [leaderboard, setLeaderboard] = useState<Array<{name: string, score: number, day: number}>>([]);
+  const [showWeb3Modal, setShowWeb3Modal] = useState<boolean>(false);
+  const [showGrowerzModal, setShowGrowerzModal] = useState<boolean>(false);
+  const [showNFTMarketplace, setShowNFTMarketplace] = useState<boolean>(false);
+  const [showHamburgerMenu, setShowHamburgerMenu] = useState<boolean>(false);
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState<boolean>(!localStorage.getItem('connectedWallet'));
+  const [showProfitAssistant, setShowProfitAssistant] = useState<boolean>(false);
+  const [showLifetimeLeaderboard, setShowLifetimeLeaderboard] = useState<boolean>(false);
+  const [lifetimeLeaderboard, setLifetimeLeaderboard] = useState<any[]>([]);
+  const [showStreetzModal, setShowStreetzModal] = useState<boolean>(false);
+  const [showDopeBudzModal, setShowDopeBudzModal] = useState<boolean>(false);
+  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+  const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false);
+  const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
+  const [serverWallet, setServerWallet] = useState<string>('');
+  const [budzBalance, setBudzBalance] = useState<number>(0);
+  const [gbuxBalance, setGbuxBalance] = useState<number>(0);
+  const [connectedWallet, setConnectedWallet] = useState<string>('');
+  const [connectedWalletType, setConnectedWalletType] = useState<string>('');
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
+  const [isConnectingWallet, setIsConnectingWallet] = useState<boolean>(false);
+  const [detectedWallets, setDetectedWallets] = useState<string[]>([]);
+  const [isLoadingBalances, setIsLoadingBalances] = useState<boolean>(false);
+  const [swapAmount, setSwapAmount] = useState<number>(0);
+  const [swapDirection, setSwapDirection] = useState<'budz-to-gbux' | 'gbux-to-budz' | 'budz-to-thc' | 'gbux-to-thc' | 'thc-to-budz'>('budz-to-gbux');
+  const [gbuxPrice, setGbuxPrice] = useState<number>(0);
+  const [budzPrice, setBudzPrice] = useState<number>(0);
+  const [thcGrowerTokenBalance, setThcGrowerTokenBalance] = useState<number>(0);
+  const [isSwapping, setIsSwapping] = useState<boolean>(false);
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'wallet' | 'profile' | 'game'>('wallet');
+  const [authState, setAuthState] = useState<any>(null);
+  const [showAchievements, setShowAchievements] = useState<boolean>(false);
+  const [currentGameRoundId, setCurrentGameRoundId] = useState<string>('');
+  const [showIntroVideo, setShowIntroVideo] = useState<boolean>(false);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState<boolean>(false);
+  const [videoAudioEnabled, setVideoAudioEnabled] = useState<boolean>(false);
+  
+  // End-game video and celebration states
+  const [showEndGameVideo, setShowEndGameVideo] = useState<boolean>(false);
+  const [endGameVideoCompleted, setEndGameVideoCompleted] = useState<boolean>(false);
+  const [showAchievementRewards, setShowAchievementRewards] = useState<boolean>(false);
+  const [achievementBudzEarned, setAchievementBudzEarned] = useState<number>(0);
+  const [leaderboardPosition, setLeaderboardPosition] = useState<number>(0);
+  const [finalRewards, setFinalRewards] = useState<{achievements: number, completion: number, position: number}>({achievements: 0, completion: 100, position: 0});
+  
+  // Smoking session states
+  const [lastSmokingDay, setLastSmokingDay] = useState<number>(0);
+  const [showSmokingVideo, setShowSmokingVideo] = useState<boolean>(false);
+  const [smokingAudioEnabled, setSmokingAudioEnabled] = useState<boolean>(false);
+  const [selectedDrugForSmoking, setSelectedDrugForSmoking] = useState<string>('');
+  const [highlightedProduct, setHighlightedProduct] = useState<string>('');
+  const [smokingBuffs, setSmokingBuffs] = useState<{active: boolean, drug: string, traits: string[]}>({active: false, drug: '', traits: []});
+  
+  // Admin wallet addresses
+  const adminWallets = ['98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK', 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65', 'Fyfu65hZv3npv6wChMFQXqjUfc2hWmq3mGSZbVLDJc9n'];
+  const isAdmin = connectedWallet && adminWallets.includes(connectedWallet);
+
+  // Calculate final achievement rewards
+  const calculateFinalAchievements = async () => {
+    if (!connectedWallet) return;
+    
+    try {
+      const gameRoundId = `${connectedWallet}_${Date.now()}`;
+      const finalScore = gameState.money + gameState.bankAccount - gameState.debt;
+      
+      const achievementResponse = await fetch('/api/achievements/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: connectedWallet,
+          gameState: {
+            money: gameState.money,
+            debt: gameState.debt,
+            health: gameState.health,
+            day: gameState.day,
+            currentCity: gameState.currentCity,
+            reputation: gameState.reputation,
+            inventory: gameState.drugs.reduce((inv, drug) => {
+              if (drug.owned > 0) inv[drug.id] = drug.owned;
+              return inv;
+            }, {} as Record<string, number>),
+            finalScore,
+            gameRoundId,
+            // Include new achievement tracking fields
+            strainsSmoked: gameState.strainsSmoked || [],
+            nightDeals: gameState.nightDeals || 0,
+            maxCitiesPerDay: gameState.maxCitiesPerDay || 0,
+            maxHeatReached: gameState.maxHeatReached || 0,
+            bargainDeals: gameState.bargainDeals || 0,
+            highRiskPurchases: gameState.highRiskPurchases || 0,
+            aiChatCount: gameState.aiChatCount || 0
+          }
+        })
+      });
+
+      if (achievementResponse.ok) {
+        const achievementData = await achievementResponse.json();
+        const achievementBudz = achievementData.success ? achievementData.totalBudzEarned || 0 : 0;
+        setFinalRewards(prev => ({...prev, achievements: achievementBudz}));
+        console.log(`🏆 Calculated ${achievementBudz} BUDZ from achievements`);
+      } else {
+        setFinalRewards(prev => ({...prev, achievements: 0}));
+      }
+    } catch (error) {
+      console.error('❌ Achievement calculation failed:', error);
+      setFinalRewards(prev => ({...prev, achievements: 0}));
+    }
+  };
+
+  // Test functions for admin panel
+  const handleTestEndGameVideo = () => {
+    console.log('🎬 Admin triggered end-game video test');
+    calculateFinalAchievements();
+    setShowEndGameVideo(true);
+  };
+
+  const handleTestAchievementRewards = () => {
+    console.log('🏆 Admin triggered achievement rewards test');
+    // Set test rewards data
+    setFinalRewards({ achievements: 850, completion: 100, position: 3 });
+    setLeaderboardPosition(3);
+    setShowAchievementRewards(true);
+  };
+
+  // Generate Growerz URL with player data
+  const getGrowerzUrl = useCallback(() => {
+    const baseUrl = 'https://growerz.thc-labz.xyz/';
+    
+    // Create URL parameters with player data and wallet connection
+    const paramData: Record<string, string> = {
+      playerMoney: gameState.money.toString(),
+      playerDay: gameState.day.toString(),
+      playerHealth: gameState.health.toString(),
+      playerDebt: gameState.debt.toString(),
+      playerCity: gameState.currentCity,
+      autoLogin: 'true',
+      source: 'dopeboys'
+    };
+
+    // Add wallet connection data if connected
+    if (connectedWallet) {
+      paramData.walletAddress = connectedWallet;
+      paramData.walletConnected = 'true';
+      paramData.walletType = connectedWalletType || 'unknown';
+    }
+
+    // Add server wallet if available
+    if (serverWallet) {
+      paramData.serverWallet = serverWallet;
+    }
+
+    // Add token balances if available
+    if (budzBalance !== null) {
+      paramData.budzBalance = budzBalance.toString();
+    }
+    if (gbuxBalance !== null) {
+      paramData.gbuxBalance = gbuxBalance.toString();
+    }
+
+    const params = new URLSearchParams(paramData);
+    return `${baseUrl}?${params.toString()}`;
+  }, [gameState, connectedWallet, connectedWalletType, serverWallet, budzBalance, gbuxBalance]);
+
+  // Generate Cannabis Cultivator URL with player data
+  const getStreetsUrl = useCallback(() => {
+    const baseUrl = 'https://cannabis-cultivator-grudgedev.replit.app/';
+    
+    // Create URL parameters with player data for seamless login
+    const paramData: Record<string, string> = {
+      playerMoney: gameState.money.toString(),
+      playerDay: gameState.day.toString(),
+      playerHealth: gameState.health.toString(),
+      playerDebt: gameState.debt.toString(),
+      playerCity: gameState.currentCity,
+      playerReputation: gameState.reputation.toString(),
+      autoLogin: 'true',
+      source: 'dopeboys'
+    };
+    const params = new URLSearchParams(paramData);
+
+    return `${baseUrl}?${params.toString()}`;
+  }, [gameState]);
+
+  // Generate Web3 URL with player data
+  const getWeb3Url = useCallback(() => {
+    const baseUrl = 'https://grudge-thc-growrez.replit.app/';
+    
+    // Create URL parameters with player data for seamless login
+    const paramData: Record<string, string> = {
+      playerMoney: gameState.money.toString(),
+      playerDay: gameState.day.toString(),
+      playerHealth: gameState.health.toString(),
+      playerDebt: gameState.debt.toString(),
+      playerCity: gameState.currentCity,
+      playerReputation: gameState.reputation.toString(),
+      autoLogin: 'true',
+      source: 'dopebuds'
+    };
+    const params = new URLSearchParams(paramData);
+
+    return `${baseUrl}?${params.toString()}`;
+  }, [gameState]);
+
+
+
+  // Skill Tree Definition
+  const skillTree: Record<string, Skill> = {
+    streetwise: {
+      id: 'streetwise',
+      name: 'Streetwise',
+      description: 'Reduce chance of bad events by 10% per level',
+      cost: 500,
+      maxLevel: 3,
+      currentLevel: gameState.skills.streetwise || 0,
+      icon: '🕵️',
+      prerequisites: [],
+      category: 'survival'
+    },
+    negotiation: {
+      id: 'negotiation',
+      name: 'Negotiation',
+      description: 'Get 5% better prices when buying per level',
+      cost: 800,
+      maxLevel: 5,
+      currentLevel: gameState.skills.negotiation || 0,
+      icon: '🤝',
+      prerequisites: [],
+      category: 'dealing'
+    },
+    intimidation: {
+      id: 'intimidation',
+      name: 'Intimidation',
+      description: 'Get 5% better prices when selling per level',
+      cost: 800,
+      maxLevel: 5,
+      currentLevel: gameState.skills.intimidation || 0,
+      icon: '😤',
+      prerequisites: [],
+      category: 'dealing'
+    },
+    networking: {
+      id: 'networking',
+      name: 'Networking',
+      description: 'Find free drugs 15% more often per level',
+      cost: 1200,
+      maxLevel: 4,
+      currentLevel: gameState.skills.networking || 0,
+      icon: '🌐',
+      prerequisites: ['negotiation'],
+      category: 'dealing'
+    },
+    inventory: {
+      id: 'inventory',
+      name: 'Bigger Coat',
+      description: '+20 carry capacity per level',
+      cost: 1000,
+      maxLevel: 10,
+      currentLevel: gameState.skills.inventory || 0,
+      icon: '🧥',
+      prerequisites: [],
+      category: 'business'
+    },
+    megacoat: {
+      id: 'megacoat',
+      name: 'Mega Coat',
+      description: '+50 carry capacity per level',
+      cost: 5000,
+      maxLevel: 8,
+      currentLevel: gameState.skills.megacoat || 0,
+      icon: '🎒',
+      prerequisites: ['inventory'],
+      category: 'business'
+    },
+    cargocoat: {
+      id: 'cargocoat',
+      name: 'Cargo Coat',
+      description: '+100 carry capacity per level',
+      cost: 15000,
+      maxLevel: 5,
+      currentLevel: gameState.skills.cargocoat || 0,
+      icon: '📦',
+      prerequisites: ['megacoat'],
+      category: 'business'
+    },
+    resilience: {
+      id: 'resilience',
+      name: 'Resilience',
+      description: 'Take 20% less damage from events per level',
+      cost: 1500,
+      maxLevel: 3,
+      currentLevel: gameState.skills.resilience || 0,
+      icon: '💪',
+      prerequisites: ['streetwise'],
+      category: 'survival'
+    },
+    connections: {
+      id: 'connections',
+      name: 'Police Connections',
+      description: 'Reduce police event damage by 50% per level',
+      cost: 2000,
+      maxLevel: 2,
+      currentLevel: gameState.skills.connections || 0,
+      icon: '👮',
+      prerequisites: ['streetwise', 'networking'],
+      category: 'survival'
+    },
+    mastermind: {
+      id: 'mastermind',
+      name: 'Drug Lord',
+      description: 'Earn 25% more from all sales per level',
+      cost: 5000,
+      maxLevel: 2,
+      currentLevel: gameState.skills.mastermind || 0,
+      icon: '👑',
+      prerequisites: ['intimidation', 'networking', 'inventory'],
+      category: 'business'
+    }
+  };
+
+  // Enhanced wallet detection with Web3 browser support
+  const detectWallets = useCallback(() => {
+    const wallets: string[] = [];
+    
+    // Detect browser type for optimized wallet support
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isPhantomBrowser = userAgent.includes('phantom') || window.solana?.isPhantom;
+    const isBrave = !!(window as any).brave;
+    const isOpera = userAgent.includes('opr/') || userAgent.includes('opera');
+    
+    console.log('🌐 Browser Detection:', {
+      isPhantomBrowser,
+      isBrave,
+      isOpera,
+      userAgent: userAgent.substring(0, 50) + '...'
+    });
+    
+    console.log('🔍 Scanning for wallet extensions...');
+    console.log('window.solana:', window.solana);
+    console.log('window.phantom:', window.phantom);
+    console.log('window.solflare:', window.solflare);
+    console.log('window.backpack:', window.backpack);
+    console.log('window.magicEden:', window.magicEden);
+    
+    // Enhanced Phantom detection (prioritized for Phantom Browser)
+    if (window.solana?.isPhantom) {
+      wallets.push('Phantom');
+      console.log('✅ Phantom wallet detected via window.solana');
+    } else if (window.phantom?.solana) {
+      wallets.push('Phantom');
+      console.log('✅ Phantom wallet detected via window.phantom');
+    }
+    
+    // Solflare detection
+    if (window.solflare) {
+      wallets.push('Solflare');
+      console.log('✅ Solflare wallet detected');
+    }
+    
+    // Backpack detection
+    if (window.backpack?.solana) {
+      wallets.push('Backpack');
+      console.log('✅ Backpack wallet detected');
+    }
+    
+    // Magic Eden detection
+    if (window.magicEden?.solana) {
+      wallets.push('Magic Eden');
+      console.log('✅ Magic Eden wallet detected');
+    }
+    
+    // Coinbase detection
+    if (window.coinbaseSolana) {
+      wallets.push('Coinbase');
+      console.log('✅ Coinbase wallet detected');
+    }
+    
+    // Glow detection (mobile-friendly)
+    if (window.glow) {
+      wallets.push('Glow');
+      console.log('✅ Glow wallet detected');
+    }
+    
+    // Generic Solana wallet fallback
+    if (wallets.length === 0 && window.solana) {
+      wallets.push('Solana Wallet');
+      console.log('✅ Generic Solana wallet detected');
+    }
+    
+    // Web3 browser specific optimizations
+    if (isPhantomBrowser && wallets.length > 0) {
+      console.log('🚀 Phantom Browser detected - optimizing for Web3 experience');
+    }
+    
+    if (isBrave && wallets.length > 0) {
+      console.log('🛡️ Brave Browser detected - privacy-focused wallet support enabled');
+    }
+    
+    console.log('🔍 Final detected wallets:', wallets);
+    setDetectedWallets(wallets);
+    return wallets;
+  }, []);
+
+  // Connect to specific wallet with enhanced error handling
+  const connectSpecificWallet = async (walletType: string) => {
+    console.log(`🔗 Attempting to connect to ${walletType} wallet...`);
+    
+    try {
+      let wallet;
+      let walletName = walletType;
+      
+      switch (walletType) {
+        case 'Phantom':
+          // Try multiple Phantom detection paths
+          if (window.solana?.isPhantom) {
+            wallet = window.solana;
+            console.log('📱 Using window.solana for Phantom');
+          } else if (window.phantom?.solana) {
+            wallet = window.phantom.solana;
+            console.log('📱 Using window.phantom.solana for Phantom');
+          } else {
+            throw new Error('Phantom wallet not detected. Please install Phantom from phantom.app');
+          }
+          break;
+          
+        case 'Magic Eden':
+          if (!window.magicEden?.solana) {
+            throw new Error('Magic Eden wallet not available');
+          }
+          wallet = window.magicEden.solana;
+          break;
+          
+        case 'Solflare':
+          if (!window.solflare) {
+            throw new Error('Solflare wallet not available');
+          }
+          wallet = window.solflare;
+          break;
+          
+        case 'Backpack':
+          if (!window.backpack?.solana) {
+            throw new Error('Backpack wallet not available');
+          }
+          wallet = window.backpack.solana;
+          break;
+          
+        case 'Coinbase':
+          if (!window.coinbaseSolana) {
+            throw new Error('Coinbase wallet not available');
+          }
+          wallet = window.coinbaseSolana;
+          break;
+          
+        case 'Glow':
+          if (!window.glow) {
+            throw new Error('Glow wallet not available');
+          }
+          wallet = window.glow;
+          break;
+          
+        case 'Solana Wallet':
+          if (!window.solana) {
+            throw new Error('Solana wallet not available');
+          }
+          wallet = window.solana;
+          break;
+          
+        default:
+          throw new Error(`Unsupported wallet: ${walletType}`);
+      }
+      
+      console.log(`🔌 Wallet object found for ${walletType}:`, wallet);
+      
+      // Ensure wallet is not already connected to avoid conflicts
+      if (wallet.isConnected) {
+        console.log(`🔄 Wallet already connected, attempting disconnect first...`);
+        try {
+          await wallet.disconnect();
+          // Wait a bit for disconnect to complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (disconnectError) {
+          console.log('⚠️ Disconnect error (continuing anyway):', disconnectError);
+        }
+      }
+      
+      console.log(`🚀 Attempting connection to ${walletType}...`);
+      const response = await wallet.connect({ onlyIfTrusted: false });
+      
+      console.log(`📡 Connection response from ${walletType}:`, response);
+      
+      if (!response?.publicKey) {
+        throw new Error(`${walletType} did not return a public key`);
+      }
+      
+      const walletAddress = response.publicKey.toString();
+      console.log(`✅ Successfully connected ${walletType} wallet:`, walletAddress);
+      
+      return { walletAddress, walletName };
+    } catch (error) {
+      console.error(`❌ Error connecting ${walletType} wallet:`, error);
+      throw error;
+    }
+  };
+
+  // Universal wallet connection function
+  const connectWallet = async (preferredWallet?: string) => {
+    console.log('🔗 Starting wallet connection process...');
+    setIsConnectingWallet(true);
+    
+    try {
+      // Detect available wallets
+      let availableWallets = detectWallets();
+      
+      if (availableWallets.length === 0) {
+        console.log('❌ No Solana wallets detected');
+        
+        // Wait a moment and try again in case wallets are still loading
+        console.log('🔄 Waiting for wallet extensions to load...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const retryWallets = detectWallets();
+        if (retryWallets.length === 0) {
+          // Detect browser type for better recommendations
+          const userAgent = navigator.userAgent.toLowerCase();
+          const isPhantomBrowser = userAgent.includes('phantom');
+          const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+          
+          let walletMessage = 'No Solana wallets detected!\n\nSupported wallets:\n';
+          
+          if (isPhantomBrowser) {
+            walletMessage += '• Phantom (Built-in for Phantom Browser)\n';
+          } else {
+            walletMessage += '• Phantom (phantom.app)\n';
+          }
+          
+          walletMessage += '• Magic Eden (magiceden.io)\n• Solflare (solflare.com)\n• Backpack (backpack.app)\n';
+          
+          if (!isMobile) {
+            walletMessage += '• Coinbase (coinbase.com)\n';
+          } else {
+            walletMessage += '• Glow (glow.app) - Mobile Optimized\n';
+          }
+          
+          if (isPhantomBrowser) {
+            walletMessage += '\nNote: You\'re using Phantom Browser - wallet should be automatically available.';
+          } else {
+            walletMessage += '\nInstall any wallet extension and refresh to continue.';
+          }
+          
+          alert(walletMessage);
+          setIsConnectingWallet(false);
+          return;
+        }
+        availableWallets = retryWallets;
+        console.log('✅ Wallets detected on retry:', retryWallets);
+      }
+
+      // Use preferred wallet or first available
+      const walletToConnect = preferredWallet && availableWallets.includes(preferredWallet) 
+        ? preferredWallet 
+        : availableWallets[0];
+      
+      console.log(`🔗 Connecting to ${walletToConnect} (${availableWallets.length} wallets available)`);
+      
+      const { walletAddress, walletName } = await connectSpecificWallet(walletToConnect);
+      console.log('✅ Connected wallet:', walletAddress);
+      
+      console.log('📡 Creating server wallet for:', walletAddress);
+      // Create server wallet
+      const serverResponse = await fetch('/api/wallet/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solanaWallet: walletAddress })
+      });
+      
+      console.log('Server response status:', serverResponse.status);
+      const serverData = await serverResponse.json();
+      console.log('Server data:', serverData);
+      
+      if (serverResponse.ok) {
+        console.log('✅ Server wallet created successfully');
+        setConnectedWallet(walletAddress);
+        setServerWallet(serverData.serverWallet);
+        setBudzBalance(serverData.budzBalance);
+        setGbuxBalance(serverData.gbuxBalance);
+        setConnectedWalletType(walletName);
+        setShowWalletModal(false);
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('connectedWallet', walletAddress);
+        localStorage.setItem('serverWallet', serverData.serverWallet);
+        localStorage.setItem('walletType', walletName);
+        
+        // Close welcome screen and trigger intro video
+        setShowWelcomeScreen(false);
+        
+        // Check if intro video has been played for this session
+        const hasPlayedIntroKey = `introPlayed_${walletAddress}`;
+        const hasPlayedIntroSession = localStorage.getItem(hasPlayedIntroKey);
+        
+        if (!hasPlayedIntroSession) {
+          console.log('🎬 Playing intro video for new session');
+          setShowIntroVideo(true);
+          setHasPlayedIntro(false);
+          // Don't set localStorage here - set it after video ends
+        } else {
+          console.log('🎬 Intro video already played, starting game directly');
+          setHasPlayedIntro(true);
+          setGameState(prev => ({ ...prev, money: 2000 })); // Start with initial money
+        }
+        
+        console.log('✅ Game ready to start with wallet:', walletAddress);
+        alert(`${walletName} wallet connected successfully! You can now play and earn BUDZ tokens!`);
+      } else {
+        console.log('❌ Server wallet creation failed:', serverData);
+        throw new Error(serverData.error || 'Failed to create server wallet');
+      }
+      
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      alert('Failed to connect wallet. Please try again.');
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  };
+
+  const disconnectWallet = async () => {
+    try {
+      // Disconnect from Phantom wallet if available
+      if (window.solana && window.solana.isConnected) {
+        await window.solana.disconnect();
+      }
+    } catch (error) {
+      console.log('Error disconnecting from Phantom:', error);
+    }
+    
+    // Clear local state and storage
+    setConnectedWallet('');
+    setServerWallet('');
+    setBudzBalance(0);
+    setGbuxBalance(0);
+    setShowWelcomeScreen(true);
+    setHasPlayedIntro(false);
+    setShowIntroVideo(false);
+    
+    // Clear wallet-related localStorage
+    localStorage.removeItem('connectedWallet');
+    localStorage.removeItem('serverWallet');
+    localStorage.removeItem('walletType');
+    
+    // Clear intro video localStorage for all wallets (reset for next login)
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('introPlayed_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    alert('Wallet disconnected successfully!');
+  };
+
+  const updateWalletBalances = useCallback(async () => {
+    if (!connectedWallet) return;
+    
+    setIsLoadingBalances(true);
+    try {
+      console.log(`🔍 Fetching real balances for wallet: ${connectedWallet}`);
+      const response = await fetch(`/api/wallet/${connectedWallet}`);
+      const data = await response.json();
+      
+      console.log('📊 Raw wallet response:', data);
+      
+      if (response.ok) {
+        setBudzBalance(data.budzBalance || 0);
+        setGbuxBalance(data.gbuxBalance || 0);
+        setThcGrowerTokenBalance(data.thcLabzTokenBalance || 0);
+        console.log('💰 Updated wallet balances:', { 
+          budz: data.budzBalance, 
+          gbux: data.gbuxBalance,
+          thcLabz: data.thcLabzTokenBalance,
+          sol: data.solBalance
+        });
+      } else {
+        console.error('❌ Failed to fetch wallet balances:', data);
+      }
+    } catch (error) {
+      console.error('❌ Error updating wallet balances:', error);
+    } finally {
+      setIsLoadingBalances(false);
+    }
+  }, [connectedWallet]);
+
+  // Fetch real-time token prices with standby mode for NFT users
+  const updateTokenPrices = useCallback(async (forceUpdate = false) => {
+    try {
+      // Standby mode: Only update if user has NFT or force update requested
+      const hasNFT = connectedWallet && serverWallet;
+      if (!hasNFT && !forceUpdate) {
+        console.log('⏸️ Standby mode: No NFT user, skipping price update to conserve API limits');
+        return;
+      }
+
+      console.log('💰 Updating token prices via batch API...');
+      
+      // Use single batch call to reduce API requests
+      const batchResponse = await fetch('/api/token-prices/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokens: [
+            '55TpSoMNxbfsNJ9U1dQoo9H3dRtDmjBZVMcKqvU2nray', // GBUX
+            '2i7TjYvmTfyU8P22x8HkX2Wv8nmEtsHbyR8QnThxnsiQ', // BUDZ
+            'BmwJNuAAjFdKMfE9sWFb1YJJReJJGHLFsENPLkhjLbuT'  // THC LABZ
+          ]
+        })
+      });
+      
+      if (batchResponse.ok) {
+        const batchData = await batchResponse.json();
+        setGbuxPrice(batchData.gbux || 0.0000123);
+        setBudzPrice(batchData.budz || 0.0000123);
+        console.log('🔄 Batch prices updated - GBUX:', batchData.gbux, 'BUDZ:', batchData.budz, 'THC LABZ:', batchData.thcLabz);
+      } else {
+        // Fallback to individual calls only if batch fails
+        console.log('📦 Batch API failed, using fallback prices');
+        setGbuxPrice(0.0000123);
+        setBudzPrice(0.0000123);
+      }
+    } catch (error) {
+      console.error('Error fetching token prices:', error);
+    }
+  }, [connectedWallet, serverWallet]);
+
+  // Token swap function
+  const executeTokenSwap = useCallback(async () => {
+    if (!connectedWallet || !serverWallet || swapAmount <= 0) return;
+    
+    setIsSwapping(true);
+    try {
+      const response = await fetch('/api/swap-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: connectedWallet,
+          serverWallet: serverWallet,
+          amount: swapAmount,
+          direction: swapDirection,
+          aiAgentWallet: 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65'
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert(`Swap successful! Transaction: ${data.transactionId}`);
+        updateWalletBalances();
+        setSwapAmount(0);
+      } else {
+        alert(`Swap failed: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error executing swap:', error);
+      alert('Swap failed. Please try again.');
+    } finally {
+      setIsSwapping(false);
+    }
+  }, [connectedWallet, serverWallet, swapAmount, swapDirection, updateWalletBalances]);
+
+  // Load wallet from localStorage on component mount
+  useEffect(() => {
+    const initializeWalletConnection = async () => {
+      console.log('🔍 Initializing wallet connection and detection...');
+      
+      // First detect available wallets with enhanced logging
+      const detectedWallets = detectWallets();
+      console.log('🔍 Available wallets:', detectedWallets);
+      
+      const savedWallet = localStorage.getItem('connectedWallet');
+      const savedServerWallet = localStorage.getItem('serverWallet');
+      const savedWalletType = localStorage.getItem('walletType');
+      
+      console.log('💾 Saved wallet data:', { savedWallet, savedServerWallet, savedWalletType });
+      
+      if (savedWallet && savedServerWallet) {
+        console.log('🔄 Found saved wallet connection, verifying...');
+        
+        // Verify the wallet still exists and is connected
+        try {
+          const response = await fetch(`/api/wallet/${savedWallet}`);
+          if (response.ok) {
+            const walletData = await response.json();
+            console.log('✅ Verified saved wallet is valid:', walletData);
+            
+            setConnectedWallet(savedWallet);
+            setServerWallet(savedServerWallet);
+            setConnectedWalletType(savedWalletType || 'Unknown');
+            
+            // Load balances for saved wallet
+            updateWalletBalances();
+            updateTokenPrices(true);
+            
+            // Check if intro has been played for this wallet
+            const hasPlayedIntroKey = `introPlayed_${savedWallet}`;
+            const hasPlayedIntroSession = localStorage.getItem(hasPlayedIntroKey);
+            
+            if (hasPlayedIntroSession) {
+              console.log('🎬 Intro already played, checking for saved game...');
+              setShowWelcomeScreen(false);
+              setHasPlayedIntro(true);
+              
+              // Try to load existing save
+              const savedGame = loadLatestGameSave();
+              if (savedGame && savedGame.day > 1) {
+                console.log(`🔄 Restoring progress from day ${savedGame.day}`);
+                setGameState(savedGame);
+                setCurrentGameRoundId(savedGame.gameRoundId || `${savedWallet}_${Date.now()}`);
+              } else {
+                console.log('🎮 Starting new game with initial money');
+                setGameState(prev => ({ ...prev, money: 2000 })); // Start with initial money
+                setCurrentGameRoundId(`${savedWallet}_${Date.now()}`);
+              }
+            } else {
+              console.log('🎬 Intro not played yet, showing welcome screen first');
+              setShowWelcomeScreen(false); // Skip welcome but show intro after connection
+            }
+          } else {
+            console.log('❌ Saved wallet no longer valid, clearing...');
+            localStorage.removeItem('connectedWallet');
+            localStorage.removeItem('serverWallet');
+            localStorage.removeItem('walletType');
+            setShowWelcomeScreen(true);
+          }
+        } catch (error) {
+          console.error('❌ Error verifying saved wallet:', error);
+          localStorage.removeItem('connectedWallet');
+          localStorage.removeItem('serverWallet');
+          localStorage.removeItem('walletType');
+          setShowWelcomeScreen(true);
+        }
+      } else {
+        console.log('🔍 No saved wallet found, showing welcome screen');
+        setShowWelcomeScreen(true);
+      }
+    };
+    
+    // Wait for wallet extensions to load, then initialize
+    setTimeout(initializeWalletConnection, 1500);
+  }, [updateWalletBalances, updateTokenPrices, detectWallets]);
+
+  // Set up automatic price updates every 30 minutes (1800000ms) to reduce API calls
+  useEffect(() => {
+    const priceUpdateInterval = setInterval(() => {
+      updateTokenPrices(); // Uses standby mode - only updates for NFT users
+    }, 1800000); // 30 minutes - reduced from 6 minutes to prevent rate limiting
+
+    return () => clearInterval(priceUpdateInterval);
+  }, [updateTokenPrices]);
+
+  // Add manual price update button for users
+  const forceUpdatePrices = useCallback(() => {
+    updateTokenPrices(true); // Force update regardless of NFT status
+  }, [updateTokenPrices]);
+
+  // Enhanced game state management with daily saves to prevent progress loss
+  const saveGameStateDaily = useCallback((currentGameState: typeof gameState) => {
+    if (!connectedWallet) return;
+    
+    const dailySaveKey = `dopeWars_dailySave_${connectedWallet}_day${currentGameState.day}`;
+    const gameStateSave = {
+      ...currentGameState,
+      savedAt: Date.now(),
+      walletAddress: connectedWallet,
+      serverWallet: serverWallet,
+      gameRoundId: currentGameRoundId,
+      saveType: 'daily_progress'
+    };
+    
+    try {
+      localStorage.setItem(dailySaveKey, JSON.stringify(gameStateSave));
+      localStorage.setItem(`dopeWars_lastSave_${connectedWallet}`, JSON.stringify({
+        day: currentGameState.day,
+        timestamp: Date.now(),
+        key: dailySaveKey
+      }));
+      console.log(`💾 Daily save completed for day ${currentGameState.day} - Money: $${currentGameState.money.toLocaleString()}`);
+    } catch (error) {
+      console.error('❌ Failed to save daily progress:', error);
+    }
+  }, [connectedWallet, serverWallet, currentGameRoundId]);
+
+  // Load most recent save if available
+  const loadLatestGameSave = useCallback(() => {
+    if (!connectedWallet) return null;
+    
+    try {
+      const lastSaveInfo = localStorage.getItem(`dopeWars_lastSave_${connectedWallet}`);
+      if (lastSaveInfo) {
+        const saveInfo = JSON.parse(lastSaveInfo);
+        const savedGameState = localStorage.getItem(saveInfo.key);
+        
+        if (savedGameState) {
+          const gameData = JSON.parse(savedGameState);
+          console.log(`🔄 Found save from day ${gameData.day} (${new Date(saveInfo.timestamp).toLocaleString()})`);
+          return gameData;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to load game save:', error);
+    }
+    return null;
+  }, [connectedWallet]);
+
+  // Auto-save at end of each day
+  // Track last saved day to prevent repeated saves
+  const lastSavedDayRef = useRef<number>(0);
+  
+  useEffect(() => {
+    if (connectedWallet && gameState.day > 1 && gameState.day !== lastSavedDayRef.current) {
+      lastSavedDayRef.current = gameState.day;
+      saveGameStateDaily(gameState);
+    }
+  }, [gameState.day, connectedWallet, saveGameStateDaily]);
+
+  const [drugs, setDrugs] = useState<Record<string, Drug>>({
+    reggie: { 
+      id: 'reggie', name: 'Regz (Low Grade)', basePrice: 50, currentPrice: 50, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Indica Strain', 'Premium Quality']
+    },
+    mids: { 
+      id: 'mids', name: 'Midz (Mid Grade)', basePrice: 120, currentPrice: 120, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Hybrid Strain']
+    },
+    kush: { 
+      id: 'kush', name: 'OG Kush', basePrice: 280, currentPrice: 280, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Indica Strain', 'High THC %', 'Rare Genetics']
+    },
+    sour: { 
+      id: 'sour', name: 'Sour Diesel', basePrice: 320, currentPrice: 320, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Sativa Strain', 'High THC %', 'Premium Quality']
+    },
+    purple: { 
+      id: 'purple', name: 'Purple Haze', basePrice: 380, currentPrice: 380, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Sativa Strain', 'Rare Genetics']
+    },
+    white: { 
+      id: 'white', name: 'White Widow', basePrice: 450, currentPrice: 450, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Hybrid Strain', 'Premium Quality', 'Rare Genetics']
+    },
+    gelato: { 
+      id: 'gelato', name: 'Gelato', basePrice: 520, currentPrice: 520, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Hybrid Strain', 'High THC %', 'Premium Quality']
+    },
+    runtz: { 
+      id: 'runtz', name: 'Runtz (Premium)', basePrice: 600, currentPrice: 600, owned: 0,
+      totalBought: 0, totalSold: 0, totalSpent: 0, totalEarned: 0, averageBuyPrice: 0,
+      highestSellPrice: 0, lowestBuyPrice: 999999,
+      traits: ['Hybrid Strain', 'High THC %', 'Premium Quality', 'Rare Genetics']
+    }
+  });
+
+  const cities = {
+    hometown: 'Home Town',
+    neighborhood: 'The NeighborHood', 
+    central: 'Central Park',
+    newyork: 'New York',
+    stlouis: 'St. Louis',
+    memphis: 'Memphis',
+    baltimore: 'Baltimore',
+    miami: 'Miami',
+    atlanta: 'Atlanta',
+    detroit: 'Detroit',
+    kansascity: 'Kansas City',
+    houston: 'Houston',
+    neworleans: 'New Orleans',
+    cleveland: 'Cleveland',
+    oakland: 'Oakland',
+    denver: 'Denver'
+  };
+
+  // Smoking session function
+  const startSmokingSession = useCallback((drugId: string) => {
+    // Check if already smoked today
+    if (lastSmokingDay === gameState.day) {
+      alert('You can only smoke once per day with your AI assistant!');
+      return;
+    }
+
+    const drug = drugs[drugId];
+    if (!drug || drug.owned < 1) {
+      alert('You need at least 1 unit of this product to smoke!');
+      return;
+    }
+
+    // Consume 1 unit of the product
+    setDrugs(prev => ({
+      ...prev,
+      [drugId]: {
+        ...prev[drugId],
+        owned: prev[drugId].owned - 1
+      }
+    }));
+
+    // Set smoking session data
+    setSelectedDrugForSmoking(drugId);
+    setLastSmokingDay(gameState.day);
+    setSmokingBuffs({active: true, drug: drug.name, traits: drug.traits});
+    setShowSmokingVideo(true);
+    
+    // Track strains smoked for achievements
+    setGameState(prev => {
+      const newStrainsSmoked = prev.strainsSmoked || [];
+      if (!newStrainsSmoked.includes(drug.name)) {
+        return {...prev, strainsSmoked: [...newStrainsSmoked, drug.name]};
+      }
+      return prev;
+    });
+    
+    console.log(`🌿 Started smoking session with ${drug.name} (Traits: ${drug.traits.join(', ')})`);
+  }, [drugs, gameState.day, lastSmokingDay]);
+
+  // Handle smoking video completion
+  const handleSmokingVideoEnd = useCallback(() => {
+    setShowSmokingVideo(false);
+    
+    // Show AI assistant with smoking buffs
+    const drug = drugs[selectedDrugForSmoking];
+    if (drug) {
+      alert(`🌿 Smoking session complete! Your AI assistant is now enhanced with ${drug.name} effects: ${drug.traits.join(', ')}`);
+    }
+  }, [drugs, selectedDrugForSmoking]);
+
+  // Generate random prices for current city
+  const generatePrices = useCallback(() => {
+    setDrugs(prev => {
+      const newDrugs = { ...prev };
+      Object.keys(newDrugs).forEach(drugId => {
+        const drug = newDrugs[drugId];
+        // Random price fluctuation between 50% and 300% of base price
+        const multiplier = 0.5 + Math.random() * 2.5;
+        newDrugs[drugId] = {
+          ...drug,
+          currentPrice: Math.round(drug.basePrice * multiplier)
+        };
+      });
+      return newDrugs;
+    });
+  }, []);
+
+  // Heat management functions
+  const increaseHeat = useCallback((amount: number, reason?: string) => {
+    setGameState(prev => {
+      const newHeat = Math.min(5, prev.heat + amount);
+      if (newHeat > prev.heat && reason) {
+        console.log(`🚨 Heat increased by ${amount} (${reason}): ${prev.heat} → ${newHeat}`);
+      }
+      // Track max heat reached for achievements
+      const maxHeatReached = Math.max(prev.maxHeatReached || 0, newHeat === 5 ? (prev.maxHeatReached || 0) + 1 : prev.maxHeatReached || 0);
+      return { ...prev, heat: newHeat, maxHeatReached };
+    });
+  }, []);
+
+  const decreaseHeat = useCallback((amount: number, reason?: string) => {
+    setGameState(prev => {
+      const newHeat = Math.max(0, prev.heat - amount);
+      if (newHeat < prev.heat && reason) {
+        console.log(`❄️ Heat decreased by ${amount} (${reason}): ${prev.heat} → ${newHeat}`);
+      }
+      return { ...prev, heat: newHeat };
+    });
+  }, []);
+
+  // Random events with heat-based probability
+  const triggerRandomEvent = useCallback(() => {
+    const currentHeat = gameState.heat;
+    
+    // Heat-based police events (higher heat = more likely)
+    const policeEvents = [
+      { 
+        message: "DEA raid nearby! Prices are going up!", 
+        effect: () => {
+          setDrugs(prev => {
+            const newDrugs = { ...prev };
+            Object.keys(newDrugs).forEach(drugId => {
+              newDrugs[drugId] = { ...newDrugs[drugId], currentPrice: Math.round(newDrugs[drugId].currentPrice * 1.3) };
+            });
+            return newDrugs;
+          });
+          increaseHeat(2, "DEA raid in area");
+        }
+      },
+      { 
+        message: "A cop eyes you suspiciously...", 
+        effect: () => {
+          setGameState(prev => ({ ...prev, health: Math.max(0, prev.health - 10) }));
+          increaseHeat(1, "Suspicious police activity");
+        }
+      },
+      { 
+        message: "🚨 POLICE RAID! 🚨\nThey found some of your stash!", 
+        effect: () => {
+          setGameState(prev => ({ ...prev, health: Math.max(0, prev.health - 20), timesArrested: prev.timesArrested + 1 }));
+          setDrugs(prev => {
+            const newDrugs = { ...prev };
+            Object.keys(newDrugs).forEach(drugId => {
+              newDrugs[drugId] = { ...newDrugs[drugId], owned: Math.floor(newDrugs[drugId].owned * 0.7) };
+            });
+            return newDrugs;
+          });
+          decreaseHeat(2, "Police raid - heat reduced after bust");
+        }
+      },
+      { 
+        message: "🚔 BUSTED! 🚔\nPaid a heavy fine to avoid arrest!", 
+        effect: () => {
+          setGameState(prev => ({ 
+            ...prev, 
+            money: Math.max(0, prev.money - 500),
+            health: Math.max(0, prev.health - 15),
+            timesArrested: prev.timesArrested + 1
+          }));
+          decreaseHeat(1, "Paid fine - heat reduced");
+        }
+      }
+    ];
+
+    // Neutral/positive events
+    const neutralEvents = [
+      { 
+        message: "You found some regz someone dropped!", 
+        effect: () => setDrugs(prev => ({ ...prev, reggie: { ...prev.reggie, owned: prev.reggie.owned + Math.floor(Math.random() * 3) + 1 }}))
+      },
+      { 
+        message: "A grower hooked you up with free midz!", 
+        effect: () => setDrugs(prev => ({ ...prev, mids: { ...prev.mids, owned: prev.mids.owned + Math.floor(Math.random() * 2) + 1 }}))
+      },
+      { 
+        message: "You got robbed by some street punks!", 
+        effect: () => {
+          setGameState(prev => {
+            const stolenAmount = Math.floor(prev.money * 0.5);
+            return { 
+              ...prev, 
+              money: prev.money - stolenAmount, 
+              timesRobbed: prev.timesRobbed + 1 
+            };
+          });
+          increaseHeat(2, "Robbery incident attracts attention");
+        }
+      },
+      { 
+        message: "Narcs are watching! Better lay low.", 
+        effect: () => {
+          setGameState(prev => ({ 
+            ...prev, 
+            health: Math.max(0, prev.health - 15),
+            timesArrested: prev.timesArrested + 1
+          }));
+          increaseHeat(3, "Narcotics officers investigating");
+        }
+      },
+      { 
+        message: "You found a stash house with cash!", 
+        effect: () => setGameState(prev => ({ ...prev, money: prev.money + Math.floor(Math.random() * 800) + 200 }))
+      },
+      { 
+        message: "Competition got busted! Demand is high!", 
+        effect: () => {
+          setDrugs(prev => {
+            const newDrugs = { ...prev };
+            Object.keys(newDrugs).forEach(drugId => {
+              newDrugs[drugId] = { ...newDrugs[drugId], currentPrice: Math.round(newDrugs[drugId].currentPrice * 1.2) };
+            });
+            return newDrugs;
+          });
+        }
+      },
+      {
+        message: "You laid low and avoided police attention.",
+        effect: () => decreaseHeat(1, "Keeping a low profile")
+      }
+    ];
+
+    // Heat-based event selection
+    const heatProbability = Math.min(0.8, currentHeat * 0.15); // Max 80% chance of police events
+    const randomValue = Math.random();
+    
+    console.log(`🎲 Random event check: Heat=${currentHeat}, Probability=${(heatProbability * 100).toFixed(1)}%, Roll=${(randomValue * 100).toFixed(1)}%`);
+    
+    let selectedEvents;
+    if (randomValue < heatProbability && currentHeat > 0) {
+      selectedEvents = policeEvents;
+      console.log(`🚨 Police event triggered due to high heat (${currentHeat}/5)`);
+    } else {
+      selectedEvents = neutralEvents;
+    }
+    
+    // Skip event sometimes to avoid being too frequent
+    if (Math.random() < 0.3) {
+      console.log(`⏭️ Skipping random event this time`);
+      return;
+    }
+    
+    const randomEvent = selectedEvents[Math.floor(Math.random() * selectedEvents.length)];
+    randomEvent.effect();
+    
+    setEventMessage(randomEvent.message);
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 4000);
+    
+    // Trigger special music for police events
+    if (selectedEvents === policeEvents) {
+      switchToTrack('police_chase', 500); // Quick transition for police events
+    }
+  }, [gameState.heat, increaseHeat, decreaseHeat]);
+
+  // Buy drugs with enhanced tracking
+  const buyDrug = useCallback((drugId: string, amount: number) => {
+    const drug = drugs[drugId];
+    const totalCost = drug.currentPrice * amount;
+    const totalSpace = Object.values(drugs).reduce((sum, d) => sum + d.owned, 0);
+    
+    if (gameState.money >= totalCost && totalSpace + amount <= gameState.coatSpace) {
+      // Check if this is a high-risk purchase (90% of money)
+      const isHighRisk = totalCost >= gameState.money * 0.9;
+      
+      // Check if this is a bargain deal (50% below base price)
+      const isBargain = drug.currentPrice <= drug.basePrice * 0.5 && amount >= 100;
+      
+      // Check if this is a night deal (assuming 11 PM+ is night)
+      const currentHour = new Date().getHours();
+      const isNightDeal = currentHour >= 23 || currentHour < 6;
+      
+      setGameState(prev => ({ 
+        ...prev, 
+        money: prev.money - totalCost,
+        totalTransactions: prev.totalTransactions + 1,
+        dealsCompleted: prev.dealsCompleted + 1,
+        // Track achievement metrics
+        highRiskPurchases: isHighRisk ? (prev.highRiskPurchases || 0) + 1 : prev.highRiskPurchases,
+        bargainDeals: isBargain ? (prev.bargainDeals || 0) + 1 : prev.bargainDeals,
+        nightDeals: isNightDeal ? (prev.nightDeals || 0) + 1 : prev.nightDeals
+      }));
+      
+      setDrugs(prev => {
+        const currentDrug = prev[drugId];
+        const newTotalBought = currentDrug.totalBought + amount;
+        const newTotalSpent = currentDrug.totalSpent + totalCost;
+        const newAverageBuyPrice = newTotalBought > 0 ? newTotalSpent / newTotalBought : 0;
+        const newLowestBuyPrice = Math.min(currentDrug.lowestBuyPrice, drug.currentPrice);
+        
+        return {
+          ...prev,
+          [drugId]: { 
+            ...currentDrug, 
+            owned: currentDrug.owned + amount,
+            totalBought: newTotalBought,
+            totalSpent: newTotalSpent,
+            averageBuyPrice: newAverageBuyPrice,
+            lowestBuyPrice: newLowestBuyPrice === 999999 ? drug.currentPrice : newLowestBuyPrice
+          }
+        };
+      });
+      setBuyAmount(prev => ({ ...prev, [drugId]: 0 }));
+      
+      // Increase heat for large purchases
+      if (totalCost > 5000) {
+        increaseHeat(1, `Large ${drug.name} purchase ($${totalCost})`);
+      } else if (totalCost > 15000) {
+        increaseHeat(2, `Major ${drug.name} purchase ($${totalCost})`);
+      }
+    }
+  }, [drugs, gameState.money, gameState.coatSpace, increaseHeat]);
+
+  // Sell drugs with enhanced tracking
+  const sellDrug = useCallback((drugId: string, amount: number) => {
+    const drug = drugs[drugId];
+    const totalEarnings = drug.currentPrice * amount;
+    
+    if (drug.owned >= amount) {
+      const profit = totalEarnings - (drug.averageBuyPrice * amount);
+      
+      setGameState(prev => ({ 
+        ...prev, 
+        money: prev.money + totalEarnings,
+        totalTransactions: prev.totalTransactions + 1,
+        totalProfit: prev.totalProfit + profit,
+        dealsCompleted: prev.dealsCompleted + 1
+      }));
+      
+      setDrugs(prev => {
+        const currentDrug = prev[drugId];
+        const newTotalSold = currentDrug.totalSold + amount;
+        const newTotalEarned = currentDrug.totalEarned + totalEarnings;
+        const newHighestSellPrice = Math.max(currentDrug.highestSellPrice, drug.currentPrice);
+        
+        return {
+          ...prev,
+          [drugId]: { 
+            ...currentDrug, 
+            owned: currentDrug.owned - amount,
+            totalSold: newTotalSold,
+            totalEarned: newTotalEarned,
+            highestSellPrice: newHighestSellPrice
+          }
+        };
+      });
+      setSellAmount(prev => ({ ...prev, [drugId]: 0 }));
+      
+      // Track recent sales and increase heat for large sales
+      setGameState(prev => {
+        const newSale = { city: prev.currentCity, amount: totalEarnings, day: prev.day };
+        const updatedSales = [...prev.recentSales, newSale]
+          .filter(sale => prev.day - sale.day <= 3) // Keep only last 3 days
+          .slice(-10); // Keep max 10 recent sales
+        
+        return {
+          ...prev,
+          recentSales: updatedSales
+        };
+      });
+
+      // Increase heat for large sales
+      if (totalEarnings > 8000) {
+        increaseHeat(1, `Large ${drug.name} sale ($${totalEarnings})`);
+      } else if (totalEarnings > 20000) {
+        increaseHeat(2, `Major ${drug.name} sale ($${totalEarnings})`);
+      }
+
+      // Check for excessive selling in current city
+      const currentCitySales = gameState.recentSales.filter(sale => 
+        sale.city === gameState.currentCity && 
+        gameState.day - sale.day <= 2 // Last 2 days
+      );
+      
+      if (currentCitySales.length >= 3) {
+        increaseHeat(1, `Selling too much in ${cities[gameState.currentCity as keyof typeof cities]} recently`);
+      }
+    }
+  }, [drugs, increaseHeat]);
+
+
+
+  // Travel to new city
+  const travelToCity = useCallback((cityId: string) => {
+    if (showGameEnd) return; // Block travel if game has ended
+    
+    if (gameState.isWorking) {
+      setEventMessage("You can't travel while working at McShitz!");
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+      return;
+    }
+    
+    // Define dangerous cities that increase heat
+    const dangerousCities = {
+      'newyork': 2,    // Very dangerous
+      'baltimore': 2,  // Very dangerous
+      'detroit': 2,    // Very dangerous
+      'miami': 1,      // Dangerous
+      'atlanta': 1,    // Dangerous
+      'memphis': 1,    // Dangerous
+      'cleveland': 1,  // Dangerous
+      'oakland': 1,    // Dangerous
+      'stlouis': 1,    // Dangerous
+      'neworleans': 1, // Dangerous
+      'kansascity': 0, // Safe
+      'houston': 0,    // Safe
+      'denver': 0,     // Safe
+      'central': 0,    // Safe
+      'neighborhood': 0, // Safe
+      'hometown': 0    // Safe
+    };
+    
+    const heatIncrease = dangerousCities[cityId as keyof typeof dangerousCities] || 0;
+    if (heatIncrease > 0) {
+      const cityName = cities[cityId as keyof typeof cities];
+      increaseHeat(heatIncrease, `Traveling to dangerous city: ${cityName}`);
+    }
+    
+    setGameState(prev => {
+      // Track daily city visits for achievements
+      let newDailyCities = prev.dailyCities || [];
+      let newMaxCitiesPerDay = prev.maxCitiesPerDay || 0;
+      
+      // Reset daily cities if it's a new day
+      if (prev.lastDayForCityCount !== prev.day) {
+        newDailyCities = [cityId];
+        newMaxCitiesPerDay = Math.max(newMaxCitiesPerDay, 1);
+      } else if (!newDailyCities.includes(cityId)) {
+        newDailyCities = [...newDailyCities, cityId];
+        newMaxCitiesPerDay = Math.max(newMaxCitiesPerDay, newDailyCities.length);
+      }
+      
+      return {
+        ...prev, 
+        currentCity: cityId,
+        daysInCurrentCity: prev.currentCity === cityId ? prev.daysInCurrentCity + 1 : 1,
+        citiesVisited: prev.citiesVisited.includes(cityId) 
+          ? prev.citiesVisited 
+          : [...prev.citiesVisited, cityId],
+        dailyCities: newDailyCities,
+        maxCitiesPerDay: newMaxCitiesPerDay,
+        lastDayForCityCount: prev.day
+      };
+    });
+    advanceDay();
+    generatePrices();
+    triggerRandomEvent();
+    setCurrentView('market');
+  }, [gameState.isWorking, showGameEnd, cities, increaseHeat]);
+
+  // Advance to next day
+  const advanceDay = useCallback(() => {
+    setGameState(prev => {
+      const newDay = prev.day + 1;
+      const isNewWeek = newDay - prev.weekStartDay >= 7;
+      
+      // Pay worker if working
+      let newMoney = prev.money;
+      if (prev.isWorking) {
+        newMoney += 18; // $18 per day
+      }
+      
+      // Check if staying in one city too long
+      const daysInCity = prev.daysInCurrentCity + 1;
+      let heatIncrease = 0;
+      if (daysInCity >= 5) {
+        heatIncrease = 1;
+        console.log(`🔥 Heat increased by 1 - staying in ${cities[prev.currentCity as keyof typeof cities]} for ${daysInCity} days`);
+      }
+
+      return {
+        ...prev,
+        day: newDay,
+        timeLeftInDay: 600, // Reset to 10 minutes
+        money: newMoney,
+        debt: Math.round(prev.debt * 1.1), // Interest on debt
+        heat: Math.max(0, prev.heat - 0.5 + heatIncrease), // Heat naturally decreases but increases if staying too long
+        daysInCurrentCity: daysInCity,
+        // Reset work week if it's a new week
+        daysWorkedThisWeek: isNewWeek ? 0 : prev.daysWorkedThisWeek,
+        weekStartDay: isNewWeek ? newDay : prev.weekStartDay,
+        // Stop working if work days are done
+        isWorking: prev.workDaysLeft > 1 ? prev.isWorking : false,
+        workDaysLeft: prev.workDaysLeft > 0 ? prev.workDaysLeft - 1 : 0
+      };
+    });
+  }, []);
+
+  // Enhanced wallet detection with retry mechanism
+  useEffect(() => {
+    const performWalletDetection = () => {
+      const wallets: string[] = [];
+      
+      console.log('🔍 Performing enhanced wallet detection...');
+      console.log('window.solana:', window.solana);
+      console.log('window.phantom:', window.phantom);
+      
+      if (window.solana?.isPhantom) {
+        wallets.push('Phantom');
+        console.log('✅ Phantom wallet detected via window.solana');
+      } else if (window.phantom?.solana) {
+        wallets.push('Phantom');
+        console.log('✅ Phantom wallet detected via window.phantom');
+      }
+      
+      if (window.magicEden?.solana) {
+        wallets.push('Magic Eden');
+        console.log('✅ Magic Eden wallet detected');
+      }
+      
+      if (window.solflare) {
+        wallets.push('Solflare');
+        console.log('✅ Solflare wallet detected');
+      }
+      
+      if (window.backpack?.solana) {
+        wallets.push('Backpack');
+        console.log('✅ Backpack wallet detected');
+      }
+      
+      console.log('🔍 Final detected wallets:', wallets);
+      setDetectedWallets(wallets);
+      
+      // Retry detection if no wallets found (wait for extensions to load)
+      if (wallets.length === 0) {
+        console.log('⏳ No wallets detected, retrying in 2 seconds...');
+        setTimeout(performWalletDetection, 2000);
+      }
+    };
+    
+    // Initial detection
+    performWalletDetection();
+  }, []);
+
+  // Rest and smoke break - skip 1 day and restore health to 100%
+  const takeRestBreak = useCallback(() => {
+    if (showGameEnd) return;
+    
+    if (gameState.isWorking) {
+      setEventMessage("You can't rest while working at McShits!");
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+      return;
+    }
+    
+    setGameState(prev => ({ ...prev, health: 100 }));
+    advanceDay();
+    generatePrices();
+    triggerRandomEvent();
+    
+    setEventMessage("💨 Took a smoke break and rested up! 💨\nHealth restored to 100%");
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 2000);
+    setCurrentView('market');
+  }, [gameState.isWorking, advanceDay, generatePrices, triggerRandomEvent, showGameEnd]);
+
+  // Start working at McShitz
+  const startWork = useCallback(() => {
+    if (showGameEnd) return; // Block work if game has ended
+    
+    if (gameState.daysWorkedThisWeek >= 4) {
+      setEventMessage("You can only work 4 days per week!");
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+      return;
+    }
+    
+    setGameState(prev => ({
+      ...prev,
+      isWorking: true,
+      workDaysLeft: 5,
+      daysWorkedThisWeek: prev.daysWorkedThisWeek + 1
+    }));
+    
+    // Working reduces heat by keeping a low profile
+    decreaseHeat(1, "Working at McShitz - keeping low profile");
+    
+    setEventMessage("Started working at McShits! You'll earn $18/day for 5 days.\n🧊 Working helps cool down heat!");
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 3000);
+  }, [gameState.daysWorkedThisWeek, showGameEnd, decreaseHeat]);
+
+  // Quit job early
+  const quitJob = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      isWorking: false,
+      workDaysLeft: 0
+    }));
+    
+    setEventMessage("You quit your job at McShits!");
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 2000);
+  }, []);
+
+  // Bank functions
+  const depositMoney = useCallback((amount: number) => {
+    if (showGameEnd) return; // Block banking if game has ended
+    
+    if (gameState.money >= amount && amount > 0) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - amount,
+        bankAccount: prev.bankAccount + amount
+      }));
+      setDepositAmount(0);
+      setEventMessage(`Deposited $${amount.toLocaleString()} into your bank account.`);
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+    }
+  }, [gameState.money, showGameEnd]);
+
+  const withdrawMoney = useCallback((amount: number) => {
+    if (showGameEnd) return; // Block banking if game has ended
+    
+    if (gameState.bankAccount >= amount && amount > 0) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money + amount,
+        bankAccount: prev.bankAccount - amount
+      }));
+      setWithdrawAmount(0);
+      setEventMessage(`Withdrew $${amount.toLocaleString()} from your bank account.`);
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 5000); // Extended to 5 seconds
+    }
+  }, [gameState.bankAccount, showGameEnd]);
+
+  const payOffDebt = useCallback((amount: number) => {
+    if (showGameEnd) return; // Block debt payment if game has ended
+    
+    const actualPayment = Math.min(amount, gameState.debt, gameState.money);
+    if (actualPayment > 0) {
+      setGameState(prev => ({
+        ...prev,
+        money: prev.money - actualPayment,
+        debt: prev.debt - actualPayment,
+        loansRepaid: actualPayment === prev.debt ? prev.loansRepaid + 1 : prev.loansRepaid
+      }));
+      setDebtPayAmount(0);
+      
+      // Paying off debt reduces heat (looking more legitimate)
+      if (actualPayment >= 1000) {
+        decreaseHeat(1, `Paid off large debt amount ($${actualPayment})`);
+      }
+      
+      if (actualPayment === gameState.debt) {
+        setEventMessage(`💰 DEBT FREE! 💰\nPaid off all $${actualPayment.toLocaleString()} debt!\n🧊 Reduced heat by looking legitimate!`);
+      } else {
+        setEventMessage(`Paid $${actualPayment.toLocaleString()} towards debt.${actualPayment >= 1000 ? '\n🧊 Large payment reduces heat!' : ''}`);
+      }
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 6000); // Extended to 6 seconds
+    }
+  }, [gameState.money, gameState.debt, showGameEnd, decreaseHeat]);
+
+
+
+  // Loan system
+  const takeLoan = useCallback((increments: number) => {
+    if (showGameEnd) return; // Block loans if game has ended
+    
+    const loanTotal = increments * 1000;
+    const maxLoanLimit = 5000;
+    
+    // Check if loan would exceed the $5,000 limit
+    if (gameState.debt + loanTotal > maxLoanLimit) {
+      const remainingLimit = maxLoanLimit - gameState.debt;
+      if (remainingLimit <= 0) {
+        setEventMessage(`❌ Loan limit reached!\nMaximum debt allowed: $5,000\nCurrent debt: $${gameState.debt.toLocaleString()}`);
+      } else {
+        setEventMessage(`❌ Loan too large!\nMaximum remaining loan: $${remainingLimit.toLocaleString()}\nCurrent debt: $${gameState.debt.toLocaleString()}`);
+      }
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 6000); // Extended to 6 seconds for error messages
+      return;
+    }
+    
+    setGameState(prev => {
+      const newDebt = prev.debt + loanTotal;
+      return {
+        ...prev,
+        money: prev.money + loanTotal,
+        debt: newDebt,
+        maxConcurrentDebt: Math.max(prev.maxConcurrentDebt, newDebt)
+      };
+    });
+    
+    // Physics effects for loan
+    if (physicsEnabled) {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 3;
+      createBouncyMoney(centerX, centerY, loanTotal);
+      shakeScreen(Math.min(loanTotal / 15000, 2));
+    }
+    
+    setLoanAmount(1);
+    setEventMessage(`💳 Borrowed $${loanTotal.toLocaleString()}!\nRemember: 10% interest per day!\nRemaining loan limit: $${(maxLoanLimit - gameState.debt - loanTotal).toLocaleString()}`);
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 7000); // Extended to 7 seconds for important loan information
+  }, [physicsEnabled, showGameEnd, gameState.debt]);
+
+  // Leaderboard functions
+  const loadLeaderboard = useCallback(async () => {
+    try {
+      const response = await fetch('/api/leaderboard');
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboard(data);
+      }
+    } catch (error) {
+      console.error('Failed to load leaderboard:', error);
+    }
+  }, []);
+
+  const loadLifetimeLeaderboard = useCallback(async () => {
+    try {
+      const response = await fetch('/api/leaderboard/lifetime');
+      if (response.ok) {
+        const data = await response.json();
+        setLifetimeLeaderboard(data);
+      }
+    } catch (error) {
+      console.error('Failed to load lifetime leaderboard:', error);
+    }
+  }, []);
+
+
+
+  const submitScore = useCallback(async () => {
+    if (!playerName.trim()) return;
+    
+    // Production mode requires wallet connection
+    if (!connectedWallet) {
+      alert('Connect your wallet to submit scores and earn BUDZ tokens!\n\nClick hamburger menu → Web3 to connect.');
+      return;
+    }
+    
+    const finalScore = gameState.money + gameState.bankAccount - gameState.debt;
+    try {
+      const response = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: playerName.trim(),
+          score: finalScore,
+          day: gameState.day,
+          walletAddress: connectedWallet,
+          serverWallet: serverWallet
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Get current leaderboard position after submission
+        await loadLeaderboard();
+        
+        // Find player's position on leaderboard
+        const currentLeaderboard = await fetch('/api/leaderboard').then(r => r.json());
+        const playerPosition = currentLeaderboard.findIndex((entry: any) => 
+          entry.walletAddress === connectedWallet
+        ) + 1;
+        
+        setLeaderboardPosition(playerPosition);
+        setFinalRewards(prev => ({...prev, position: playerPosition}));
+        
+        console.log(`🏆 Final 45-day completion! Position: ${playerPosition}, Total BUDZ: ${finalRewards.achievements + finalRewards.completion}`);
+
+        setShowGameEnd(false);
+        setShowAchievementRewards(true); // Show achievement rewards modal instead of leaderboard
+        loadLifetimeLeaderboard();
+        
+        // Update wallet balances after successful submission
+        updateWalletBalances();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to submit score: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to submit score:', error);
+      alert('Network error. Please try again.');
+    }
+  }, [playerName, gameState, loadLeaderboard, loadLifetimeLeaderboard, connectedWallet, serverWallet, updateWalletBalances]);
+
+  // Load leaderboard on component mount
+  useEffect(() => {
+    loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  // Skill functions
+  const upgradeSkill = useCallback((skillId: string) => {
+    const skill = skillTree[skillId];
+    if (!skill) return;
+
+    const currentLevel = gameState.skills[skillId] || 0;
+    const upgradeCost = skill.cost * Math.pow(2, currentLevel);
+
+    // Check prerequisites
+    const hasPrereqs = skill.prerequisites.every(prereq => 
+      (gameState.skills[prereq] || 0) > 0
+    );
+
+    if (currentLevel >= skill.maxLevel) {
+      setEventMessage("Skill is already maxed out!");
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+      return;
+    }
+
+    if (!hasPrereqs) {
+      setEventMessage("You need to unlock prerequisite skills first!");
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+      return;
+    }
+
+    if (gameState.money < upgradeCost) {
+      setEventMessage(`Not enough money! Need $${upgradeCost.toLocaleString()}`);
+      setShowEvent(true);
+      setTimeout(() => setShowEvent(false), 2000);
+      return;
+    }
+
+    // Apply skill upgrade
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - upgradeCost,
+      skills: {
+        ...prev.skills,
+        [skillId]: currentLevel + 1
+      },
+      // Apply coat space skills immediately
+      coatSpace: ['inventory', 'megacoat', 'cargocoat'].includes(skillId) 
+        ? prev.coatSpace + (skillId === 'inventory' ? 20 : skillId === 'megacoat' ? 50 : 100)
+        : prev.coatSpace
+    }));
+
+    setEventMessage(`📈 ${skill.name} upgraded to level ${currentLevel + 1}!`);
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 3000);
+  }, [gameState.money, gameState.skills, skillTree]);
+
+  const canUpgradeSkill = useCallback((skillId: string) => {
+    const skill = skillTree[skillId];
+    if (!skill) return false;
+
+    const currentLevel = gameState.skills[skillId] || 0;
+    const upgradeCost = skill.cost * Math.pow(2, currentLevel);
+
+    const hasPrereqs = skill.prerequisites.every(prereq => 
+      (gameState.skills[prereq] || 0) > 0
+    );
+
+    return currentLevel < skill.maxLevel && 
+           gameState.money >= upgradeCost && 
+           hasPrereqs;
+  }, [gameState.money, gameState.skills, skillTree]);
+
+  // Handle mission completion from The Plug assistant
+  const handleMissionComplete = useCallback((missionId: string, reward: number) => {
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money + reward
+    }));
+    
+    setEventMessage(`🎯 Mission Complete! +$${reward} from The Plug`);
+    setShowEvent(true);
+    setTimeout(() => setShowEvent(false), 3000);
+    
+    // Create bouncy money effect for mission reward
+    if (physicsEnabled) {
+      createBouncyMoney(reward);
+    }
+  }, [physicsEnabled]);
+
+  // Day timer countdown
+  useEffect(() => {
+    if (showGameEnd) return; // Stop timer if game has ended
+    
+    const timer = setInterval(() => {
+      setGameState(prev => {
+        if (prev.timeLeftInDay <= 1) {
+          // Day is over, advance to next day
+          const newDay = prev.day + 1;
+          
+          // Check if game should end at day 45
+          if (newDay > 45) {
+            setTimeout(() => {
+              // Calculate achievements and trigger end-game video
+              calculateFinalAchievements();
+              setShowEndGameVideo(true);
+            }, 100);
+            return { ...prev, timeLeftInDay: 0 }; // Stop timer completely
+          }
+          
+          const isNewWeek = newDay - prev.weekStartDay >= 7;
+          
+          // Pay worker if working
+          let newMoney = prev.money;
+          if (prev.isWorking) {
+            newMoney += 18; // $18 per day
+          }
+          
+          return {
+            ...prev,
+            day: newDay,
+            timeLeftInDay: 600, // Reset to 10 minutes
+            money: newMoney,
+            debt: Math.round(prev.debt * 1.1), // Interest on debt
+            heat: Math.max(0, prev.heat - 0.5), // Heat naturally decreases over time
+            // Reset work week if it's a new week
+            daysWorkedThisWeek: isNewWeek ? 0 : prev.daysWorkedThisWeek,
+            weekStartDay: isNewWeek ? newDay : prev.weekStartDay,
+            // Stop working if work days are done
+            isWorking: prev.workDaysLeft > 1 ? prev.isWorking : false,
+            workDaysLeft: prev.workDaysLeft > 0 ? prev.workDaysLeft - 1 : 0
+          };
+        } else {
+          return {
+            ...prev,
+            timeLeftInDay: prev.timeLeftInDay - 1
+          };
+        }
+      });
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, [showGameEnd]);
+
+  // Initialize prices on start
+  useEffect(() => {
+    generatePrices();
+  }, [generatePrices]);
+
+  // Initialize dynamic music system on component mount
+  useEffect(() => {
+    console.log('🎵 Initializing dynamic music system...');
+    initializeMusicTracks().then(() => {
+      console.log('🎵 Dynamic music system ready');
+      // Start with calm music
+      updateMusicBasedOnGameState(gameState);
+    });
+  }, [initializeMusicTracks]);
+
+  // Update music when game state changes
+  useEffect(() => {
+    updateMusicBasedOnGameState(gameState);
+  }, [gameState.heat, gameState.money, gameState.currentCity, gameState.health, gameState.day, updateMusicBasedOnGameState]);
+
+  // Regenerate prices when day changes
+  useEffect(() => {
+    generatePrices();
+  }, [gameState.day, generatePrices]);
+
+  const totalSpace = Object.values(drugs).reduce((sum, drug) => sum + drug.owned, 0);
+  const totalValue = Object.values(drugs).reduce((sum, drug) => sum + (drug.owned * drug.currentPrice), 0);
+
+  const getPriceColor = (currentPrice: number, basePrice: number) => {
+    if (currentPrice > basePrice * 1.5) return 'text-red-400'; // High price
+    if (currentPrice < basePrice * 0.8) return 'text-green-400'; // Low price
+    return 'text-white';
+  };
+
+  const getPriceIcon = (currentPrice: number, basePrice: number) => {
+    if (currentPrice > basePrice * 1.5) return <TrendingUp className="w-4 h-4 text-red-400" />;
+    if (currentPrice < basePrice * 0.8) return <TrendingDown className="w-4 h-4 text-green-400" />;
+    return null;
+  };
+
+  // Production Welcome Screen - Requires wallet connection
+  if (showWelcomeScreen) {
+    return (
+      <div 
+        className="w-full h-screen text-green-400 overflow-hidden relative flex items-center justify-center" 
+        style={{ 
+          fontFamily: 'LemonMilk, sans-serif'
+        }}
+      >
+        {/* Background Video */}
+        <video 
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+        >
+          <source src="/intro-video.mp4" type="video/mp4" />
+          {/* Fallback background image if video fails */}
+          <div 
+            className="absolute inset-0 w-full h-full"
+            style={{ 
+              backgroundImage: `url(/attached_assets/THCDopeBuds_1752203150964.png)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          />
+        </video>
+        
+        <div className="bg-black bg-opacity-80 p-8 rounded-lg text-center w-full max-w-md mx-auto relative z-10">
+          <h1 className="text-3xl font-bold text-purple-400 mb-4" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+            THC Labz Dope Budz
+          </h1>
+          <h2 className="text-xl text-green-400 mb-6">
+            Real Web3 Cannabis Trading
+          </h2>
+          
+          <div className="space-y-4 mb-6">
+            <div className="bg-gray-800 p-4 rounded-lg text-left">
+              <h3 className="text-purple-300 font-bold mb-2">🌐 Web3 Features</h3>
+              <p className="text-sm text-gray-300 mb-2">
+                Connect your Solana wallet to play and earn real BUDZ tokens
+              </p>
+              <div className="space-y-1">
+                <p className="text-xs text-green-400">✓ Daily BUDZ token rewards (100-1000 tokens)</p>
+                <p className="text-xs text-green-400">✓ Top 10 leaderboard pays at midnight CST</p>
+                <p className="text-xs text-green-400">✓ Lifetime leaderboard for records</p>
+                <p className="text-xs text-green-400">✓ Server-side wallet security</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {detectedWallets.length > 0 ? (
+              detectedWallets.map((wallet) => (
+                <button
+                  key={wallet}
+                  onClick={async () => {
+                    console.log(`Connect ${wallet} button clicked!`);
+                    await connectWallet(wallet);
+                  }}
+                  className="w-full py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold text-base rounded-lg transition-colors flex items-center justify-center gap-2"
+                  style={{ fontFamily: 'ThumbsDown, sans-serif' }}
+                >
+                  <span>🔗</span>
+                  <span>Connect {wallet} Wallet</span>
+                </button>
+              ))
+            ) : (
+              <button
+                onClick={() => {
+                  alert('No Solana wallets detected!\n\nSupported wallets:\n• Phantom (phantom.app)\n• Magic Eden (magiceden.io)\n• Solflare (solflare.com)\n• Backpack (backpack.app)\n\nInstall any of these and refresh to continue.');
+                }}
+                className="w-full py-4 px-6 bg-gray-600 text-white font-bold text-lg rounded-lg"
+                style={{ fontFamily: 'ThumbsDown, sans-serif' }}
+              >
+                ⚠️ Install Solana Wallet
+              </button>
+            )}
+          </div>
+          
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-gray-400">
+              Requires Solana wallet for score submission and token rewards
+            </p>
+            
+            {detectedWallets.length > 0 ? (
+              <p className="text-xs text-green-400">
+                ✅ {detectedWallets.length} wallet{detectedWallets.length > 1 ? 's' : ''} detected: {detectedWallets.join(', ')}
+              </p>
+            ) : (
+              <p className="text-xs text-red-400">
+                ⚠️ No Solana wallets detected - Install any supported wallet above
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="min-h-screen text-green-400 font-mono relative"
+      style={{
+        backgroundImage: `url(/attached_assets/THC_banner_1752098551109.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#000000'
+      }}
+    >
+      <div 
+        className="absolute inset-0 bg-black"
+        style={{ opacity: 0.6 }}
+      ></div>
+      <div className="relative z-10">
+        {/* Game End Overlay - Completely blocks all interactions */}
+      {showGameEnd && (
+        <div className="absolute inset-0 bg-black bg-opacity-80 z-40 pointer-events-auto">
+          <div className="absolute inset-0 cursor-not-allowed" />
+        </div>
+      )}
+      
+      {/* Physics Renderer */}
+      <PhysicsRenderer enabled={physicsEnabled && !showGameEnd} />
+      
+      {/* Header - Mobile Optimized with Hamburger Menu */}
+      <div className="bg-black bg-opacity-80 p-2 md:p-3 border-b border-green-400 relative z-20">
+        <div className="flex justify-between items-center">
+          <button 
+            onClick={() => setShowDopeBudzModal(true)}
+            className="text-lg md:text-xl font-bold text-green-400 hover:text-green-300 transition-colors cursor-pointer" 
+            style={{ fontFamily: 'ThumbsDown, sans-serif' }}
+            title="Open Dope Budz Platform"
+          >
+            Dope Budz
+          </button>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs md:text-sm">
+              <span className="text-yellow-400 font-bold">${gameState.money.toLocaleString()}</span>
+              {gameState.debt > 0 && (
+                <span className="text-red-400">Debt: ${gameState.debt.toLocaleString()}</span>
+              )}
+            </div>
+            
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
+              className="p-2 rounded bg-green-600 hover:bg-green-700 active:bg-green-800 touch-manipulation min-h-[40px] min-w-[40px] flex items-center justify-center text-black"
+              title="Menu"
+            >
+              {showHamburgerMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Dropdown Menu */}
+        {showHamburgerMenu && (
+          <div className="absolute top-full right-2 mt-1 bg-black bg-opacity-95 border border-green-400 rounded-lg shadow-lg p-2 z-30 min-w-[160px]">
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => {
+                  setShowNFTMarketplace(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🌿 GROWERZ Hub
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowGrowerzModal(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-green-600 hover:bg-green-700 active:bg-green-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🌱 Growerz
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowWalletModal(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-purple-600 hover:bg-purple-700 active:bg-purple-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🌐 Web3
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowStreetzModal(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-orange-600 hover:bg-orange-700 active:bg-orange-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🏙️ Streetz
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowLifetimeLeaderboard(true);
+                  loadLifetimeLeaderboard();
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🏆 Lifetime Board
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowAchievements(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🏅 Achievements
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowAboutModal(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-blue-600 hover:bg-blue-700 active:bg-blue-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                📖 About & How to Play
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowSettingsModal(true);
+                  setShowHamburgerMenu(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-gray-600 hover:bg-gray-700 active:bg-gray-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                ⚙️ Settings
+              </button>
+              
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setShowAdminPanel(true);
+                    setShowHamburgerMenu(false);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded bg-red-600 hover:bg-red-700 active:bg-red-800 touch-manipulation min-h-[40px] text-black w-full text-left"
+                  style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                >
+                  🔧 Admin
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Current Leaderboard Button */}
+        <div className="flex justify-center mb-1">
+          <button
+            onClick={() => {
+              setShowLeaderboard(true);
+              loadLeaderboard();
+            }}
+            className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            style={{ fontFamily: 'LemonMilk, sans-serif' }}
+          >
+            🏆 Current Leaderboard
+          </button>
+        </div>
+
+        {/* Status Information Row */}
+        <div className="flex flex-wrap justify-between items-center text-xs md:text-sm mt-1 gap-2">
+          <span className="truncate max-w-[120px] md:max-w-none" style={{ fontFamily: 'LemonMilk, sans-serif' }}>{cities[gameState.currentCity as keyof typeof cities]}</span>
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-yellow-400 font-mono" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+              {Math.floor(gameState.timeLeftInDay / 60)}:
+              {(gameState.timeLeftInDay % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+          <span className="text-white font-semibold" style={{ fontFamily: 'LemonMilk, sans-serif' }}>Day {gameState.day}</span>
+          <span className={`font-semibold ${gameState.health > 75 ? 'text-green-400' : gameState.health > 50 ? 'text-yellow-400' : 'text-red-400'}`} style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            HP {gameState.health}%
+          </span>
+        </div>
+        
+        {/* Heat Level Display */}
+        <div className="flex items-center justify-center mt-2 gap-1">
+          <span className="text-xs text-gray-400" style={{ fontFamily: 'LemonMilk, sans-serif' }}>Heat:</span>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map(star => (
+              <span 
+                key={star}
+                className={`text-sm transition-all duration-300 ${
+                  star <= gameState.heat 
+                    ? gameState.heat <= 2 
+                      ? 'text-yellow-400' 
+                      : gameState.heat <= 4 
+                      ? 'text-orange-400' 
+                      : 'text-red-500 animate-pulse'
+                    : 'text-gray-600'
+                }`}
+                style={{ 
+                  textShadow: star <= gameState.heat && gameState.heat >= 4 ? '0 0 8px currentColor' : 'none',
+                  filter: star <= gameState.heat && gameState.heat === 5 ? 'drop-shadow(0 0 4px currentColor)' : 'none'
+                }}
+                title={`Heat Level: ${gameState.heat}/5 ${
+                  gameState.heat === 0 ? '(Clean)' :
+                  gameState.heat <= 2 ? '(Low attention)' :
+                  gameState.heat <= 4 ? '(Police watching)' :
+                  '(HOT! Danger!)'
+                }`}
+              >
+                ⭐
+              </span>
+            ))}
+          </div>
+          <span className="text-xs ml-1" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            {gameState.heat === 0 && <span className="text-green-400">Clean</span>}
+            {gameState.heat === 1 && <span className="text-yellow-400">Noticed</span>}
+            {gameState.heat === 2 && <span className="text-yellow-500">Watched</span>}
+            {gameState.heat === 3 && <span className="text-orange-400">Tracked</span>}
+            {gameState.heat === 4 && <span className="text-red-400">Wanted</span>}
+            {gameState.heat === 5 && <span className="text-red-500 animate-pulse font-bold">HOT!</span>}
+          </span>
+        </div>
+        {gameState.isWorking && (
+          <div className="text-center text-yellow-400 text-xs mt-1">
+            🍟 Working at McShitz - {gameState.workDaysLeft} days left
+          </div>
+        )}
+      </div>
+
+      {/* Event popup - Enhanced with Smooth Animations */}
+      {showEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-gray-900 border border-green-400 p-4 md:p-6 max-w-sm w-full text-center rounded-lg shadow-2xl transform animate-bounce-in scale-105 hover:scale-110 transition-all duration-500">
+            <AlertTriangle className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 mx-auto mb-3 animate-pulse" />
+            <p className="text-green-400 text-sm md:text-base leading-relaxed whitespace-pre-line animate-slide-up">{eventMessage}</p>
+            <div className="mt-4 bg-green-400 h-1 rounded-full animate-progress-bar"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Streets Modal - Coming Soon */}
+      {showStreetzModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-green-400 p-6 max-w-md w-full text-center rounded-lg">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-green-400 mb-2" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                🏙️ The Streetz
+              </h2>
+              <p className="text-green-300 text-lg mb-4">Coming Soon!</p>
+              <p className="text-green-500 text-sm mb-6">
+                Join our Discord community to stay updated on the latest features and connect with other players.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <button
+                onClick={() => window.open('https://discord.gg/Eu4w7MfAKh', '_blank')}
+                className="w-full py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🎮 Join Discord
+              </button>
+              <button
+                onClick={() => setShowStreetzModal(false)}
+                className="w-full py-3 px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg transition-colors"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dope Budz Platform Modal */}
+      {showDopeBudzModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-green-400 w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-green-400">
+              <h2 className="text-xl font-bold text-green-400" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                🌿 Dope Budz Platform
+              </h2>
+              <button
+                onClick={() => setShowDopeBudzModal(false)}
+                className="text-red-400 hover:text-red-300 text-2xl font-bold"
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 p-4">
+              <iframe
+                ref={(iframe) => {
+                  if (iframe) {
+                    iframe.onload = () => {
+                      // Send wallet data to Dope Budz platform
+                      const walletData = {
+                        type: 'WALLET_STATE',
+                        gameState: {
+                          money: gameState.money,
+                          day: gameState.day,
+                          health: gameState.health,
+                          debt: gameState.debt,
+                          currentCity: gameState.currentCity,
+                          reputation: gameState.reputation
+                        },
+                        wallet: {
+                          address: connectedWallet,
+                          type: connectedWalletType,
+                          connected: !!connectedWallet,
+                          serverWallet: serverWallet,
+                          budzBalance: budzBalance,
+                          gbuxBalance: gbuxBalance
+                        }
+                      };
+                      
+                      console.log('🌿 Dope Budz: Sending wallet data to iframe:', walletData);
+                      iframe.contentWindow?.postMessage(walletData, 'https://www.thc-labz.xyz');
+                      
+                      // Also set wallet data in localStorage for iframe access
+                      try {
+                        localStorage.setItem('parentWalletState', JSON.stringify(walletData));
+                        localStorage.setItem('parentWalletAddress', connectedWallet || '');
+                        localStorage.setItem('parentWalletType', connectedWalletType || '');
+                        localStorage.setItem('parentServerWallet', serverWallet || '');
+                        console.log('🌿 Dope Budz: Wallet data stored in localStorage');
+                      } catch (e) {
+                        console.warn('Could not store wallet state in localStorage:', e);
+                      }
+                    };
+                  }
+                }}
+                src="https://www.thc-labz.xyz/"
+                className="w-full h-full border border-gray-600 rounded"
+                title="Dope Budz Platform"
+                allow="clipboard-write; payment; microphone; camera"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock"
+              />
+            </div>
+            
+            {/* Footer with instructions */}
+            <div className="p-4 border-t border-gray-600 bg-gray-800">
+              <p className="text-sm text-gray-400 text-center">
+                🌿 Access the complete Dope Budz ecosystem • Your wallet state is shared automatically
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End-Game Video Player - Plays first on 45-day completion */}
+      {showEndGameVideo && (
+        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+          <div className="relative w-full h-full">
+            <video
+              className="w-full h-full object-cover"
+              autoPlay
+              muted={!videoAudioEnabled}
+              onEnded={() => {
+                setEndGameVideoCompleted(true);
+                setShowEndGameVideo(false);
+                setShowGameEnd(true); // Show score submission after video
+              }}
+              onLoadedData={() => console.log('🎬 End-game celebration video loaded')}
+            >
+              <source src="/attached_assets/SMOKEWEEDWITH_1752341770440.mp4" type="video/mp4" />
+            </video>
+            
+            {/* Video Controls */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button
+                onClick={() => setVideoAudioEnabled(!videoAudioEnabled)}
+                className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                title={videoAudioEnabled ? 'Mute' : 'Unmute'}
+              >
+                {videoAudioEnabled ? '🔊' : '🔇'}
+              </button>
+              <button
+                onClick={() => {
+                  setEndGameVideoCompleted(true);
+                  setShowEndGameVideo(false);
+                  setShowGameEnd(true);
+                }}
+                className="bg-black bg-opacity-50 text-white px-3 py-2 rounded hover:bg-opacity-70"
+              >
+                Skip Video
+              </button>
+            </div>
+            
+            {/* Celebration Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black bg-opacity-30">
+              <div className="absolute bottom-8 left-8 text-white">
+                <h1 className="text-4xl md:text-6xl font-bold mb-2" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  🎉 45 DAYS COMPLETE! 🎉
+                </h1>
+                <p className="text-xl md:text-2xl text-green-400">
+                  Celebrating your THC Dope Budz journey...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Achievement Rewards Modal - Shows after score submission */}
+      {showAchievementRewards && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-yellow-400 p-6 max-w-md w-full text-center rounded-lg">
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">🏆 45-DAY COMPLETION REWARDS! 🏆</h2>
+            
+            {/* Final Score Display */}
+            <div className="bg-gray-800 p-4 rounded-lg mb-4">
+              <p className="text-lg font-semibold text-green-400 mb-2">
+                Final Score: ${(gameState.money + gameState.bankAccount - gameState.debt).toLocaleString()}
+              </p>
+              <div className="text-sm text-gray-400 space-y-1">
+                <div>Cash: ${gameState.money.toLocaleString()}</div>
+                <div>Bank: ${gameState.bankAccount.toLocaleString()}</div>
+                <div>Debt: -${gameState.debt.toLocaleString()}</div>
+              </div>
+            </div>
+
+            {/* Leaderboard Position */}
+            <div className="bg-purple-900 bg-opacity-50 p-4 rounded-lg mb-4">
+              <h3 className="text-lg font-bold text-purple-400 mb-2">🥇 Leaderboard Position</h3>
+              <p className="text-2xl font-bold text-yellow-400">
+                #{leaderboardPosition > 0 ? leaderboardPosition : '?'}
+              </p>
+              <p className="text-sm text-gray-400">
+                {leaderboardPosition <= 10 ? 'Top 10! Extra daily BUDZ rewards!' : 'Great effort! Keep grinding for top 10!'}
+              </p>
+            </div>
+
+            {/* BUDZ Rewards Breakdown */}
+            <div className="bg-green-900 bg-opacity-50 p-4 rounded-lg mb-4">
+              <h3 className="text-lg font-bold text-green-400 mb-3">💰 BUDZ Token Rewards</h3>
+              <div className="space-y-2 text-left">
+                <div className="flex justify-between">
+                  <span className="text-gray-300">Achievement Rewards:</span>
+                  <span className="text-green-400 font-bold">+{finalRewards.achievements} BUDZ</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-300">45-Day Completion Bonus:</span>
+                  <span className="text-green-400 font-bold">+{finalRewards.completion} BUDZ</span>
+                </div>
+                <div className="border-t border-gray-600 pt-2 mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-bold">Total Earned:</span>
+                    <span className="text-yellow-400 font-bold text-lg">+{finalRewards.achievements + finalRewards.completion} BUDZ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowAchievementRewards(false);
+                  setShowLeaderboard(true);
+                }}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 p-3 font-bold rounded"
+              >
+                View Leaderboard
+              </button>
+              <button
+                onClick={() => {
+                  setShowAchievementRewards(false);
+                  setShowAchievements(true);
+                }}
+                className="flex-1 bg-green-600 hover:bg-green-700 p-3 font-bold rounded"
+              >
+                View Achievements
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700 p-3 font-bold rounded"
+              >
+                Play Again
+              </button>
+            </div>
+            
+            <p className="text-xs text-gray-400 mt-4">
+              BUDZ tokens will be distributed to your server wallet within 24 hours.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Smoking Video Modal - Shows when user smokes cannabis */}
+      {showSmokingVideo && (
+        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+          <div className="relative w-full h-full">
+            <video
+              className="w-full h-full object-cover"
+              autoPlay
+              muted={!smokingAudioEnabled}
+              onEnded={handleSmokingVideoEnd}
+              onLoadedData={() => console.log('🌿 Smoking video loaded')}
+            >
+              <source src="/attached_assets/SMOKEWEEDWITH_1752360428007.mp4" type="video/mp4" />
+            </video>
+            
+            {/* Video Controls */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button
+                onClick={() => setSmokingAudioEnabled(!smokingAudioEnabled)}
+                className="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                title={smokingAudioEnabled ? 'Mute' : 'Unmute'}
+              >
+                {smokingAudioEnabled ? '🔊' : '🔇'}
+              </button>
+              <button
+                onClick={handleSmokingVideoEnd}
+                className="bg-black bg-opacity-50 text-white px-3 py-2 rounded hover:bg-opacity-70"
+              >
+                Skip Video
+              </button>
+            </div>
+            
+            {/* Smoking Session Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black bg-opacity-30">
+              <div className="absolute bottom-8 left-8 text-white">
+                <h1 className="text-3xl md:text-5xl font-bold mb-2" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  🌿 SMOKING SESSION 🌿
+                </h1>
+                <p className="text-lg md:text-xl text-purple-400">
+                  Enjoying {drugs[selectedDrugForSmoking]?.name || 'premium cannabis'}...
+                </p>
+                {smokingBuffs.active && (
+                  <div className="text-sm text-green-400 mt-2">
+                    <p>AI Assistant Enhancement: {smokingBuffs.traits.join(', ')}</p>
+                    <p className="text-xs text-gray-300">Effects last until next smoking session</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game End Modal - Mobile Optimized */}
+      {showGameEnd && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-yellow-400 p-4 md:p-6 max-w-md w-full text-center rounded-lg">
+            <h2 className="text-xl md:text-2xl font-bold text-yellow-400 mb-4">🎉 GAME OVER 🎉</h2>
+            <div className="text-green-400 mb-4">
+              <p className="text-base md:text-lg">45 Days Complete!</p>
+              <p className="text-sm md:text-base mt-2 font-semibold">Final Score: ${(gameState.money + gameState.bankAccount - gameState.debt).toLocaleString()}</p>
+              <div className="text-xs md:text-sm text-gray-400 mt-3 space-y-1">
+                <div>Cash: ${gameState.money.toLocaleString()}</div>
+                <div>Bank: ${gameState.bankAccount.toLocaleString()}</div>
+                <div>Debt: -${gameState.debt.toLocaleString()}</div>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm md:text-base text-green-400 mb-2">Enter your name for the leaderboard:</label>
+              <input
+                type="text"
+                maxLength={20}
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="w-full bg-gray-800 border border-green-400 p-3 text-green-400 text-center touch-manipulation min-h-[44px] rounded"
+                placeholder="Your name..."
+                onKeyPress={(e) => e.key === 'Enter' && submitScore()}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={submitScore}
+                disabled={!playerName.trim()}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 p-2 font-bold"
+              >
+                Submit Score
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 bg-green-600 hover:bg-green-700 p-2 font-bold"
+              >
+                Play Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-yellow-400 p-6 max-w-lg mx-4 w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-yellow-400">🏆 LEADERBOARD 🏆</h2>
+              <button
+                onClick={() => setShowLeaderboard(false)}
+                className="text-gray-400 hover:text-white text-xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Countdown Timer */}
+            <div className="bg-gray-800 p-3 rounded-lg mb-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-yellow-400">⏰ Next Payout:</span>
+                <span className="text-lg font-bold text-yellow-400 font-mono">
+                  {(() => {
+                    const now = new Date();
+                    const nextMidnight = new Date();
+                    nextMidnight.setUTCHours(6, 0, 0, 0); // 6 UTC = Midnight CST
+                    if (now > nextMidnight) {
+                      nextMidnight.setDate(nextMidnight.getDate() + 1);
+                    }
+                    const diff = nextMidnight.getTime() - now.getTime();
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    return `${hours}h ${minutes}m`;
+                  })()}
+                </span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                Top 10 players earn 100-1000 BUDZ tokens
+              </div>
+            </div>
+            <div className="space-y-2">
+              {leaderboard.length > 0 ? (
+                leaderboard.map((entry, index) => (
+                  <div
+                    key={index}
+                    className={`flex justify-between items-center p-3 border rounded ${
+                      index === 0 ? 'border-yellow-400 bg-yellow-900 bg-opacity-20' :
+                      index === 1 ? 'border-gray-300 bg-gray-800 bg-opacity-20' :
+                      index === 2 ? 'border-orange-400 bg-orange-900 bg-opacity-20' :
+                      'border-green-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold ${
+                        index === 0 ? 'text-yellow-400' :
+                        index === 1 ? 'text-gray-300' :
+                        index === 2 ? 'text-orange-400' :
+                        'text-green-400'
+                      }`}>
+                        #{index + 1}
+                      </span>
+                      <span className="text-white font-bold">{entry.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-green-400 font-bold">${entry.score.toLocaleString()}</div>
+                      <div className="text-xs text-gray-400">Day {entry.day}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  No scores yet. Be the first to complete the game!
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowLeaderboard(false)}
+              className="w-full mt-4 bg-green-600 hover:bg-green-700 p-2 font-bold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation - Mobile Optimized */}
+      <div className="flex border-b border-green-400 bg-black bg-opacity-80">
+        {[
+          { id: 'market', label: 'Market', icon: Briefcase },
+          { id: 'travel', label: 'Travel', icon: MapPin },
+          { id: 'work', label: 'Work', icon: HardHat },
+          { id: 'skills', label: 'Skillz', icon: Star },
+          { id: 'bank', label: 'Bank', icon: DollarSign },
+          { id: 'status', label: 'Status', icon: Users }
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setCurrentView(id as any)}
+            className={`flex-1 p-2 md:p-3 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 touch-manipulation min-h-[50px] md:min-h-[60px] transition-colors ${
+              currentView === id 
+                ? 'bg-green-400 text-black font-semibold' 
+                : 'bg-gray-900 text-green-400 active:bg-gray-800'
+            }`}
+            title={label}
+          >
+            <Icon className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="text-xs md:text-sm leading-none" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Main Content - Mobile Optimized */}
+      <div className="p-2 md:p-4 overflow-y-auto max-h-[calc(100vh-160px)] md:max-h-[calc(100vh-200px)] pb-4 md:pb-6">
+        {currentView === 'market' && (
+          <div style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Briefcase className="w-5 h-5" />
+              🍃 Weed Strains Market - {cities[gameState.currentCity as keyof typeof cities]}
+            </h2>
+            
+            <div className="mb-4 text-sm flex justify-between items-center">
+              <div>
+                <div>Space: {totalSpace}/{gameState.coatSpace}</div>
+                <div>Portfolio Value: ${totalValue.toLocaleString()}</div>
+              </div>
+              <button
+                onClick={() => setShowProfitAssistant(true)}
+                className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs rounded transition-colors flex items-center gap-1"
+                title="Get daily profit analysis and market insights"
+              >
+                <TrendingUp className="w-3 h-3" />
+                Daily Brief
+              </button>
+            </div>
+
+            {/* Enhanced Inventory Display Section */}
+            <div className="mb-6 p-4 bg-gray-900 bg-opacity-95 border border-green-400 rounded-lg">
+              <h3 className="text-lg font-bold mb-4 text-green-300">📦 INVENTORY</h3>
+              
+              {/* User Info Section */}
+              <div className="mb-4 p-3 bg-gray-800 bg-opacity-70 border border-gray-600 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <p className="text-gray-400 mb-1">Player</p>
+                    <p className="text-white font-bold">{connectedWallet ? `${connectedWallet.slice(0, 6)}...${connectedWallet.slice(-4)}` : 'Guest'}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 mb-1">Health</p>
+                    <p className={`font-bold ${gameState.health > 70 ? 'text-green-400' : gameState.health > 30 ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {gameState.health}%
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 mb-1">Cash</p>
+                    <p className="text-green-400 font-bold">${gameState.money.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.values(drugs).filter(drug => drug.owned > 0).map(drug => (
+                  <div 
+                    key={drug.id} 
+                    className={`relative border rounded-lg overflow-hidden h-32 bg-gray-800 cursor-pointer transition-all duration-300 ${
+                      highlightedProduct === drug.id 
+                        ? 'border-yellow-400 ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' 
+                        : 'border-green-400 hover:border-green-300'
+                    }`}
+                    onClick={() => {
+                      setHighlightedProduct(highlightedProduct === drug.id ? '' : drug.id);
+                      // Scroll to market section if product is highlighted
+                      if (highlightedProduct !== drug.id) {
+                        setTimeout(() => {
+                          const marketSection = document.querySelector('[data-market-grid]');
+                          if (marketSection) {
+                            marketSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                        }, 100);
+                      }
+                    }}
+                  >
+                    {/* Strain Background Image */}
+                    <div 
+                      className="absolute inset-0 opacity-30"
+                      style={{
+                        backgroundImage: drug.id === 'reggie' ? 'url(/attached_assets/Regz_1752183158112.jpg)' :
+                                        drug.id === 'mids' ? 'url(/attached_assets/Mids_1752183315749.jpg)' :
+                                        drug.id === 'kush' ? 'url(/attached_assets/OGKush_1752183385525.jpg)' :
+                                        drug.id === 'sour' ? 'url(/attached_assets/SourDiesel2_1752185001725.jpg)' :
+                                        drug.id === 'purple' ? 'url(/attached_assets/purplehaze_1752183464779.jpg)' :
+                                        drug.id === 'white' ? 'url(/attached_assets/whitewidow_1752183483730.jpg)' :
+                                        drug.id === 'gelato' ? 'url(/attached_assets/gelato_1752183529839.jpg)' :
+                                        drug.id === 'runtz' ? 'url(/attached_assets/runtz1_1752183634093.jpg)' : 
+                                        'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                    />
+                    
+                    {/* Content */}
+                    <div className="relative z-10 flex flex-col h-full p-2 bg-black bg-opacity-60">
+                      <div className="flex-1 flex flex-col items-center justify-center">
+                        <div className="text-2xl font-bold text-white mb-1">{drug.owned}</div>
+                        <div className="text-xs text-green-300 text-center">{drug.name}</div>
+                      </div>
+                      
+                      {/* Smoking Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent inventory item click
+                          startSmokingSession(drug.id);
+                        }}
+                        disabled={lastSmokingDay === gameState.day}
+                        className={`w-full py-1 px-2 text-xs font-semibold rounded transition-colors ${
+                          lastSmokingDay === gameState.day
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        }`}
+                        title={lastSmokingDay === gameState.day ? "Already smoked today!" : `Smoke 1 oz of ${drug.name}`}
+                      >
+                        🌿 Smoke
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                {Object.values(drugs).filter(drug => drug.owned > 0).length === 0 && (
+                  <div className="col-span-full text-center text-gray-400 py-4">
+                    No items in inventory
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 pb-8 md:pb-12" data-market-grid>
+              {Object.values(drugs).map(drug => (
+                <div 
+                  key={drug.id} 
+                  className={`border p-3 transition-all duration-300 ${
+                    highlightedProduct === drug.id 
+                      ? 'border-yellow-400 ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50 bg-yellow-900 bg-opacity-20' 
+                      : 'border-green-400'
+                  }`}
+                  style={drug.id === 'reggie' ? {
+                    backgroundImage: 'url(/attached_assets/Regz_1752183158112.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'mids' ? {
+                    backgroundImage: 'url(/attached_assets/Mids_1752183315749.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'kush' ? {
+                    backgroundImage: 'url(/attached_assets/OGKush_1752183385525.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'sour' ? {
+                    backgroundImage: 'url(/attached_assets/SourDiesel2_1752185001725.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'purple' ? {
+                    backgroundImage: 'url(/attached_assets/purplehaze_1752183464779.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'white' ? {
+                    backgroundImage: 'url(/attached_assets/whitewidow_1752183483730.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'gelato' ? {
+                    backgroundImage: 'url(/attached_assets/gelato_1752183529839.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : drug.id === 'runtz' ? {
+                    backgroundImage: 'url(/attached_assets/runtz1_1752183634093.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    position: 'relative'
+                  } : {}}
+                >
+                  {drug.id === 'reggie' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'mids' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'kush' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'sour' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'purple' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'white' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'gelato' ? (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  ) : drug.id === 'runtz' && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                  )}
+                  <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm md:text-base">{drug.name}</span>
+                      {getPriceIcon(drug.currentPrice, drug.basePrice)}
+                    </div>
+                    <div className={`font-bold text-sm md:text-base ${getPriceColor(drug.currentPrice, drug.basePrice)}`}>
+                      ${drug.currentPrice.toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className={`text-xs md:text-sm mb-2 ${drug.owned > 0 ? 'text-yellow-400' : 'text-green-400'}`}>Owned: {drug.owned}</div>
+                  
+                  {/* THC GROWERZ Strain Traits */}
+                  <div className="mb-2">
+                    <div className="flex flex-wrap gap-1">
+                      {drug.traits.map((trait, index) => (
+                        <span 
+                          key={index}
+                          className="text-xs px-2 py-1 rounded-full bg-green-600 text-white font-semibold border border-green-400"
+                          style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <div className="flex-1">
+                      <div className="flex gap-1 mb-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max={Math.floor(gameState.money / drug.currentPrice)}
+                          value={buyAmount[drug.id] || 0}
+                          onChange={(e) => setBuyAmount(prev => ({ ...prev, [drug.id]: parseInt(e.target.value) || 0 }))}
+                          className="flex-1 bg-gray-900 border border-green-400 p-2 text-green-400 text-sm touch-manipulation min-h-[40px]"
+                          placeholder="0"
+                          inputMode="numeric"
+                        />
+                        <button
+                          onClick={(event) => {
+                            const amount = buyAmount[drug.id] || 0;
+                            
+                            if (amount > 0) {
+                              buyDrug(drug.id, amount);
+                              
+                              // Physics effects
+                              if (physicsEnabled) {
+                                const rect = (event.target as HTMLElement).getBoundingClientRect();
+                                const x = rect.left + rect.width / 2;
+                                const y = rect.top + rect.height / 2;
+                                const totalCost = drug.currentPrice * amount;
+                                
+                                createBouncyMoney(x, y, totalCost);
+                                createBouncyDrug(x + 100, y - 50, drug.name);
+                                
+                                if (totalCost > 5000) {
+                                  shakeScreen(Math.min(totalCost / 10000, 2));
+                                }
+                              }
+                              
+                              setEventMessage(`💰 FUCK YOU PAY ME! 💰\nBought ${amount} oz of ${drug.name} for $${(drug.currentPrice * amount).toLocaleString()}`);
+                              setShowEvent(true);
+                              setTimeout(() => setShowEvent(false), 2000);
+                            }
+                          }}
+                          disabled={!buyAmount[drug.id] || gameState.money < drug.currentPrice * (buyAmount[drug.id] || 0)}
+                          className="bg-gray-500 active:bg-green-700 disabled:bg-black-600 px-3 py-2 text-sm font-semibold touch-manipulation min-h-[40px]"
+                        >
+                          Buy
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(event) => {
+                          const maxAffordable = Math.floor(gameState.money / drug.currentPrice);
+                          const spaceAvailable = gameState.coatSpace - totalSpace;
+                          const maxCanBuy = Math.min(maxAffordable, spaceAvailable);
+                          
+                          if (maxCanBuy > 0) {
+                            buyDrug(drug.id, maxCanBuy);
+                            
+                            // Physics effects for max buy
+                            if (physicsEnabled) {
+                              const rect = (event.target as HTMLElement).getBoundingClientRect();
+                              const x = rect.left + rect.width / 2;
+                              const y = rect.top + rect.height / 2;
+                              const totalCost = drug.currentPrice * maxCanBuy;
+                              
+                              createBouncyMoney(x, y, totalCost);
+                              createBouncyDrug(x + 100, y - 50, drug.name);
+                              
+                              // Big screen shake for max buys
+                              shakeScreen(Math.min(totalCost / 8000, 3));
+                            }
+                            
+                            setEventMessage(`💰 FUCK YOU PAY ME! 💰\nMax bought ${maxCanBuy} oz of ${drug.name} for $${(drug.currentPrice * maxCanBuy).toLocaleString()}`);
+                            setShowEvent(true);
+                            setTimeout(() => setShowEvent(false), 2000);
+                          }
+                        }}
+                        disabled={gameState.money < drug.currentPrice || totalSpace >= gameState.coatSpace}
+                        className="bg-black border border-green-400 active:bg-gray-500 disabled:bg-black-500 disabled:border-green-500 px-2 py-2 text-xs font-semibold touch-manipulation min-h-[40px] text-green-400"
+                      >
+                        Max Buy
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          const amount = drug.owned;
+                          
+                          if (amount > 0) {
+                            sellDrug(drug.id, amount);
+                            
+                            // Physics effects for sell all
+                            if (physicsEnabled) {
+                              const rect = (event.target as HTMLElement).getBoundingClientRect();
+                              const x = rect.left + rect.width / 2;
+                              const y = rect.top + rect.height / 2;
+                              const totalEarned = drug.currentPrice * amount;
+                              
+                              createBouncyMoney(x, y, totalEarned);
+                              
+                              if (totalEarned > 3000) {
+                                shakeScreen(Math.min(totalEarned / 12000, 1.5));
+                              }
+                            }
+                            
+                            setEventMessage(`💵 CHA-CHING! 💵\nSold all ${amount} oz of ${drug.name} for $${(drug.currentPrice * amount).toLocaleString()}`);
+                            setShowEvent(true);
+                            setTimeout(() => setShowEvent(false), 2000);
+                          }
+                        }}
+                        disabled={drug.owned === 0}
+                        className="bg-black border border-green-400 active:bg-gray-900 disabled:bg-black-600 disabled:border-green-500 px-2 py-2 text-xs font-semibold touch-manipulation min-h-[40px] text-green-400"
+                      >
+                        Sell All
+                      </button>
+                      <button
+                        onClick={() => startSmokingSession(drug.id)}
+                        disabled={drug.owned < 1 || lastSmokingDay === gameState.day}
+                        className="bg-purple-600 border border-purple-400 active:bg-purple-700 disabled:bg-gray-600 disabled:border-gray-500 px-2 py-2 text-xs font-semibold touch-manipulation min-h-[40px] text-white"
+                        title={lastSmokingDay === gameState.day ? "Already smoked today!" : `Smoke 1 oz of ${drug.name} with AI Assistant`}
+                      >
+                        🌿 Smoke
+                      </button>
+                    </div>
+                    
+                    <div className="mt-2">
+                      <div className="flex gap-1 mb-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max={drug.owned}
+                          value={sellAmount[drug.id] || 0}
+                          onChange={(e) => setSellAmount(prev => ({ ...prev, [drug.id]: parseInt(e.target.value) || 0 }))}
+                          className="flex-1 bg-gray-800 border border-green-400 p-2 text-green-400 text-sm touch-manipulation min-h-[40px]"
+                          placeholder="0"
+                          inputMode="numeric"
+                        />
+                        <button
+                          onClick={(event) => {
+                            const amount = sellAmount[drug.id] || 0;
+                            
+                            if (amount > 0) {
+                              sellDrug(drug.id, amount);
+                              
+                              // Physics effects for selling
+                              if (physicsEnabled) {
+                                const rect = (event.target as HTMLElement).getBoundingClientRect();
+                                const x = rect.left + rect.width / 2;
+                                const y = rect.top + rect.height / 2;
+                                const totalEarned = drug.currentPrice * amount;
+                                
+                                createBouncyMoney(x, y, totalEarned);
+                                
+                                if (totalEarned > 3000) {
+                                  shakeScreen(Math.min(totalEarned / 12000, 1.5));
+                                }
+                              }
+                              
+                              setEventMessage(`💵 CHA-CHING! 💵\nSold ${amount} oz of ${drug.name} for $${(drug.currentPrice * amount).toLocaleString()}`);
+                              setShowEvent(true);
+                              setTimeout(() => setShowEvent(false), 2000);
+                            }
+                          }}
+                          disabled={!sellAmount[drug.id] || drug.owned < (sellAmount[drug.id] || 0)}
+                          className="bg-red-600 active:bg-red-700 disabled:bg-gray-600 px-3 py-2 text-sm font-semibold touch-manipulation min-h-[40px]"
+                        >
+                          Sell
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {currentView === 'travel' && (
+          <div style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Travel to...
+            </h2>
+            <div className="grid grid-cols-1 gap-2">
+              {Object.entries(cities).map(([cityId, cityName]) => (
+                <button
+                  key={cityId}
+                  onClick={() => travelToCity(cityId)}
+                  disabled={cityId === gameState.currentCity || gameState.isWorking}
+                  className={`p-3 border border-green-400 text-left ${
+                    cityId === gameState.currentCity 
+                      ? 'bg-black bg-opacity-80 text-green-400 cursor-not-allowed' 
+                      : gameState.isWorking
+                      ? 'bg-black bg-opacity-80 text-gray-400 cursor-not-allowed'
+                      : 'bg-black bg-opacity-80 hover:bg-black hover:bg-opacity-90'
+                  }`}
+                >
+                  {cityName} {cityId === gameState.currentCity && '(Current)'}
+                </button>
+              ))}
+              
+              {/* Rest & Smoke Break Option */}
+              <div className="mt-4 border border-purple-400">
+                <button
+                  onClick={() => takeRestBreak()}
+                  disabled={gameState.isWorking || gameState.health === 100}
+                  className={`w-full p-3 text-left ${
+                    gameState.isWorking
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : gameState.health === 100
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-purple-900 hover:bg-purple-800 text-purple-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">💨</span>
+                    <span className="font-bold">Rest & Smoke Break</span>
+                  </div>
+                  <div className="text-sm opacity-80">
+                    Skip 1 day • Restore health to 100%
+                    {gameState.health === 100 && ' (Already at full health)'}
+                  </div>
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 p-3 border border-yellow-400 text-yellow-400 text-sm">
+              <AlertTriangle className="w-4 h-4 inline mr-2" />
+              {gameState.isWorking 
+                ? "You can't travel while working at McShitz!"
+                : "Traveling advances one day and may trigger random events!"
+              }
+            </div>
+          </div>
+        )}
+
+        {currentView === 'skills' && (
+          <div style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5" />
+              ⚡ Skill Tree - Hustle Upgrades
+            </h2>
+            
+            <div className="mb-4 p-3 border border-yellow-400 text-yellow-400 text-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="w-4 h-4" />
+                <span className="font-bold">Upgrade your game with permanent skills!</span>
+              </div>
+              <div className="text-xs text-gray-400">
+                Skillz get more expensive as you level them up. Prerequisites unlock advanced skillz.
+              </div>
+            </div>
+
+            {/* Command Center SKILLZ Redirect */}
+            <div className="mb-6 p-6 border-2 border-blue-400 bg-gradient-to-br from-blue-900 to-purple-900 bg-opacity-40 rounded-xl text-center">
+              <div className="mb-4">
+                <div className="text-4xl mb-2">⚡</div>
+                <h3 className="text-xl font-bold text-blue-300 mb-2">COMMAND CENTER SKILLZ</h3>
+                <p className="text-sm text-gray-300 mb-4">
+                  All skill upgrades, progression tracking, and abilities have been unified into the enhanced Command Center SKILLZ system for better organization and improved user experience.
+                </p>
+                <button
+                  onClick={() => setShowPlayerPanel(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  🎮 OPEN COMMAND CENTER SKILLZ
+                </button>
+                <div className="text-xs text-gray-400">
+                  Access enhanced skills interface with better visuals and functionality
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'work' && (
+          <div style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <HardHat className="w-5 h-5" />
+              McShits Job
+            </h2>
+            
+            <div className="space-y-4">
+              <div 
+                className="border border-green-400 p-4 bg-black bg-opacity-80 relative rounded"
+                style={{
+                  backgroundImage: 'url(/attached_assets/mcds_1752186817166.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              >
+                <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+                <div className="relative z-10">
+                  <div className="text-center mb-4">
+                    <div className="text-6xl mb-2">🍟</div>
+                    <div className="text-xl font-bold text-yellow-400">McShits</div>
+                    <div className="text-sm text-gray-400">Hourly Wage Job</div>
+                  </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div>Pay: <span className="text-green-400">$18/day</span></div>
+                  <div>Duration: <span className="text-yellow-400">5 days</span></div>
+                  <div>Work Week: <span className="text-blue-400">{gameState.daysWorkedThisWeek}/4 days</span></div>
+                  <div>Status: <span className={gameState.isWorking ? "text-green-400" : "text-gray-400"}>
+                    {gameState.isWorking ? "Working" : "Available"}
+                  </span></div>
+                </div>
+
+                {gameState.isWorking ? (
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-400">Currently Working</div>
+                      <div className="text-sm text-gray-400">
+                        {gameState.workDaysLeft} days remaining
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-800 rounded-lg p-3">
+                      <div className="text-sm text-gray-400 mb-1">Progress</div>
+                      <div className="bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${((5 - gameState.workDaysLeft) / 5) * 100}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        Day {6 - gameState.workDaysLeft} of 5
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={quitJob}
+                      className="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-semibold"
+                    >
+                      Quit Job Early
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {gameState.daysWorkedThisWeek >= 4 ? (
+                      <div className="text-center p-3 border border-red-400 text-red-400">
+                        <AlertTriangle className="w-5 h-5 mx-auto mb-2" />
+                        <div>You've worked 4 days this week!</div>
+                        <div className="text-sm">Wait for next week to work again.</div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={startWork}
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 p-3 rounded font-semibold"
+                      >
+                        Start Working ($18/day × 5 days = $90)
+                      </button>
+                    )}
+                    
+                    <div className="text-xs text-gray-400 space-y-1">
+                      <div>• Work 5 consecutive days</div>
+                      <div>• Earn $18 per day automatically</div>
+                      <div>• Maximum 4 work periods per week</div>
+                      <div>• Cannot travel while working</div>
+                    </div>
+                  </div>
+                )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'bank' && (
+          <div style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Bank
+            </h2>
+            {/* Account Summary - Full Width */}
+            <div 
+              className="border border-green-400 p-3 mb-4 bg-black bg-opacity-80 relative rounded"
+              style={{
+                backgroundImage: 'url(/attached_assets/bank1_1752188062383.jpg)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-50 rounded"></div>
+              <div className="relative z-10">
+                <h3 className="font-bold mb-2">Account Summary</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>Cash: <span className="text-green-400">${gameState.money.toLocaleString()}</span></div>
+                  <div>Bank Account: <span className="text-blue-400">${gameState.bankAccount.toLocaleString()}</span></div>
+                  <div>Debt: <span className="text-red-400">${gameState.debt.toLocaleString()}</span></div>
+                  <div>Net Worth: <span className="text-yellow-400">${(gameState.money + gameState.bankAccount - gameState.debt).toLocaleString()}</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Left Column */}
+              <div className="space-y-4">
+                {/* Loan System */}
+                <div className="border border-purple-400 p-3 bg-black bg-opacity-80">
+                  <h3 className="font-bold mb-2 text-purple-400">💳 Street Loanz</h3>
+                  <div className="text-sm text-gray-400 mb-2">Get cash fast in $1,000 increments - 10% interest per day!</div>
+                  <div className="text-xs text-yellow-400 mb-2">
+                    Loan Limit: $5,000 | Available: ${Math.max(0, 5000 - gameState.debt).toLocaleString()}
+                  </div>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max={Math.max(1, Math.floor((5000 - gameState.debt) / 1000))}
+                      value={loanAmount}
+                      onChange={(e) => setLoanAmount(Math.max(1, Math.min(parseInt(e.target.value) || 1, Math.floor((5000 - gameState.debt) / 1000))))}
+                      placeholder="# of $1k loans"
+                      className="flex-1 bg-gray-900 border border-purple-400 p-2 text-purple-400"
+                      disabled={gameState.debt >= 5000}
+                    />
+                    <div className="flex items-center px-3 bg-gray-800 border border-purple-400 text-purple-400">
+                      = ${(loanAmount * 1000).toLocaleString()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => takeLoan(loanAmount)}
+                    disabled={gameState.debt >= 5000 || gameState.debt + (loanAmount * 1000) > 5000}
+                    className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 px-2 py-1 font-bold mb-2 text-sm"
+                  >
+                    {gameState.debt >= 5000 ? 'Loan Limit Reached' : `Take Loan: $${(loanAmount * 1000).toLocaleString()}`}
+                  </button>
+                  <div className="text-xs text-purple-300">
+                    Daily interest on this loan: ${Math.round(loanAmount * 1000 * 0.1).toLocaleString()}
+                  </div>
+                </div>
+
+                {/* Deposit Money */}
+                <div className="border border-blue-400 p-3 bg-black bg-opacity-80">
+                  <h3 className="font-bold mb-2 text-blue-400">Deposit Money</h3>
+                  <div className="text-sm text-gray-400 mb-2">Keep your money safe from street robbery</div>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max={gameState.money}
+                      value={depositAmount || ''}
+                      onChange={(e) => setDepositAmount(parseInt(e.target.value) || 0)}
+                      placeholder="Amount"
+                      className="flex-1 bg-gray-900 border border-blue-400 p-2 text-green-400"
+                    />
+                    <button
+                      onClick={() => depositMoney(depositAmount)}
+                      disabled={depositAmount <= 0 || depositAmount > gameState.money}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-3 py-1 text-sm"
+                    >
+                      Deposit
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setDepositAmount(gameState.money)}
+                      disabled={gameState.money === 0}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 px-2 py-1 text-sm"
+                    >
+                      All Cash
+                    </button>
+                    <button
+                      onClick={() => setDepositAmount(Math.floor(gameState.money / 2))}
+                      disabled={gameState.money === 0}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 px-2 py-1 text-sm"
+                    >
+                      Half Cash
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-4">
+                {/* Debt Payment */}
+                <div className="border border-red-400 p-3 bg-black bg-opacity-80">
+                  <h3 className="font-bold mb-2 text-red-400">Pay Off Debt</h3>
+                  <div className="text-sm text-gray-400 mb-2">Current debt: ${gameState.debt.toLocaleString()} (10% interest per day)</div>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max={Math.min(gameState.money, gameState.debt)}
+                      value={debtPayAmount || ''}
+                      onChange={(e) => setDebtPayAmount(parseInt(e.target.value) || 0)}
+                      placeholder="Amount"
+                      className="flex-1 bg-gray-900 border border-red-400 p-2 text-green-400"
+                    />
+                    <button
+                      onClick={() => payOffDebt(debtPayAmount)}
+                      disabled={debtPayAmount <= 0 || debtPayAmount > gameState.money || gameState.debt === 0}
+                      className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 px-3 py-1 text-sm"
+                    >
+                      Pay
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setDebtPayAmount(Math.min(gameState.money, gameState.debt))}
+                      disabled={gameState.debt === 0 || gameState.money === 0}
+                      className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-600 px-2 py-1 text-sm"
+                    >
+                      Pay All
+                    </button>
+                    <button
+                      onClick={() => setDebtPayAmount(Math.min(gameState.money, Math.floor(gameState.debt / 2)))}
+                      disabled={gameState.debt === 0 || gameState.money === 0}
+                      className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-600 px-2 py-1 text-sm"
+                    >
+                      Pay Half
+                    </button>
+                  </div>
+                </div>
+
+                {/* Withdraw Money */}
+                <div className="border border-green-400 p-3 bg-black bg-opacity-80">
+                  <h3 className="font-bold mb-2 text-green-400">Withdraw Money</h3>
+                  <div className="text-sm text-gray-400 mb-2">Take money out for deals</div>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max={gameState.bankAccount}
+                      value={withdrawAmount || ''}
+                      onChange={(e) => setWithdrawAmount(parseInt(e.target.value) || 0)}
+                      placeholder="Amount"
+                      className="flex-1 bg-gray-900 border border-green-400 p-2 text-green-400"
+                    />
+                    <button
+                      onClick={() => withdrawMoney(withdrawAmount)}
+                      disabled={withdrawAmount <= 0 || withdrawAmount > gameState.bankAccount}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-3 py-1 text-sm"
+                    >
+                      Withdraw
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setWithdrawAmount(gameState.bankAccount)}
+                      disabled={gameState.bankAccount === 0}
+                      className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 px-2 py-1 text-sm"
+                    >
+                      All Savings
+                    </button>
+                    <button
+                      onClick={() => setWithdrawAmount(Math.floor(gameState.bankAccount / 2))}
+                      disabled={gameState.bankAccount === 0}
+                      className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 px-2 py-1 text-sm"
+                    >
+                      Half Savings
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'status' && (
+          <div style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Status
+            </h2>
+            <div className="space-y-3">
+              <div className="border border-green-400 p-3 bg-black bg-opacity-80">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>Cash: <span className="text-green-400">${gameState.money.toLocaleString()}</span></div>
+                  <div>Debt: <span className="text-red-400">${gameState.debt.toLocaleString()}</span></div>
+                  <div>Day: {gameState.day}</div>
+                  <div>Health: {gameState.health}%</div>
+                  <div>Location: {cities[gameState.currentCity as keyof typeof cities]}</div>
+                  <div>Coat Space: {totalSpace}/{gameState.coatSpace}</div>
+                </div>
+              </div>
+              
+              <div className="border border-green-400 p-3 bg-black bg-opacity-80">
+                <h3 className="font-bold mb-2">🌿 Dope Statz</h3>
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  {Object.values(drugs).filter(drug => drug.totalBought > 0 || drug.owned > 0).map(drug => {
+                    const currentValue = drug.owned * drug.currentPrice;
+                    const invested = drug.owned * drug.averageBuyPrice;
+                    const unrealizedProfit = currentValue - invested;
+                    const totalProfit = drug.totalEarned - drug.totalSpent;
+                    
+                    return (
+                      <div key={drug.id} className="border border-gray-600 p-2 bg-gray-800 rounded">
+                        <div className="font-bold text-green-400 mb-1">{drug.name}</div>
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          <span>Owned: {drug.owned} oz</span>
+                          <span>Avg Buy: ${Math.round(drug.averageBuyPrice)}</span>
+                          <span>Total Bought: {drug.totalBought}</span>
+                          <span>Total Sold: {drug.totalSold}</span>
+                          <span>Invested: ${Math.round(invested)}</span>
+                          <span>Current Value: ${Math.round(currentValue)}</span>
+                          <span className={unrealizedProfit >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            Unrealized: ${Math.round(unrealizedProfit)}
+                          </span>
+                          <span className={totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            Total Profit: ${Math.round(totalProfit)}
+                          </span>
+                          {drug.lowestBuyPrice < 999999 && (
+                            <span>Lowest Buy: ${drug.lowestBuyPrice}</span>
+                          )}
+                          {drug.highestSellPrice > 0 && (
+                            <span>Highest Sell: ${drug.highestSellPrice}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {Object.values(drugs).every(drug => drug.totalBought === 0 && drug.owned === 0) && (
+                    <div className="text-gray-400">No weed trading history</div>
+                  )}
+                </div>
+                
+                {/* Overall Game Statz */}
+                <div className="mt-4 border-t border-gray-600 pt-3">
+                  <h4 className="font-bold text-yellow-400 mb-2">📊 Game Statz</h4>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <span>Total Deals: {gameState.dealsCompleted}</span>
+                    <span>Cities Visited: {gameState.citiesVisited.length}</span>
+                    <span className={gameState.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}>
+                      Total Profit: ${Math.round(gameState.totalProfit)}
+                    </span>
+                    <span>Transactions: {gameState.totalTransactions}</span>
+                    <span>Times Robbed: {gameState.timesRobbed}</span>
+                    <span>Times Arrested: {gameState.timesArrested}</span>
+                    <span>Loans Repaid: {gameState.loansRepaid}</span>
+                    <span>Max Debt: ${gameState.maxConcurrentDebt}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Game Over Check */}
+      {gameState.health <= 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center">
+          <div className="bg-gray-900 border border-red-400 p-6 text-center">
+            <h2 className="text-2xl font-bold text-red-400 mb-4">GAME OVER</h2>
+            <p className="text-green-400 mb-4">You died on the streets...</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-green-600 hover:bg-green-700 px-4 py-2"
+            >
+              Start New Game
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NFT Marketplace Modal */}
+      <NFTMarketplace
+        isOpen={showNFTMarketplace}
+        onClose={() => setShowNFTMarketplace(false)}
+        connectedWallet={connectedWallet}
+        onAssistantSelect={(nft) => {
+          console.log('🤖 Selected NFT as assistant:', nft);
+          // The NFT marketplace will handle the assistant selection
+          // This could integrate with The Plug assistant system
+        }}
+      />
+
+      {/* Profit Assistant Modal */}
+      {showProfitAssistant && (
+        <ProfitAssistant
+          drugs={drugs}
+          currentCity={gameState.currentCity}
+          gameDay={gameState.day}
+          totalPortfolioValue={totalValue}
+          onClose={() => setShowProfitAssistant(false)}
+        />
+      )}
+
+      {/* Web3 Modal */}
+      {showWeb3Modal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-purple-400 w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-purple-400">
+              <h2 className="text-xl font-bold text-purple-400">🌐 Sell to Web3</h2>
+              <button
+                onClick={() => setShowWeb3Modal(false)}
+                className="text-red-400 hover:text-red-300 text-2xl font-bold"
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 p-4">
+              <iframe
+                ref={(iframe) => {
+                  if (iframe) {
+                    iframe.onload = () => {
+                      const walletData = {
+                        type: 'WALLET_STATE',
+                        gameState: {
+                          money: gameState.money,
+                          day: gameState.day,
+                          health: gameState.health,
+                          debt: gameState.debt,
+                          currentCity: gameState.currentCity,
+                          reputation: gameState.reputation
+                        }
+                      };
+                      iframe.contentWindow?.postMessage(walletData, '*');
+                      
+                      // Also set wallet data in localStorage for iframe access
+                      try {
+                        localStorage.setItem('parentWalletState', JSON.stringify(walletData));
+                      } catch (e) {
+                        console.warn('Could not store wallet state in localStorage:', e);
+                      }
+                    };
+                  }
+                }}
+                src={getWeb3Url()}
+                className="w-full h-full border border-gray-600 rounded"
+                title="THC Growrez Web3 Platform"
+                allow="clipboard-write; payment; microphone; camera"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
+              />
+            </div>
+            <div className="p-4 border-t border-purple-400 text-center text-sm text-gray-400">
+              <p>Connected to THC Growrez Web3 Platform</p>
+              <p className="text-xs mt-1">Trade your virtual earnings for real Web3 assets</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Growerz Modal */}
+      {showGrowerzModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-green-400 w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-green-400">
+              <h2 className="text-xl font-bold text-green-400">🌱 THC Growerz Hub</h2>
+              <button
+                onClick={() => setShowGrowerzModal(false)}
+                className="text-red-400 hover:text-red-300 text-2xl font-bold"
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 p-4">
+              <iframe
+                ref={(iframe) => {
+                  if (iframe) {
+                    iframe.onload = () => {
+                      const walletData = {
+                        type: 'WALLET_STATE',
+                        gameState: {
+                          money: gameState.money,
+                          day: gameState.day,
+                          health: gameState.health,
+                          debt: gameState.debt,
+                          currentCity: gameState.currentCity,
+                          reputation: gameState.reputation
+                        },
+                        wallet: {
+                          address: connectedWallet,
+                          type: connectedWalletType,
+                          connected: !!connectedWallet,
+                          serverWallet: serverWallet,
+                          budzBalance: budzBalance,
+                          gbuxBalance: gbuxBalance
+                        }
+                      };
+                      
+                      console.log('🌱 Growerz: Sending wallet data to iframe:', walletData);
+                      iframe.contentWindow?.postMessage(walletData, 'https://growerz.thc-labz.xyz');
+                      
+                      // Also set wallet data in localStorage for iframe access
+                      try {
+                        localStorage.setItem('parentWalletState', JSON.stringify(walletData));
+                        localStorage.setItem('parentWalletAddress', connectedWallet || '');
+                        localStorage.setItem('parentWalletType', connectedWalletType || '');
+                        localStorage.setItem('parentServerWallet', serverWallet || '');
+                        console.log('🌱 Growerz: Wallet data stored in localStorage');
+                      } catch (e) {
+                        console.warn('Could not store wallet state in localStorage:', e);
+                      }
+                    };
+                  }
+                }}
+                src={getGrowerzUrl()}
+                className="w-full h-full border border-gray-600 rounded"
+                title="THC Growerz Hub Platform"
+                allow="clipboard-write; payment; microphone; camera; web-share; fullscreen"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation allow-modals allow-pointer-lock"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+            <div className="p-4 border-t border-green-400 text-center text-sm text-gray-400">
+              <p>Connected to THC Growerz Hub - Wallet & Player Data Synced</p>
+              <p className="text-xs mt-1">
+                {connectedWallet ? `Wallet: ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)} | ` : 'Demo Mode | '}
+                Money: ${gameState.money.toLocaleString()} | Day: {gameState.day}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal - Tabbed Interface with Profile Management */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-green-400 max-w-4xl w-full rounded-lg my-8 max-h-[90vh] overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-green-400">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-green-400" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                  ⚙️ Settings
+                </h2>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="text-green-400 hover:text-green-300 text-2xl font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Tabbed Content */}
+            <div className="flex">
+              {/* Tab Navigation */}
+              <div className="w-1/4 bg-black/30 border-r border-green-400">
+                <div className="p-4 space-y-2">
+                  <button
+                    onClick={() => setActiveSettingsTab('wallet')}
+                    className={`w-full text-left py-2 px-3 rounded transition-colors ${
+                      activeSettingsTab === 'wallet' 
+                        ? 'bg-green-600 text-white' 
+                        : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                    style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                  >
+                    💰 Wallet
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSettingsTab('profile')}
+                    className={`w-full text-left py-2 px-3 rounded transition-colors ${
+                      activeSettingsTab === 'profile' 
+                        ? 'bg-green-600 text-white' 
+                        : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                    style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                  >
+                    👤 Profile
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSettingsTab('game')}
+                    className={`w-full text-left py-2 px-3 rounded transition-colors ${
+                      activeSettingsTab === 'game' 
+                        ? 'bg-green-600 text-white' 
+                        : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                    style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                  >
+                    🎮 Game
+                  </button>
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              <div className="w-3/4 p-6 overflow-y-auto max-h-[70vh]">
+                
+                {/* Wallet Tab */}
+                {activeSettingsTab === 'wallet' && (
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold text-green-400 mb-4">Wallet Management</h3>
+              
+              {/* Wallet Information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-green-300 mb-3">Wallet Information</h3>
+                <div className="space-y-3">
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <p className="text-sm text-green-500 mb-1">Connected Wallet:</p>
+                    <p className="text-xs text-white font-mono break-all">
+                      {connectedWallet || 'Not Connected (Demo Mode)'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <p className="text-sm text-green-500 mb-1">THC Dope Wars SOL Wallet:</p>
+                    <p className="text-xs text-white font-mono break-all">
+                      {serverWallet || 'Creating wallet...'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Token Balances */}
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-green-300 mb-3">Token Balances</h3>
+                <div className="space-y-3">
+                  <div className="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-green-500">BUDZ Balance</p>
+                      <p className="text-xs text-gray-400">In-Game Token</p>
+                    </div>
+                    <p className="text-lg font-bold text-green-400">{budzBalance.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-green-500">GBUX Balance</p>
+                      <p className="text-xs text-gray-400">Swappable Token</p>
+                    </div>
+                    <p className="text-lg font-bold text-yellow-400">{gbuxBalance.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Game Actions */}
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-green-300 mb-3">Game Actions</h3>
+                <div className="space-y-3">
+                  {connectedWallet && (
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to logout? This will disconnect your wallet and return to the welcome screen.')) {
+                          // Clear wallet connection
+                          localStorage.removeItem('connectedWallet');
+                          localStorage.removeItem('serverWallet');
+                          localStorage.removeItem('walletType');
+                          
+                          // Reset states
+                          setConnectedWallet('');
+                          setServerWallet('');
+                          setBudzBalance(0);
+                          setGbuxBalance(0);
+                          setShowWelcomeScreen(true);
+                          setShowSettingsModal(false);
+                          
+                          // Reset game state to fresh start
+                          setGameState({
+                            money: 0,
+                            debt: 0,
+                            health: 100,
+                            day: 1,
+                            currentCity: 'hometown',
+                            coatSpace: 100,
+                            reputation: 0,
+                            timeLeftInDay: 600,
+                            isWorking: false,
+                            workDaysLeft: 0,
+                            daysWorkedThisWeek: 0,
+                            weekStartDay: 1,
+                            bankAccount: 0,
+                            skills: {},
+                            totalTransactions: 0,
+                            totalProfit: 0,
+                            highestDailyProfit: 0,
+                            citiesVisited: ['hometown'],
+                            dealsCompleted: 0,
+                            timesRobbed: 0,
+                            timesArrested: 0,
+                            loansRepaid: 0,
+                            maxConcurrentDebt: 0
+                          });
+                          
+                          alert('Successfully logged out! Connect a wallet to play again.');
+                        }
+                      }}
+                      className="w-full py-3 px-6 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors"
+                      style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                    >
+                      🚪 Logout & Disconnect Wallet
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      setPhysicsEnabled(!physicsEnabled);
+                    }}
+                    className={`w-full py-3 px-6 font-bold rounded-lg transition-colors ${
+                      physicsEnabled ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-600 hover:bg-gray-500 text-white'
+                    }`}
+                    style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                  >
+                    ⚡ FX Effects {physicsEnabled ? 'ON' : 'OFF'}
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure you want to restart your game? This will reset all progress but keep your wallet connected.')) {
+                        // Reset game state
+                        setGameState({
+                          money: 2000,
+                          debt: 0,
+                          health: 100,
+                          day: 1,
+                          currentCity: 'hometown',
+                          coatSpace: 100,
+                          reputation: 0,
+                          timeLeftInDay: 600,
+                          isWorking: false,
+                          workDaysLeft: 0,
+                          daysWorkedThisWeek: 0,
+                          weekStartDay: 1,
+                          bankAccount: 0,
+                          skills: {},
+                          totalTransactions: 0,
+                          totalProfit: 0,
+                          highestDailyProfit: 0,
+                          citiesVisited: ['hometown'],
+                          dealsCompleted: 0,
+                          timesRobbed: 0,
+                          timesArrested: 0,
+                          loansRepaid: 0,
+                          maxConcurrentDebt: 0
+                        });
+                        setCurrentView('market');
+                        setShowSettingsModal(false);
+                        alert('Game restarted successfully!');
+                      }
+                    }}
+                    className="w-full py-3 px-6 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg transition-colors"
+                    style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                  >
+                    🔄 Restart Game
+                  </button>
+                  
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <p className="text-sm text-green-500 mb-1">Leaderboard Info:</p>
+                    <p className="text-xs text-gray-400">
+                      Complete 45 days to post your score. Top 10 players get daily BUDZ rewards!
+                    </p>
+                  </div>
+                </div>
+              </div>
+                  </div>
+                )}
+
+
+
+                {/* Game Tab */}
+                {activeSettingsTab === 'game' && (
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold text-green-400 mb-4">Game Settings</h3>
+                    
+                    <div className="space-y-4">
+                      <button
+                        onClick={() => {
+                          setPhysicsEnabled(!physicsEnabled);
+                        }}
+                        className={`w-full py-3 px-6 font-bold rounded-lg transition-colors ${
+                          physicsEnabled ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-600 hover:bg-gray-500 text-white'
+                        }`}
+                        style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                      >
+                        ⚡ FX Effects {physicsEnabled ? 'ON' : 'OFF'}
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to restart your game? This will reset all progress but keep your wallet connected.')) {
+                            setGameState({
+                              money: 2000,
+                              debt: 0,
+                              health: 100,
+                              day: 1,
+                              currentCity: 'hometown',
+                              coatSpace: 100,
+                              reputation: 0,
+                              timeLeftInDay: 600,
+                              isWorking: false,
+                              workDaysLeft: 0,
+                              daysWorkedThisWeek: 0,
+                              weekStartDay: 1,
+                              bankAccount: 0,
+                              skills: {},
+                              totalTransactions: 0,
+                              totalProfit: 0,
+                              highestDailyProfit: 0,
+                              citiesVisited: ['hometown'],
+                              dealsCompleted: 0,
+                              timesRobbed: 0,
+                              timesArrested: 0,
+                              loansRepaid: 0,
+                              maxConcurrentDebt: 0
+                            });
+                            setCurrentView('market');
+                            setShowSettingsModal(false);
+                            alert('Game restarted successfully!');
+                          }
+                        }}
+                        className="w-full py-3 px-6 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg transition-colors"
+                        style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                      >
+                        🔄 Restart Game
+                      </button>
+                      
+                      <div className="bg-gray-800 p-4 rounded-lg">
+                        <h4 className="text-green-400 font-bold mb-2">Game Info</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Current Day:</span>
+                            <span className="text-white">{gameState.day}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Money:</span>
+                            <span className="text-green-400">${gameState.money.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Current City:</span>
+                            <span className="text-white capitalize">{gameState.currentCity}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Health:</span>
+                            <span className="text-red-400">{gameState.health}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Profile Tab */}
+                {activeSettingsTab === 'profile' && (
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold text-green-400 mb-4">User Profile & Authentication</h3>
+                    
+                    <UserProfileAuth 
+                      onAuthChange={(newAuthState) => {
+                        setAuthState(newAuthState);
+                        
+                        // If user successfully authenticates with wallet, update connected wallet state
+                        if (newAuthState.isAuthenticated && newAuthState.user?.walletAddress) {
+                          setConnectedWallet(newAuthState.user.walletAddress);
+                          
+                          // Refresh wallet balances and create server wallet
+                          updateWalletBalances();
+                          
+                          // Create server wallet if needed
+                          if (!serverWallet) {
+                            fetch('/api/wallet/create', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({ 
+                                walletAddress: newAuthState.user.walletAddress 
+                              }),
+                            }).then(response => response.json())
+                              .then(data => {
+                                if (data.success) {
+                                  setServerWallet(data.serverWallet);
+                                  console.log('✅ Server wallet created:', data.serverWallet);
+                                }
+                              }).catch(error => {
+                                console.error('❌ Failed to create server wallet:', error);
+                              });
+                          }
+                        }
+                      }}
+                    />
+
+                    {/* Authentication Status */}
+                    {authState && (
+                      <div className="bg-gray-800 p-4 rounded-lg">
+                        <h4 className="text-green-400 font-bold mb-2">Authentication Status</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Status:</span>
+                            <span className={authState.isAuthenticated ? "text-green-400" : "text-red-400"}>
+                              {authState.isAuthenticated ? "✅ Authenticated" : "❌ Not Authenticated"}
+                            </span>
+                          </div>
+                          {authState.user && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-gray-300">User ID:</span>
+                                <span className="text-white text-xs font-mono">
+                                  {authState.user.userId}
+                                </span>
+                              </div>
+                              {authState.user.walletAddress && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-300">Wallet:</span>
+                                  <span className="text-green-400 text-xs font-mono">
+                                    {authState.user.walletAddress.slice(0, 8)}...{authState.user.walletAddress.slice(-4)}
+                                  </span>
+                                </div>
+                              )}
+                              {authState.user.email && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-300">Email:</span>
+                                  <span className="text-white">
+                                    {authState.user.email}
+                                  </span>
+                                </div>
+                              )}
+                              {authState.user.phoneNumber && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-300">Phone:</span>
+                                  <span className="text-white">
+                                    {authState.user.phoneNumber}
+                                  </span>
+                                </div>
+                              )}
+                              {authState.user.discord && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-300">Discord:</span>
+                                  <span className="text-white">
+                                    {authState.user.discord.username}#{authState.user.discord.discriminator}
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Link Additional Authentication Methods */}
+                    {authState?.isAuthenticated && (
+                      <div className="bg-gray-800 p-4 rounded-lg">
+                        <h4 className="text-green-400 font-bold mb-2">Link Additional Methods</h4>
+                        <p className="text-gray-300 text-sm mb-3">
+                          Link multiple authentication methods to your account for easier access
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              // Implementation for linking wallet
+                              console.log('Link wallet clicked');
+                            }}
+                            className="p-2 bg-green-600 hover:bg-green-500 text-white rounded text-sm"
+                          >
+                            🔗 Link Wallet
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Implementation for linking email
+                              console.log('Link email clicked');
+                            }}
+                            className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm"
+                          >
+                            📧 Link Email
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Implementation for linking phone
+                              console.log('Link phone clicked');
+                            }}
+                            className="p-2 bg-purple-600 hover:bg-purple-500 text-white rounded text-sm"
+                          >
+                            📱 Link Phone
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Implementation for linking Discord
+                              console.log('Link Discord clicked');
+                            }}
+                            className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm"
+                          >
+                            🎮 Link Discord
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lifetime Leaderboard Modal */}
+      {showLifetimeLeaderboard && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-purple-400 p-6 max-w-lg w-full rounded-lg max-h-[90vh] overflow-y-auto">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-purple-400 mb-4" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                🏆 Lifetime Leaderboard
+              </h2>
+              <p className="text-sm text-gray-400 mb-4">
+                All-time high scores preserved for posterity. Daily leaderboard clears after rewards.
+              </p>
+              
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {lifetimeLeaderboard.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No lifetime scores yet</p>
+                ) : (
+                  lifetimeLeaderboard.map((entry, index) => (
+                    <div 
+                      key={entry.id}
+                      className={`p-3 rounded-lg flex justify-between items-center ${
+                        index === 0 ? 'bg-yellow-900 border border-yellow-600' :
+                        index === 1 ? 'bg-gray-700 border border-gray-500' :
+                        index === 2 ? 'bg-orange-900 border border-orange-600' :
+                        'bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`font-bold ${
+                          index === 0 ? 'text-yellow-400' :
+                          index === 1 ? 'text-gray-300' :
+                          index === 2 ? 'text-orange-400' :
+                          'text-gray-400'
+                        }`}>
+                          #{index + 1}
+                        </span>
+                        <div>
+                          <div className="text-white font-bold">{entry.name}</div>
+                          <div className="text-xs text-gray-400">
+                            Day {entry.day} • {new Date(entry.createdAt).toLocaleDateString()}
+                          </div>
+                          {entry.walletAddress && (
+                            <div className="text-xs text-purple-400 font-mono">
+                              {entry.walletAddress.slice(0, 8)}...{entry.walletAddress.slice(-4)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-green-400 font-bold text-lg">
+                          ${entry.score.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLifetimeLeaderboard(false)}
+                className="flex-1 py-3 px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg transition-colors"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wallet Modal - Web3 Connection */}
+      {showWalletModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-start justify-center z-[9999] p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-purple-400 p-6 max-w-lg w-full rounded-lg my-8 max-h-[90vh] overflow-y-auto">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-purple-400 mb-4 flex items-center gap-3" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                <img src="/thz-logo.png" alt="THC GROWERZ" className="w-8 h-8" />
+                Web3 Wallet Manager
+              </h2>
+              
+              {!connectedWallet ? (
+                <div className="space-y-4">
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="text-lg font-bold text-purple-300 mb-2">Connect Your Wallet</h3>
+                    <p className="text-sm text-gray-400 mb-3">
+                      Connect your Solana wallet to earn BUDZ tokens from leaderboard rewards and participate in Web3 features.
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs text-green-400">✓ Daily leaderboard rewards in BUDZ tokens</p>
+                      <p className="text-xs text-green-400">✓ Server-side wallet creation for security</p>
+                      <p className="text-xs text-green-400">✓ Token swapping between BUDZ and GBUX</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="text-lg font-bold text-purple-300 mb-2">Token Info</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-400">BUDZ Token:</span>
+                        <span className="text-xs text-green-400 font-mono">2i7T...nsiQ</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-400">GBUX Token:</span>
+                        <span className="text-xs text-yellow-400 font-mono">55Tp...nray</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {detectedWallets.length > 0 ? (
+                      detectedWallets.map((wallet) => (
+                        <button
+                          key={wallet}
+                          onClick={() => connectWallet(wallet)}
+                          disabled={isConnectingWallet}
+                          className={`w-full py-3 px-6 ${
+                            isConnectingWallet 
+                              ? 'bg-gray-600 cursor-not-allowed' 
+                              : 'bg-purple-600 hover:bg-purple-500'
+                          } text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2`}
+                          style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                        >
+                          {isConnectingWallet ? 'Connecting...' : `🔗 Connect ${wallet} Wallet`}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-red-400 mb-3">No Solana wallets detected</p>
+                        <p className="text-gray-400 text-sm mb-3">Install any supported wallet:</p>
+                        <div className="text-xs text-purple-400 space-y-1">
+                          <p>• Phantom (phantom.app)</p>
+                          <p>• Magic Eden (magiceden.io)</p>
+                          <p>• Solflare (solflare.com)</p>
+                          <p>• Backpack (backpack.app)</p>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-3">Refresh after installation</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-full overflow-y-auto">
+                  <div className="space-y-4">
+                    {/* Connected Wallet Section */}
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <h3 className="text-lg font-bold text-purple-400 mb-2">Connected SOL Wallet</h3>
+                      <p className="text-xs text-purple-200 font-mono break-all mb-2">{connectedWallet}</p>
+                      <p className="text-xs text-gray-400">Your main Solana wallet for game access</p>
+                    </div>
+
+                    {/* Server Wallet Section */}
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <h3 className="text-lg font-bold text-green-400 mb-2">THC Growerz Wallet</h3>
+                      <p className="text-xs text-green-200 font-mono break-all mb-2">{serverWallet}</p>
+                      <p className="text-xs text-gray-400">THC Growerz managed wallet for rewards and BUDZ distribution</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {/* Token Balances */}
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <h3 className="text-lg font-bold text-yellow-400 mb-3">Token Balances</h3>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-gray-700 p-2 rounded">
+                          <p className="text-xs text-green-400 font-semibold">BUDZ</p>
+                          <p className="text-sm font-bold text-green-300 break-all">{budzBalance.toLocaleString()}</p>
+                          <p className="text-xs text-gray-400">${(budzPrice * budzBalance).toFixed(6)}</p>
+                        </div>
+                        <div className="bg-gray-700 p-2 rounded">
+                          <p className="text-xs text-blue-400 font-semibold">GBUX</p>
+                          <p className="text-sm font-bold text-blue-300 break-all">{gbuxBalance.toLocaleString()}</p>
+                          <p className="text-xs text-gray-400">${(gbuxPrice * gbuxBalance).toFixed(6)}</p>
+                        </div>
+                        <div className="bg-gray-700 p-2 rounded">
+                          <p className="text-xs text-purple-400 font-semibold">THC LABZ</p>
+                          <p className="text-sm font-bold text-purple-300 break-all">{thcGrowerTokenBalance.toLocaleString()}</p>
+                          <p className="text-xs text-gray-400">${(0.001 * thcGrowerTokenBalance).toFixed(4)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Token Prices */}
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <h3 className="text-lg font-bold text-yellow-400 mb-2">Live Token Prices</h3>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <p className="text-green-400">BUDZ/USD:</p>
+                          <p className="text-white">${budzPrice > 0 ? budzPrice.toFixed(8) : '0.00001230'}</p>
+                        </div>
+                        <div>
+                          <p className="text-blue-400">GBUX/USD:</p>
+                          <p className="text-white">${gbuxPrice > 0 ? gbuxPrice.toFixed(8) : '0.00001230'}</p>
+                          <p className="text-xs text-gray-500">Live via Helius API</p>
+                        </div>
+                        <div>
+                          <p className="text-purple-400">THC LABZ:</p>
+                          <p className="text-white">$0.001000</p>
+                          <p className="text-xs text-gray-500">Min. price via Helius</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-center mt-3">
+                        <button
+                          onClick={forceUpdatePrices}
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white py-1 px-3 rounded text-sm transition-colors"
+                        >
+                          🔄 Update Prices Now
+                        </button>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        <p>• Auto-updates every 6 minutes for NFT users</p>
+                        <p>• Standby mode conserves API limits</p>
+                      </div>
+                    </div>
+
+                    {/* Token Swap Section */}
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <h3 className="text-lg font-bold text-orange-400 mb-3">Token Swap (1:1 Ratio)</h3>
+                      
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSwapDirection('budz-to-thc')}
+                            className={`flex-1 py-2 px-3 rounded text-sm ${
+                              swapDirection === 'budz-to-thc' 
+                                ? 'bg-purple-600 text-white' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}
+                          >
+                            BUDZ → THC
+                          </button>
+                          <button
+                            onClick={() => setSwapDirection('gbux-to-thc')}
+                            className={`flex-1 py-2 px-3 rounded text-sm ${
+                              swapDirection === 'gbux-to-thc' 
+                                ? 'bg-purple-600 text-white' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}
+                          >
+                            GBUX → THC
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSwapDirection('budz-to-gbux')}
+                            className={`flex-1 py-2 px-3 rounded text-sm ${
+                              swapDirection === 'budz-to-gbux' 
+                                ? 'bg-green-600 text-white' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}
+                          >
+                            BUDZ → GBUX
+                          </button>
+                          <button
+                            onClick={() => setSwapDirection('gbux-to-budz')}
+                            className={`flex-1 py-2 px-3 rounded text-sm ${
+                              swapDirection === 'gbux-to-budz' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}
+                          >
+                            GBUX → BUDZ
+                          </button>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSwapDirection('thc-to-budz')}
+                            className={`w-full py-2 px-3 rounded text-sm ${
+                              swapDirection === 'thc-to-budz' 
+                                ? 'bg-yellow-600 text-white' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}
+                          >
+                            THC LABZ → BUDZ
+                          </button>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max={
+                              swapDirection === 'budz-to-gbux' || swapDirection === 'budz-to-thc' ? budzBalance 
+                              : swapDirection === 'gbux-to-budz' || swapDirection === 'gbux-to-thc' ? gbuxBalance
+                              : swapDirection === 'thc-to-budz' ? thcGrowerTokenBalance
+                              : 0
+                            }
+                            value={swapAmount || ''}
+                            onChange={(e) => setSwapAmount(parseInt(e.target.value) || 0)}
+                            placeholder="Amount to swap"
+                            className="flex-1 bg-gray-900 border border-gray-600 p-2 text-white rounded"
+                          />
+                          <button
+                            onClick={() => setSwapAmount(
+                              swapDirection === 'budz-to-gbux' || swapDirection === 'budz-to-thc' ? budzBalance 
+                              : swapDirection === 'gbux-to-budz' || swapDirection === 'gbux-to-thc' ? gbuxBalance
+                              : swapDirection === 'thc-to-budz' ? thcGrowerTokenBalance
+                              : 0
+                            )}
+                            className="bg-gray-600 hover:bg-gray-500 px-3 py-2 text-sm rounded"
+                          >
+                            MAX
+                          </button>
+                        </div>
+
+                        <div className="text-xs text-gray-400">
+                          {swapDirection === 'budz-to-gbux' 
+                            ? `Burn ${swapAmount} BUDZ → Receive ${Math.floor(swapAmount / 10)} GBUX (10:1 rate, AI Agent processes)`
+                            : swapDirection === 'gbux-to-budz'
+                            ? `Burn ${swapAmount} GBUX → Receive ${swapAmount * 10} BUDZ (1:10 rate, AI Agent processes)`
+                            : swapDirection === 'budz-to-thc'
+                            ? `Burn ${swapAmount} BUDZ → Receive ${Math.floor(swapAmount * 0.97)} THC LABZ (3% AI fee)`
+                            : swapDirection === 'gbux-to-thc'
+                            ? `Send ${swapAmount} GBUX to AI → Receive ${Math.floor(swapAmount * 0.97)} THC LABZ (3% AI fee)`
+                            : swapDirection === 'thc-to-budz'
+                            ? `Send ${swapAmount} THC LABZ → Receive ${Math.floor(swapAmount * 0.95)} BUDZ`
+                            : ''
+                          }
+                        </div>
+
+                        <button
+                          onClick={executeTokenSwap}
+                          disabled={isSwapping || swapAmount <= 0}
+                          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white py-2 px-4 rounded transition-colors"
+                        >
+                          {isSwapping ? 'Processing Swap...' : '🔄 Execute Swap (3% AI Agent Fee)'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* AI Agent Info */}
+                    <div className="bg-gray-800 p-4 rounded-lg">
+                      <h3 className="text-lg font-bold text-red-400 mb-2">AI Agent Services</h3>
+                      <div className="text-xs text-gray-400 space-y-1">
+                        <p>🤖 Agent Wallet: ErSG...ZT65</p>
+                        <p>💰 Off-boarding Fee: 3% per transaction</p>
+                        <p>🔥 BUDZ burns to SOL burn address</p>
+                        <p>⚡ GBUX burns to AI Agent for game economy</p>
+                        <p>📊 Prices based on GBUX/SOL on-chain data</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={updateWalletBalances}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded transition-colors"
+                      disabled={isLoadingBalances}
+                    >
+                      {isLoadingBalances ? 'Updating...' : '🔄 Refresh All Balances & Prices'}
+                    </button>
+                  </div>
+
+                  {/* User Selected NFT from GROWERZ Collection */}
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="text-lg font-bold text-green-300 mb-2">👤 User Selected NFT from GROWERZ Collection</h3>
+                    <p className="text-sm text-gray-400 mb-3">
+                      Click any NFT below to set as your "The Plug" AI assistant avatar
+                    </p>
+                    <GrowerNFTsDisplay walletAddress={connectedWallet} />
+                  </div>
+
+                  {/* Leaderboard Info */}
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="text-lg font-bold text-green-300 mb-2">Leaderboard Info</h3>
+                    <p className="text-sm text-gray-400">
+                      Complete 45 days and submit your score to compete for daily BUDZ rewards. 
+                      Top 10 players earn between 100-1000 BUDZ tokens daily at midnight CST.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
+              <button
+                onClick={disconnectWallet}
+                className="flex-1 py-3 px-6 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🔌 Disconnect Wallet
+              </button>
+              <button
+                onClick={() => setShowWalletModal(false)}
+                className="flex-1 py-3 px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg transition-colors"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Admin Panel */}
+      {showAdminPanel && (
+        <AdminPanel onClose={() => setShowAdminPanel(false)} />
+      )}
+
+      {/* About Modal */}
+      {showAboutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-green-400 p-6 max-w-4xl w-full rounded-lg max-h-[95vh] overflow-y-auto">
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-3xl font-bold text-green-400" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                  🍃 THC Labz Dope Budz
+                </h2>
+                <button
+                  onClick={() => setShowAboutModal(false)}
+                  className="text-gray-400 hover:text-white text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Hero Image */}
+              <div 
+                className="w-full h-32 bg-cover bg-center rounded-lg mb-6"
+                style={{
+                  backgroundImage: 'url(/attached_assets/THC_banner_1752098551109.png)',
+                }}
+              ></div>
+              
+              <div className="text-green-300 text-lg mb-6">
+                🚀 <strong>The most immersive Web3 cannabis empire game</strong> featuring real blockchain rewards, NFT-powered AI assistants, and 70 achievements worth up to 1,400 BUDZ tokens per round! Experience the underground economy like never before.
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Game Overview */}
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  🎮 Game Overview
+                </h3>
+                <ul className="text-green-300 space-y-2 text-sm">
+                  <li>• <strong>🎯 70 Achievement System:</strong> Earn up to 1,400 BUDZ per round + completion bonus</li>
+                  <li>• <strong>🏆 Daily Championships:</strong> Top 10 players get 100-1000 BUDZ daily at midnight CST</li>
+                  <li>• <strong>🤖 NFT-Gated AI Assistant:</strong> THC GROWERZ holders get personalized trading AI</li>
+                  <li>• <strong>🌍 16 Unique Cities:</strong> From Miami beaches to Detroit streets, each with distinct markets</li>
+                  <li>• <strong>⚡ Dynamic Music System:</strong> Adaptive soundtrack responds to heat levels and events</li>
+                  <li>• <strong>📱 Cross-Platform:</strong> Seamless mobile/desktop experience with wallet integration</li>
+                  <li>• <strong>🔥 Smoking Mechanics:</strong> Cannabis strains provide gameplay buffs and enhanced analytics</li>
+                  <li>• <strong>💎 Multi-Token Economy:</strong> BUDZ, GBUX, THC LABZ integration with real Solana contracts</li>
+                </ul>
+              </div>
+
+              {/* How to Play */}
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  🚀 How to Play
+                </h3>
+                <ol className="text-green-300 space-y-2 text-sm">
+                  <li><strong>1. 🔗 Connect & Create:</strong> Link Solana wallet to get your THC Growerz server wallet</li>
+                  <li><strong>2. 🌿 Start Small:</strong> Begin with Reggie in your hometown, learn the basics</li>
+                  <li><strong>3. 🏃‍♂️ Expand Territory:</strong> Travel between 16 cities, master each market's dynamics</li>
+                  <li><strong>4. 🎯 Unlock Achievements:</strong> Complete 70 challenges for massive BUDZ rewards</li>
+                  <li><strong>5. 🤖 Get AI Assistance:</strong> THC GROWERZ NFT holders unlock personalized trading AI</li>
+                  <li><strong>6. ⭐ Avoid Heat:</strong> Manage police attention with strategic gameplay</li>
+                  <li><strong>7. 🏆 Dominate Leaderboards:</strong> Submit 45-day scores for daily token rewards</li>
+                  <li><strong>8. 💰 Stack Tokens:</strong> Earn BUDZ, GBUX, and THC LABZ through elite gameplay</li>
+                </ol>
+              </div>
+
+              {/* Strain Gallery */}
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  🌿 Premium Strains
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { name: 'Reggie', img: '/attached_assets/Regz_1752183158112.jpg' },
+                    { name: 'OG Kush', img: '/attached_assets/OGKush_1752183385525.jpg' },
+                    { name: 'Sour Diesel', img: '/attached_assets/SourDiesel2_1752185001725.jpg' },
+                    { name: 'Purple Haze', img: '/attached_assets/purplehaze_1752183464779.jpg' },
+                  ].map((strain) => (
+                    <div key={strain.name} className="text-center">
+                      <div 
+                        className="w-full h-20 bg-cover bg-center rounded border border-green-400"
+                        style={{ backgroundImage: `url(${strain.img})` }}
+                      ></div>
+                      <p className="text-green-300 text-xs mt-1">{strain.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Game Features */}
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  ⭐ Game Features
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h4 className="text-green-400 font-bold mb-2">Trading</h4>
+                    <ul className="text-green-300 space-y-1">
+                      <li>• Market dynamics</li>
+                      <li>• Price fluctuations</li>
+                      <li>• Bulk trading</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-green-400 font-bold mb-2">Banking</h4>
+                    <ul className="text-green-300 space-y-1">
+                      <li>• Secure deposits</li>
+                      <li>• Loan system</li>
+                      <li>• Interest rates</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-green-400 font-bold mb-2">Skills</h4>
+                    <ul className="text-green-300 space-y-1">
+                      <li>• Dealing expertise</li>
+                      <li>• Survival tactics</li>
+                      <li>• Business acumen</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-green-400 font-bold mb-2">Work</h4>
+                    <ul className="text-green-300 space-y-1">
+                      <li>• McShitz jobs</li>
+                      <li>• Steady income</li>
+                      <li>• Weekly limits</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cities */}
+              <div className="bg-gray-800 p-4 rounded-lg lg:col-span-2">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  🏙️ Trading Locations
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  {[
+                    { city: 'Home Town', specialty: 'Safe starting area', risk: 'Low' },
+                    { city: 'The NeighborHood', specialty: 'Local connections', risk: 'Medium' },
+                    { city: 'Central Park', specialty: 'Tourist prices', risk: 'Low' },
+                    { city: 'New York', specialty: 'High-end clientele', risk: 'Medium' },
+                    { city: 'St. Louis', specialty: 'Midwest prices', risk: 'Medium' },
+                    { city: 'Memphis', specialty: 'Southern market', risk: 'High' },
+                    { city: 'Baltimore', specialty: 'East coast deals', risk: 'High' },
+                    { city: 'Miami', specialty: 'Premium rates', risk: 'Low' },
+                    { city: 'Atlanta', specialty: 'Southern hub', risk: 'Medium' },
+                    { city: 'Detroit', specialty: 'Industrial prices', risk: 'High' },
+                    { city: 'Kansas City', specialty: 'Central market', risk: 'Medium' },
+                    { city: 'Houston', specialty: 'Oil money', risk: 'Low' },
+                    { city: 'New Orleans', specialty: 'Party scene', risk: 'Medium' },
+                    { city: 'Cleveland', specialty: 'Rust belt deals', risk: 'High' },
+                    { city: 'Oakland', specialty: 'West coast prices', risk: 'High' },
+                    { city: 'Denver', specialty: 'Mountain high', risk: 'Low' }
+                  ].map((location) => (
+                    <div key={location.city} className="bg-gray-700 p-3 rounded border border-green-400">
+                      <h4 className="text-green-400 font-bold">{location.city}</h4>
+                      <p className="text-green-300 text-xs">{location.specialty}</p>
+                      <p className="text-yellow-400 text-xs">Risk: {location.risk}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rewards System */}
+              <div className="bg-gray-800 p-4 rounded-lg lg:col-span-2">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  💰 Reward System
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-yellow-900 bg-opacity-30 p-3 rounded border border-yellow-400">
+                    <h4 className="text-yellow-400 font-bold text-center">🥇 Top 3</h4>
+                    <p className="text-center text-2xl font-bold text-yellow-400">1000 BUDZ</p>
+                    <p className="text-center text-yellow-300 text-sm">Daily Champions</p>
+                  </div>
+                  <div className="bg-gray-700 bg-opacity-30 p-3 rounded border border-gray-400">
+                    <h4 className="text-gray-300 font-bold text-center">🥈 Rank 4-7</h4>
+                    <p className="text-center text-2xl font-bold text-gray-300">500 BUDZ</p>
+                    <p className="text-center text-gray-400 text-sm">Strong Performers</p>
+                  </div>
+                  <div className="bg-orange-900 bg-opacity-30 p-3 rounded border border-orange-400">
+                    <h4 className="text-orange-400 font-bold text-center">🥉 Rank 8-10</h4>
+                    <p className="text-center text-2xl font-bold text-orange-400">100 BUDZ</p>
+                    <p className="text-center text-orange-300 text-sm">Top 10 Club</p>
+                  </div>
+                </div>
+                <div className="mt-4 bg-purple-900 bg-opacity-30 p-3 rounded border border-purple-400">
+                  <p className="text-center text-purple-300">
+                    <strong>⏰ Daily Payouts at Midnight CST</strong><br />
+                    Complete 45 days • Submit your score • Compete for rewards
+                  </p>
+                </div>
+              </div>
+
+              {/* Pro Tips */}
+              <div className="bg-gray-800 p-4 rounded-lg lg:col-span-2">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                  💡 Pro Tips
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h4 className="text-green-400 font-bold mb-2">Trading Strategy</h4>
+                    <ul className="text-green-300 space-y-1">
+                      <li>• Start in The Bronx for diverse options</li>
+                      <li>• Buy when prices crash, sell at peaks</li>
+                      <li>• Use your coat space efficiently</li>
+                      <li>• Watch for market events and opportunities</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-green-400 font-bold mb-2">Risk Management</h4>
+                    <ul className="text-green-300 space-y-1">
+                      <li>• Keep some money in the bank</li>
+                      <li>• Don't max out your debt early</li>
+                      <li>• Monitor your health carefully</li>
+                      <li>• Work at McShitz when needed</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-center gap-4">
+              <button
+                onClick={() => setShowAboutModal(false)}
+                className="bg-green-600 hover:bg-green-700 px-8 py-3 text-white font-bold rounded-lg transition-colors"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                🚀 Start Playing!
+              </button>
+              <a 
+                href="/thc-dope-budz-enhanced-advert.html" 
+                target="_blank"
+                className="bg-purple-600 hover:bg-purple-700 px-8 py-3 text-white font-bold rounded-lg transition-colors inline-block"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                📢 View Full Advert
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* The Plug AI Assistant */}
+      <ThePlugAssistant 
+        connectedWallet={connectedWallet}
+        gameState={{
+          currentCity: gameState.currentCity,
+          day: gameState.day,
+          money: gameState.money
+        }}
+        onMissionComplete={handleMissionComplete}
+        smokingBuffs={smokingBuffs}
+        onChatInteraction={() => {
+          setGameState(prev => ({
+            ...prev,
+            aiChatCount: (prev.aiChatCount || 0) + 1
+          }));
+        }}
+      />
+
+      {/* Achievement Display Modal */}
+      {showAchievements && connectedWallet && (
+        <AchievementDisplay
+          walletAddress={connectedWallet}
+          gameRoundId={currentGameRoundId}
+          onClose={() => setShowAchievements(false)}
+        />
+      )}
+
+      {/* Full-Screen Intro Video Player */}
+      {showIntroVideo && (
+        <div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center">
+          <div className="relative w-full h-full">
+            <video
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+              controls={false}
+              onLoadedData={(e) => {
+                const video = e.target as HTMLVideoElement;
+                console.log('🎬 Video loaded, attempting to play with sound...');
+                // Set volume and try to play with sound
+                video.volume = 0.8;
+                video.muted = false;
+                
+                // User interaction is required for audio in most browsers
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                  playPromise.then(() => {
+                    setVideoAudioEnabled(!video.muted);
+                    console.log('🎬 Video playing with audio:', !video.muted);
+                  }).catch(() => {
+                    console.log('🎬 Autoplay with sound failed, trying muted...');
+                    video.muted = true;
+                    setVideoAudioEnabled(false);
+                    return video.play();
+                  });
+                }
+              }}
+              onClick={(e) => {
+                // Enable audio on user click
+                const video = e.target as HTMLVideoElement;
+                if (video.muted) {
+                  video.muted = false;
+                  setVideoAudioEnabled(true);
+                  console.log('🎬 Audio enabled by user click');
+                }
+              }}
+              onEnded={() => {
+                console.log('🎬 Intro video completed');
+                setShowIntroVideo(false);
+                setHasPlayedIntro(true);
+                setGameState(prev => ({ ...prev, money: 2000 })); // Start with initial money
+                
+                // Mark intro as played for this wallet
+                if (connectedWallet) {
+                  const hasPlayedIntroKey = `introPlayed_${connectedWallet}`;
+                  localStorage.setItem(hasPlayedIntroKey, 'true');
+                }
+              }}
+              onError={(e) => {
+                console.error('🎬 Error playing intro video:', e);
+                setShowIntroVideo(false);
+                setGameState(prev => ({ ...prev, money: 2000 })); // Start with initial money
+              }}
+            >
+              <source src="/attached_assets/SMOKEWEEDWITH_1752341770440.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            
+            {/* Video Controls */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button
+                onClick={(e) => {
+                  const video = document.querySelector('video') as HTMLVideoElement;
+                  if (video) {
+                    video.muted = !video.muted;
+                    setVideoAudioEnabled(!video.muted);
+                    console.log('🎬 Video muted:', video.muted);
+                  }
+                }}
+                className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 transition-opacity text-sm"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+                title={videoAudioEnabled ? 'Mute Audio' : 'Enable Audio'}
+              >
+                {videoAudioEnabled ? '🔊' : '🔇'}
+              </button>
+              <button
+                onClick={() => {
+                  console.log('🎬 Intro video skipped by user');
+                  setShowIntroVideo(false);
+                  setHasPlayedIntro(true);
+                  setGameState(prev => ({ ...prev, money: 2000 })); // Start with initial money
+                  
+                  // Mark intro as played for this wallet
+                  if (connectedWallet) {
+                    const hasPlayedIntroKey = `introPlayed_${connectedWallet}`;
+                    localStorage.setItem(hasPlayedIntroKey, 'true');
+                  }
+                }}
+                className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-70 transition-opacity"
+                style={{ fontFamily: 'LemonMilk, sans-serif' }}
+              >
+                Skip Intro
+              </button>
+            </div>
+            
+            {/* Audio Enable Overlay */}
+            {!videoAudioEnabled && (
+              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                <div className="bg-black bg-opacity-70 text-white p-4 rounded-lg text-center">
+                  <div className="text-4xl mb-2">🔊</div>
+                  <p className="text-lg font-bold mb-2" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                    Click to Enable Audio
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    Click anywhere on the video to unmute
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* THC Dope Budz Logo Overlay */}
+            <div className="absolute bottom-4 left-4 text-white">
+              <h2 className="text-2xl font-bold" style={{ fontFamily: 'ThumbsDown, sans-serif' }}>
+                THC DOPE BUDZ
+              </h2>
+              <p className="text-lg" style={{ fontFamily: 'LemonMilk, sans-serif' }}>
+                Welcome to the Game
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+    </div>
+  );
+}
