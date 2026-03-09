@@ -22,6 +22,7 @@ import BudzPaySheet from "./components/BudzPaySheet";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/sonner";
 import { convertNFTsToUnitCards, type GrowerzUnitCard } from "./utils/GrowerzUnitSystem";
+import { extractSSOToken, verifySSOToken, listenForSSOMessages, notifyParentReady, isEmbedded } from "./utils/MobileBridge";
 
 const queryClient = new QueryClient();
 
@@ -246,6 +247,36 @@ function App() {
       })
       .catch(() => {});
   }, [user?.walletAddress]);
+
+  // SSO auto-login from Dope-Budz (URL param or postMessage)
+  useEffect(() => {
+    const attemptSSO = async (token: string) => {
+      const result = await verifySSOToken(token);
+      if (result.success && result.user) {
+        const userData = {
+          id: result.user.id,
+          username: result.user.displayName,
+          walletAddress: result.user.walletAddress,
+          gbuxBalance: result.user.gbuxBalance ?? 0,
+          budzBalance: result.user.budzBalance ?? 0,
+          loginMethod: 'sso',
+        };
+        setUser(userData);
+        localStorage.setItem('thc-clash-user', JSON.stringify(userData));
+        setScreen('hub');
+      }
+    };
+
+    // Path 1: ?sso= URL param
+    const ssoToken = extractSSOToken();
+    if (ssoToken) attemptSSO(ssoToken);
+
+    // Path 2: postMessage from parent iframe
+    const cleanup = listenForSSOMessages((token) => attemptSSO(token));
+    notifyParentReady();
+
+    return cleanup;
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setAppReady(true), 1000);

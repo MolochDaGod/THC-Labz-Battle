@@ -7,6 +7,7 @@
 import express from 'express';
 import { storage } from '../storage';
 import { dopeBudzAI } from '../dope-budz-ai-controller';
+import { BalanceSyncService } from '../../../shared/services/balance-sync';
 
 const router = express.Router();
 
@@ -257,6 +258,34 @@ router.get('/bridge/:walletAddress', async (req, res) => {
     res.json({ success: true, bridge });
   } catch {
     res.json({ success: false, bridge: null });
+  }
+});
+
+// Spend BUDZ earned in Dope Budz on CLASH purchases
+router.post('/spend-budz', async (req, res) => {
+  try {
+    const { walletAddress, amount, reason, referenceId } = req.body;
+    if (!walletAddress || !amount || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid wallet or amount' });
+    }
+    const db = storage.getDb();
+    if (!db) return res.status(503).json({ success: false, error: 'DB unavailable' });
+
+    const balanceSvc = new BalanceSyncService(db);
+    const result = await balanceSvc.debitBudz(
+      walletAddress,
+      amount,
+      'thc_clash',
+      'pack_purchase',
+      reason || 'CLASH purchase',
+      referenceId,
+    );
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    if (err.message?.includes('Insufficient')) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
