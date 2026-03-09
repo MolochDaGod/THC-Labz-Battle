@@ -7,3 +7,7 @@ vite.config.ts.*
 .vercel
 .env
 .env.*
+
+# Large 3D models (serve from CDN or local dev only)
+client/public/card-art/*.glb
+client/public/geometries/*.glb
