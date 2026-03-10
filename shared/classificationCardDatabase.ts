@@ -589,7 +589,7 @@ export const CLASSIFICATION_CARD_DATABASE: ClassificationCard[] = [
   {
     id: 'image-25',
     name: 'Raclavin The Dank King',
-    image: '/card-art/raclavin-the-dank-king.jpg',
+    image: '/card-art/raclavin-the-dank-king.png',
     cost: 7, attack: 300, health: 1100,
     rarity: 'legendary', class: 'tank', type: 'minion',
     subtype: 'beast',
