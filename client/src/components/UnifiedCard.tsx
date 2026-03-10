@@ -79,21 +79,40 @@ const UnifiedCard: React.FC<UnifiedCardProps> = ({
     return glows[rarity as keyof typeof glows] || glows.common;
   };
 
+  // Rarity gradient borders
+  const rarityBorder = {
+    legendary: 'linear-gradient(135deg, #FFD700, #FF8C00, #FFD700)',
+    epic:      'linear-gradient(135deg, #9966CC, #C084FC, #7C3AED)',
+    rare:      'linear-gradient(135deg, #4169E1, #60A5FA, #2563EB)',
+    uncommon:  'linear-gradient(135deg, #32CD32, #86EFAC, #16A34A)',
+    common:    'linear-gradient(135deg, #808080, #A0AEC0, #6B7280)',
+  }[card.rarity] || 'linear-gradient(135deg, #808080, #A0AEC0)';
+
   return (
-    <div className={`relative ${sizeClasses[size]} rounded-xl overflow-hidden ${
-      card.isActive !== false ? '' : 'opacity-50'
-    } shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:z-50 cursor-pointer border-2 group`}
-    style={{
-      backgroundColor: card.rarity === 'legendary' ? '#FFD700' :
-                      card.rarity === 'epic' ? '#9966CC' :
-                      card.rarity === 'rare' ? '#4169E1' :
-                      card.rarity === 'uncommon' ? '#32CD32' : '#808080',
-      borderColor: card.rarity === 'legendary' ? '#FFD700' :
-                   card.rarity === 'epic' ? '#9966CC' :
-                   card.rarity === 'rare' ? '#4169E1' :
-                   card.rarity === 'uncommon' ? '#32CD32' : '#808080',
-      boxShadow: `0 0 20px ${getRarityGlow(card.rarity)}`
-    }}>
+    <div
+      className={`relative ${sizeClasses[size]} rounded-xl ${
+        card.isActive !== false ? '' : 'opacity-50'
+      } shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:z-50 cursor-pointer group`}
+      style={{
+        padding: '2px',
+        background: rarityBorder,
+        boxShadow: `0 0 20px ${getRarityGlow(card.rarity)}`,
+        // Legendary gets a pulsing outer glow animation
+        animation: card.rarity === 'legendary' ? 'legendaryPulse 2s ease-in-out infinite' : undefined,
+      }}
+    >
+    {/* Inner card face */}
+    <div className="relative w-full h-full rounded-xl overflow-hidden bg-gray-900">
+    {/* Legendary shimmer sweep */}
+    {card.rarity === 'legendary' && (
+      <div
+        className="absolute inset-0 z-30 pointer-events-none rounded-xl"
+        style={{
+          background: 'linear-gradient(105deg, transparent 40%, rgba(255,215,0,0.18) 50%, transparent 60%)',
+          animation: 'shimmerSweep 2.4s ease-in-out infinite',
+        }}
+      />
+    )}
       
       {/* Hero Crown - Bottom left corner */}
       {isHero && (
@@ -104,36 +123,36 @@ const UnifiedCard: React.FC<UnifiedCardProps> = ({
         </div>
       )}
 
-      {/* Card Background Image - Full card coverage without cropping */}
+      {/* Card Background Image - Full coverage */}
       <div 
         className="absolute inset-0 rounded-xl overflow-hidden"
-        style={{ opacity: 0.8 }}
+        style={{ opacity: 0.85 }}
       >
         <img
           src={getCardBackground(card.rarity)}
           alt={`${card.rarity} background`}
-          className="w-full h-full object-contain rounded-xl"
-          style={{
-            objectFit: 'contain',
-            width: '100%',
-            height: '100%'
-          }}
+          className="w-full h-full rounded-xl"
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
         />
       </div>
       
       {/* Card Content - Full image with proper text scaling */}
       <div className="relative h-full flex flex-col p-2">
-        {/* Card Image - Larger for better visibility */}
+        {/* Card Art - transparent-bg aware (PNG support) */}
         <div className="flex-1 flex items-center justify-center relative mb-2 p-2">
           <img 
             src={card.image} 
             alt={card.name}
-            className="object-contain rounded-lg border-2 border-white/50 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl"
+            className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl"
             style={{ 
-              width: size === 'tiny' ? '70%' : size === 'small' ? '85%' : size === 'large' ? '90%' : '85%',
-              height: size === 'tiny' ? '70%' : size === 'small' ? '85%' : size === 'large' ? '90%' : '85%',
+              objectFit: 'contain',
+              width: size === 'tiny' ? '70%' : size === 'small' ? '85%' : '88%',
+              height: 'auto',
               minHeight: size === 'tiny' ? '25px' : size === 'small' ? '70px' : size === 'large' ? '180px' : '110px',
-              maxHeight: size === 'tiny' ? '35px' : size === 'small' ? '95px' : size === 'large' ? '240px' : '140px'
+              maxHeight: size === 'tiny' ? '35px' : size === 'small' ? '95px' : size === 'large' ? '240px' : '140px',
+              borderRadius: '6px',
+              filter: card.rarity === 'legendary' ? 'drop-shadow(0 0 6px rgba(255,215,0,0.6))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))'
             }}
             onError={(e) => {
               e.currentTarget.src = '/attached_assets/good_dealer.png';
@@ -219,7 +238,23 @@ const UnifiedCard: React.FC<UnifiedCardProps> = ({
             <div className="bg-green-600/80 text-white rounded-full w-2 h-2 border border-white/50"></div>
           </div>
         )}
+
+        {/* Abilities tooltip on hover (medium/large only) */}
+        {size !== 'tiny' && card.abilities && card.abilities.length > 0 && (
+          <div className="absolute inset-0 bg-black/85 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 flex flex-col justify-center p-2 pointer-events-none">
+            <div className="text-white font-bold text-center text-[9px] mb-1 truncate">{card.name}</div>
+            <div className="text-[8px] text-gray-300 text-center leading-tight space-y-0.5">
+              {card.abilities.slice(0, 3).map((ab, i) => (
+                <div key={i} className="text-green-300">• {ab}</div>
+              ))}
+            </div>
+            {card.description && size === 'large' && (
+              <div className="text-[7px] text-gray-400 text-center mt-1 leading-tight line-clamp-2">{card.description}</div>
+            )}
+          </div>
+        )}
       </div>
+    </div>  {/* end inner card face */}
 
       {/* Admin Controls */}
       {isAdmin && (

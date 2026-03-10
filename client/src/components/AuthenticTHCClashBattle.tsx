@@ -8,6 +8,7 @@ import { replayRecorder } from '../utils/BattleReplayRecorder';
 import { nftToGrowerzUnitCard } from '../utils/GrowerzUnitSystem';
 import { generateGrowerzSprite, getCachedSprite } from '../services/GrowerzBattleSprite';
 import { BattleEffectsEngine } from '../utils/BattleEffectsEngine';
+import { getBossForTheme, bossToUnit, checkBossEnrage, type BossCard } from '../utils/AiBossSystem';
 
 interface BattleCard {
   id: string;
@@ -208,6 +209,11 @@ export default function AuthenticTHCClashBattle({
   const [draggedCard, setDraggedCard] = useState<BattleCard | null>(null);
   const [gameboardLoaded, setGameboardLoaded] = useState(false);
   const [imageCache] = useState(new Map<string, HTMLImageElement>());
+  // Boss system state
+  const bossRef = useRef<BossCard | null>(null);
+  const bossSpawnedRef = useRef(false);
+  const [bossMessage, setBossMessage] = useState<string | null>(null);
+  const bossMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const growerzSpriteCache = useRef(new Map<string, string>());
   const [spriteGenStatus, setSpriteGenStatus] = useState<'idle' | 'generating' | 'done'>('idle');
   const fxEngineRef = useRef(new BattleEffectsEngine());
@@ -387,28 +393,52 @@ export default function AuthenticTHCClashBattle({
     setTowers(gameboardTowers);
   };
 
+  // ── BRIDGE CONSTANTS matching MapThemes.ts drawThemeFallback exactly ──
+  // LBX = CANVAS_WIDTH * 0.20 = 160, RBX = CANVAS_WIDTH * 0.80 = 640
+  // BRIDGE_W = 100 → left corridor [110, 210], right corridor [590, 690]
+  // RIVER: centerY ± 34 (RIVER_H = 68)
+  const BRIDGE_LEFT_X = CANVAS_WIDTH * 0.20;   // 160
+  const BRIDGE_RIGHT_X = CANVAS_WIDTH * 0.80;  // 640
+  const BRIDGE_HALF_W = 52;  // half-width of passable corridor (slightly wider than visual)
+  const RIVER_HALF_H = 38;   // half-height of river zone
+
+  const isInBridgeCorridor = (x: number) =>
+    (x >= BRIDGE_LEFT_X - BRIDGE_HALF_W && x <= BRIDGE_LEFT_X + BRIDGE_HALF_W) ||
+    (x >= BRIDGE_RIGHT_X - BRIDGE_HALF_W && x <= BRIDGE_RIGHT_X + BRIDGE_HALF_W);
+
+  const nearestBridgeX = (x: number) =>
+    Math.abs(x - BRIDGE_LEFT_X) <= Math.abs(x - BRIDGE_RIGHT_X)
+      ? BRIDGE_LEFT_X
+      : BRIDGE_RIGHT_X;
+
   // IMPROVED BRIDGE PATHFINDING - Authentic Clash Royale bridge positions
   const calculateOptimalPath = (unit: Unit, target: Unit | Tower) => {
     const centerY = CANVAS_HEIGHT / 2;
     const needsCrossing = (unit.y < centerY && target.y > centerY) || (unit.y > centerY && target.y < centerY);
     
     if (needsCrossing) {
-      // Bridge positions based on authentic Clash Royale layout (left and right side bridges)
-      const leftBridgeX = CANVAS_WIDTH * 0.20; // 20% from left (160px) - better bridge access
-      const rightBridgeX = CANVAS_WIDTH * 0.80; // 80% from left (640px) - better bridge access
-      const bridgeY = centerY; // Middle crossing
-      
-      // Calculate distances to both bridges
-      const leftBridgeDist = Math.abs(unit.x - leftBridgeX);
-      const rightBridgeDist = Math.abs(unit.x - rightBridgeX);
-      
-      // Choose closest bridge
-      const optimalBridgeX = leftBridgeDist < rightBridgeDist ? leftBridgeX : rightBridgeX;
-      
+      // Use the bridge on the same side as the unit's current X position for lane consistency
+      const leftBridgeDist = Math.abs(unit.x - BRIDGE_LEFT_X);
+      const rightBridgeDist = Math.abs(unit.x - BRIDGE_RIGHT_X);
+      // Respect lane assignment if set, otherwise pick closest bridge
+      const optimalBridgeX = (unit as any).lane === 'right'
+        ? BRIDGE_RIGHT_X
+        : leftBridgeDist <= rightBridgeDist ? BRIDGE_LEFT_X : BRIDGE_RIGHT_X;
+
+      // Waypoint: approach bridge entrance on unit's own side, then cross
+      const bridgeEntranceY = unit.y < centerY
+        ? centerY - RIVER_HALF_H - 10   // entering from top → stop just above river
+        : centerY + RIVER_HALF_H + 10;  // entering from bottom → stop just below river
+
+      const distToBridgeEntrance = Math.sqrt(
+        (optimalBridgeX - unit.x) ** 2 + (bridgeEntranceY - unit.y) ** 2
+      );
+
       return {
         needsBridge: true,
-        bridgePoint: { x: optimalBridgeX, y: bridgeY },
-        totalDistance: Math.sqrt((optimalBridgeX - unit.x) ** 2 + (bridgeY - unit.y) ** 2)
+        bridgePoint: { x: optimalBridgeX, y: bridgeEntranceY },
+        bridgeCrossPoint: { x: optimalBridgeX, y: centerY },
+        totalDistance: distToBridgeEntrance
       };
     }
     
@@ -416,6 +446,7 @@ export default function AuthenticTHCClashBattle({
     return {
       needsBridge: false,
       bridgePoint: null,
+      bridgeCrossPoint: null,
       totalDistance: Math.sqrt((target.x - unit.x) ** 2 + (target.y - unit.y) ** 2)
     };
   };
@@ -727,7 +758,7 @@ export default function AuthenticTHCClashBattle({
         ctx.fillStyle = botGrad;
         ctx.fillRect(0, CANVAS_HEIGHT - 80, CANVAS_WIDTH, 80);
       } else {
-        drawThemeFallback(ctx, activeTheme, CANVAS_WIDTH, CANVAS_HEIGHT);
+        drawThemeFallback(ctx, activeTheme, CANVAS_WIDTH, CANVAS_HEIGHT, Date.now());
       }
 
       // Draw towers with authentic images and dynamic health states
@@ -1362,9 +1393,52 @@ export default function AuthenticTHCClashBattle({
     };
   }, [gameState.isPlaying, gameboardLoaded]);
 
+  // ── BOSS SPAWN by time (fallback: 90s if no tower destroyed) ──
+  const gameStartTimeRef = useRef<number>(0);
+  useEffect(() => {
+    if (gameState.isPlaying) gameStartTimeRef.current = Date.now();
+  }, [gameState.isPlaying]);
+
   // Enhanced game logic with proper Clash Royale mechanics
   const updateGameLogic = () => {
     const now = Date.now();
+
+    // Time-based boss spawn fallback (90 seconds into battle)
+    if (
+      gameState.isPlaying &&
+      !bossSpawnedRef.current &&
+      gameStartTimeRef.current > 0 &&
+      now - gameStartTimeRef.current > 90_000
+    ) {
+      bossSpawnedRef.current = true;
+      const boss = getBossForTheme(selectedThemeIdRef.current);
+      bossRef.current = boss;
+      const bossUnit = bossToUnit(boss, CANVAS_WIDTH, CANVAS_HEIGHT, false);
+      setUnits(prev => [...prev, bossUnit as any]);
+      setBossMessage(boss.spawnMessage);
+      if (bossMessageTimerRef.current) clearTimeout(bossMessageTimerRef.current);
+      bossMessageTimerRef.current = setTimeout(() => setBossMessage(null), 5000);
+    }
+
+    // Boss enrage check — scan units for boss, check HP, apply enrage
+    if (bossRef.current && !bossRef.current.enrageTriggered) {
+      const bossUnit = unitsRef.current.find(u => (u as any).isBoss);
+      if (bossUnit) {
+        bossRef.current.health = bossUnit.health;
+        const enraged = checkBossEnrage(bossRef.current);
+        if (enraged) {
+          // Apply enraged stats to the live unit
+          setUnits(prev => prev.map(u =>
+            (u as any).isBoss
+              ? { ...u, damage: bossRef.current!.attack, speed: bossRef.current!.speed, attackCooldown: bossRef.current!.attackCooldown }
+              : u
+          ));
+          setBossMessage(bossRef.current.phaseLabel);
+          if (bossMessageTimerRef.current) clearTimeout(bossMessageTimerRef.current);
+          bossMessageTimerRef.current = setTimeout(() => setBossMessage(null), 4000);
+        }
+      }
+    }
     
     // Enhanced projectile system with error handling and cleanup
     setProjectiles(prev => prev.map(projectile => {
@@ -1437,6 +1511,17 @@ export default function AuthenticTHCClashBattle({
                     playerCrowns: projectile.isPlayer ? prev.playerCrowns + 1 : prev.playerCrowns,
                     enemyCrowns: !projectile.isPlayer ? prev.enemyCrowns + 1 : prev.enemyCrowns
                   }));
+                  // ── BOSS SPAWN on first tower destruction ──
+                  if (!bossSpawnedRef.current && tower.type !== 'king') {
+                    bossSpawnedRef.current = true;
+                    const boss = getBossForTheme(selectedThemeIdRef.current);
+                    bossRef.current = boss;
+                    const bossUnit = bossToUnit(boss, CANVAS_WIDTH, CANVAS_HEIGHT, false);
+                    setUnits(prev => [...prev, bossUnit as any]);
+                    setBossMessage(boss.spawnMessage);
+                    if (bossMessageTimerRef.current) clearTimeout(bossMessageTimerRef.current);
+                    bossMessageTimerRef.current = setTimeout(() => setBossMessage(null), 5000);
+                  }
                 }
                 return { ...tower, health: newHealth, destroyed: newHealth === 0 };
               }
@@ -1815,18 +1900,26 @@ export default function AuthenticTHCClashBattle({
             
             let moveX, moveY;
             if (directPath.needsBridge) {
-              const bridgeTarget = directPath.bridgePoint;
+              // ── Phase 1: Navigate to bridge entrance on own side ──
+              const bridgeTarget = directPath.bridgePoint; // entrance waypoint
               if (bridgeTarget) {
-                const bridgeDistance = Math.sqrt((bridgeTarget.x - u.x) ** 2 + (bridgeTarget.y - u.y) ** 2);
-                if (bridgeDistance < 30) {
-                  moveX = (dx / distance) * unitSpeed;
-                  moveY = (dy / distance) * unitSpeed;
+                const bridgeEntranceDist = Math.sqrt(
+                  (bridgeTarget.x - u.x) ** 2 + (bridgeTarget.y - u.y) ** 2
+                );
+                if (bridgeEntranceDist > 20) {
+                  // Step 1: move laterally + slightly toward river entrance
+                  const bDx = bridgeTarget.x - u.x;
+                  const bDy = bridgeTarget.y - u.y;
+                  const bDist = Math.sqrt(bDx * bDx + bDy * bDy);
+                  moveX = (bDx / bDist) * unitSpeed;
+                  moveY = (bDy / bDist) * unitSpeed;
                 } else {
-                  const bridgeDx = bridgeTarget.x - u.x;
-                  const bridgeDy = bridgeTarget.y - u.y;
-                  const bridgeDist = Math.sqrt(bridgeDx * bridgeDx + bridgeDy * bridgeDy);
-                  moveX = (bridgeDx / bridgeDist) * unitSpeed;
-                  moveY = (bridgeDy / bridgeDist) * unitSpeed;
+                  // Step 2: at entrance — drive straight across river along bridge X
+                  const crossTarget = directPath.bridgeCrossPoint || { x: bridgeTarget.x, y: CANVAS_HEIGHT / 2 };
+                  const cDx = crossTarget.x - u.x;
+                  const cDy = dx; // continue toward target Y direction  
+                  moveX = (bridgeTarget.x - u.x) * 0.1; // snap to bridge X gently
+                  moveY = (u.y < CANVAS_HEIGHT / 2 ? 1 : -1) * unitSpeed * 1.4; // push through river
                 }
               } else {
                 moveX = (dx / distance) * unitSpeed;
@@ -1850,27 +1943,22 @@ export default function AuthenticTHCClashBattle({
               u.advanceTarget = null;
               u.target = null;
             }
-            
+
+            // ── RIVER GATE: block passage except through bridge corridors ──
             const centerY = CANVAS_HEIGHT / 2;
-            const isInMiddleZone = Math.abs(newY - centerY) < 40;
-            const xPercent = (newX / CANVAS_WIDTH) * 100;
-            const isBlockedArea = xPercent > 25 && xPercent < 75;
-            
-            if (isInMiddleZone && isBlockedArea) {
-              const leftBridge = CANVAS_WIDTH * 0.15;
-              const rightBridge = CANVAS_WIDTH * 0.85;
-              const chosenBridge = u.x < CANVAS_WIDTH / 2 ? leftBridge : rightBridge;
-              
-              const bDx = chosenBridge - u.x;
-              const bDy = centerY - u.y;
-              const bridgeDistance = Math.sqrt(bDx * bDx + bDy * bDy);
-              
-              if (bridgeDistance > 25) {
-                newX = u.x + (bDx / bridgeDistance) * unitSpeed;
-                newY = u.y + (bDy / bridgeDistance) * unitSpeed;
-              } else {
-                newY += (u.isPlayer ? -1 : 1) * unitSpeed * 2;
+            const crossingRiver = (
+              (u.y < centerY - RIVER_HALF_H && newY >= centerY - RIVER_HALF_H) ||
+              (u.y > centerY + RIVER_HALF_H && newY <= centerY + RIVER_HALF_H)
+            );
+            if (crossingRiver && !isInBridgeCorridor(newX)) {
+              // Block crossing — redirect to nearest bridge
+              const bx = nearestBridgeX(newX);
+              const bDx = bx - u.x;
+              const bDist = Math.abs(bDx);
+              if (bDist > 5) {
+                newX = u.x + (bDx / bDist) * unitSpeed;
               }
+              newY = u.y; // stay on same side until aligned with bridge
             }
             
             u.x = Math.max(25, Math.min(CANVAS_WIDTH - 25, newX));
@@ -2630,6 +2718,56 @@ export default function AuthenticTHCClashBattle({
               Tap battlefield to deploy {selectedCard.name}
             </div>
           )}
+
+          {/* ── BOSS ANNOUNCEMENT BANNER ── */}
+          <AnimatePresence>
+            {bossMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -40, scale: 0.85 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+                className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+              >
+                <div className="bg-black/90 border-2 border-yellow-400 rounded-xl px-6 py-3 text-center shadow-2xl shadow-yellow-500/30">
+                  <div className="text-yellow-300 font-extrabold text-lg tracking-wide drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]">
+                    {bossMessage}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── BOSS HEALTH BAR ── */}
+          {bossRef.current && (() => {
+            const bossUnit = units.find(u => (u as any).isBoss);
+            if (!bossUnit) return null;
+            const hp = bossUnit.health / bossUnit.maxHealth;
+            const boss = bossRef.current!;
+            return (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-72 z-40 pointer-events-none">
+                <div className="bg-black/85 border border-yellow-500/60 rounded-lg px-3 py-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-yellow-300 font-bold text-xs tracking-wide">
+                      {(boss as any).bossEmoji || '👹'} {boss.name}
+                    </span>
+                    <span className={`text-xs font-bold ${ boss.isEnraged ? 'text-red-400 animate-pulse' : 'text-gray-300' }`}>
+                      {boss.isEnraged ? '🔥 ENRAGED' : 'BOSS'}
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${ boss.isEnraged ? 'bg-gradient-to-r from-red-600 to-orange-500' : 'bg-gradient-to-r from-yellow-500 to-yellow-300' }`}
+                      style={{ width: `${Math.max(0, hp * 100).toFixed(1)}%` }}
+                    />
+                  </div>
+                  <div className="text-gray-400 text-[10px] text-right mt-0.5">
+                    {Math.round(bossUnit.health).toLocaleString()} / {bossUnit.maxHealth.toLocaleString()} HP
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -2716,6 +2854,7 @@ export default function AuthenticTHCClashBattle({
             <div className="flex justify-center gap-4">
               {[0, 1, 2, 3].map((slotIndex) => {
                 const card = currentHand[slotIndex];
+                const canAfford = card && gameState.playerElixir >= card.cost;
                 return (
                   <div
                     key={`slot-${slotIndex}`}
@@ -2723,6 +2862,10 @@ export default function AuthenticTHCClashBattle({
                   >
                     {card ? (
                       <motion.div
+                        key={card.id}
+                        initial={{ y: 60, opacity: 0, scale: 0.7 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 280, damping: 20, delay: slotIndex * 0.06 }}
                         draggable
                         onDragStart={() => handleCardDragStart(card)}
                         onDragEnd={handleCardDragEnd}
@@ -2733,13 +2876,17 @@ export default function AuthenticTHCClashBattle({
                           border-2 transition-all duration-300 rounded-lg overflow-hidden
                           ${selectedCard?.id === card.id
                             ? 'opacity-100 border-yellow-400 scale-110 shadow-lg shadow-yellow-400/40 ring-2 ring-yellow-300'
-                            : gameState.playerElixir >= card.cost 
+                            : canAfford
                               ? 'opacity-100 border-green-400 hover:border-green-300 hover:scale-110 shadow-lg shadow-green-400/20' 
                               : 'opacity-60 border-gray-600 cursor-not-allowed'
                           }
                         `}
-                        whileHover={{ y: -5 }}
-                        whileTap={{ scale: 0.95 }}
+                        animate={canAfford ? {
+                          y: 0,
+                          boxShadow: ['0 0 0px rgba(74,222,128,0)', '0 0 12px rgba(74,222,128,0.6)', '0 0 0px rgba(74,222,128,0)'],
+                        } : { y: 0 }}
+                        whileHover={canAfford ? { y: -8, scale: 1.08 } : {}}
+                        whileTap={{ scale: 0.93 }}
                       >
                         <img
                           src={card.image}

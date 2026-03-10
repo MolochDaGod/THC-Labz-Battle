@@ -203,6 +203,58 @@ function drawRiverShimmer(
   ctx.globalAlpha = 1;
 }
 
+function drawRiverShimmerAnimated(
+  ctx: CanvasRenderingContext2D,
+  riverColor: string,
+  width: number,
+  riverTop: number,
+  riverH: number,
+  now: number
+) {
+  const t = now / 1000; // seconds
+  const lightColor = adjustHex(riverColor, 50);
+
+  // ── Flowing highlight streaks ──
+  const shimmerRows = 4;
+  const shimmerSpacing = riverH / shimmerRows;
+  for (let row = 0; row < shimmerRows; row++) {
+    const sy = riverTop + shimmerSpacing * row + shimmerSpacing * 0.3;
+    // Each streak scrolls left-to-right at its own speed
+    const flowSpeed = 60 + row * 22;
+    const offset = ((t * flowSpeed) % (width + 80)) - 40;
+    for (let i = 0; i < 6; i++) {
+      const sx = (offset + i * (width / 5)) % (width + 80) - 40;
+      const len = 18 + Math.sin(t * 1.5 + i) * 8;
+      const alpha = 0.08 + 0.08 * Math.abs(Math.sin(t * 2 + row + i));
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 2, len, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ── Floating bubbles ──
+  const bubbleCount = 7;
+  for (let i = 0; i < bubbleCount; i++) {
+    // Each bubble has a pseudo-random position derived from its index + time
+    const cycleLen = 4 + i * 0.7;
+    const phase = (t / cycleLen + i / bubbleCount) % 1;
+    const bx = (i * (width / bubbleCount) + (i % 2 === 0 ? t * 18 : -t * 14)) % width;
+    const by = riverTop + riverH - phase * (riverH + 10);
+    const radius = 2 + (i % 3);
+    const alpha = 0.12 + 0.1 * Math.sin(t * 3 + i);
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(bx < 0 ? bx + width : bx, by, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 1;
+}
+
 function drawBridge(
   ctx: CanvasRenderingContext2D,
   theme: MapTheme,
@@ -520,7 +572,8 @@ export function drawThemeFallback(
   ctx: CanvasRenderingContext2D,
   theme: MapTheme,
   width: number,
-  height: number
+  height: number,
+  now: number = Date.now()
 ) {
   const TILE = 32;
   const centerY = height / 2;
@@ -576,8 +629,8 @@ export function drawThemeFallback(
   ctx.fillRect(0, riverTop, width, RIVER_H);
   ctx.globalAlpha = 1;
 
-  // River shimmer
-  drawRiverShimmer(ctx, theme.riverColor, width, riverTop, RIVER_H);
+  // River shimmer — time-based flowing animation
+  drawRiverShimmerAnimated(ctx, theme.riverColor, width, riverTop, RIVER_H, now);
 
   // River bank edges (raised stone/dirt)
   ctx.fillStyle = adjustHex(theme.bridgeColor, -5);
