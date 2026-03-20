@@ -1,0 +1,342 @@
+/* THC CLASH Mobile Optimizations - Enhanced Device Detection & Touch Interface */
+
+/* ─── Scrollable screen wrapper ─────────────────────────────────────────────
+   Use .screen-scroll on any full-page menu/list screen so it scrolls
+   independently inside #root while preventing rubber-band.
+   ─────────────────────────────────────────────────────────────────────────── */
+.screen-scroll {
+  height: 100%;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling         */
+  overscroll-behavior-y: contain;    /* stop pull-to-refresh inside app */
+}
+
+/* ─── Non-scrollable game screen wrapper ─────────────────────────────────────
+   Use .screen-fixed on the battle canvas / any full-page game scene
+   that must never scroll.
+   ─────────────────────────────────────────────────────────────────────────── */
+.screen-fixed {
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;          /* disable all browser gestures */
+  overscroll-behavior: none;
+}
+
+/* ─── Horizontal scroll row (card hands, token bars, etc.) ──────────────────
+   Snap to items, hide the scrollbar, allow horizontal swiping only.
+   ─────────────────────────────────────────────────────────────────────────── */
+.scroll-x-snap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE/Edge */
+}
+.scroll-x-snap::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+.scroll-x-snap > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Device Detection Classes */
+.mobile-device {
+  --card-size: 80px;
+  --gap-size: 8px;
+  --padding-sm: 8px;
+  --padding-md: 12px;
+  --text-scale: 0.9;
+}
+
+.tablet-device {
+  --card-size: 100px;
+  --gap-size: 12px;
+  --padding-sm: 12px;
+  --padding-md: 16px;
+  --text-scale: 1.0;
+}
+
+.desktop-device {
+  --card-size: 120px;
+  --gap-size: 16px;
+  --padding-sm: 16px;
+  --padding-md: 24px;
+  --text-scale: 1.1;
+}
+
+.web3-browser {
+  /* Specific optimizations for Web3 mobile browsers */
+  --touch-target: 44px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+}
+
+/* Portrait/Landscape Orientation */
+.portrait-mode {
+  --layout-direction: column;
+  --card-grid-cols: 3;
+  --max-cards-row: 4;
+}
+
+.landscape-mode {
+  --layout-direction: row;
+  --card-grid-cols: 6;
+  --max-cards-row: 8;
+}
+
+/* High DPI / Retina Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .retina-device {
+    --text-sharpness: optimizeLegibility;
+    --icon-rendering: crisp-edges;
+  }
+}
+
+/* Touch-Friendly Interface Elements */
+.touch-optimized {
+  /* Minimum touch target sizes */
+  min-height: var(--touch-target, 44px);
+  min-width: var(--touch-target, 44px);
+  
+  /* Enhanced touch feedback */
+  -webkit-tap-highlight-color: rgba(16, 185, 129, 0.3);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-card {
+  /* Card-specific touch optimizations */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  transform-origin: center;
+}
+
+.touch-card:active {
+  transform: scale(0.95);
+}
+
+.touch-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+/* Mobile-First Layout Spacing */
+.mobile-container {
+  padding: var(--padding-sm);
+  gap: var(--gap-size);
+}
+
+.mobile-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--card-grid-cols), 1fr);
+  gap: var(--gap-size);
+  padding: var(--padding-sm);
+}
+
+.mobile-card-size {
+  width: var(--card-size);
+  height: calc(var(--card-size) * 1.4);
+}
+
+/* Text Scaling for Different Devices */
+.responsive-text {
+  font-size: calc(1rem * var(--text-scale));
+  line-height: 1.4;
+}
+
+.mobile-title {
+  font-size: calc(1.5rem * var(--text-scale));
+  font-weight: 700;
+}
+
+.mobile-subtitle {
+  font-size: calc(1.2rem * var(--text-scale));
+  font-weight: 600;
+}
+
+.mobile-body {
+  font-size: calc(1rem * var(--text-scale));
+}
+
+.mobile-caption {
+  font-size: calc(0.875rem * var(--text-scale));
+}
+
+/* Enhanced Button Styles for Touch */
+.mobile-button {
+  min-height: var(--touch-target, 44px);
+  padding: var(--padding-sm) var(--padding-md);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: calc(1rem * var(--text-scale));
+  
+  /* Touch feedback */
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-button:active {
+  transform: scale(0.98);
+}
+
+/* Modal/Dialog Optimizations */
+.mobile-modal {
+  max-width: 95vw;
+  max-height: 90vh;
+  padding: var(--padding-md);
+  
+  /* Safe area handling */
+  padding-bottom: calc(var(--padding-md) + var(--safe-area-bottom));
+  padding-top: calc(var(--padding-md) + var(--safe-area-top));
+}
+
+/* Card Grid Responsive Behavior */
+@media (max-width: 640px) {
+  .mobile-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .mobile-card-size {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3/4;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .mobile-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* Battle System Mobile Optimizations */
+.mobile-battle-canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mobile-card-hand {
+  height: 120px;
+  padding: var(--padding-sm);
+  gap: var(--gap-size);
+  
+  /* Safe area for mobile browsers */
+  padding-bottom: calc(var(--padding-sm) + var(--safe-area-bottom));
+}
+
+/* Tab Navigation Mobile Optimizations */
+.mobile-tabs {
+  min-height: var(--touch-target, 44px);
+  padding: 0 var(--padding-sm);
+}
+
+.mobile-tab-button {
+  min-width: var(--touch-target, 44px);
+  min-height: var(--touch-target, 44px);
+  padding: var(--padding-sm);
+  font-size: calc(0.875rem * var(--text-scale));
+}
+
+/* Balance Display Mobile */
+.mobile-balance {
+  font-size: calc(0.75rem * var(--text-scale));
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+/* Animation Performance for Mobile */
+@media (prefers-reduced-motion: no-preference) {
+  .mobile-animate {
+    will-change: transform, opacity;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-animate {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Solana Wallet Browser Specific Fixes */
+.web3-browser .mobile-container {
+  /* Solana mobile wallet browser adjustments */
+  padding-bottom: calc(var(--padding-md) + 20px);
+}
+
+.web3-browser .mobile-modal {
+  /* Phantom/Solflare wallet browser adjustments */
+  z-index: 9999;
+  position: fixed;
+}
+
+/* Performance Optimizations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Dark Mode Optimizations for Mobile */
+@media (prefers-color-scheme: dark) {
+  .mobile-container {
+    background: rgba(0, 0, 0, 0.9);
+  }
+  
+  .mobile-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .mobile-button {
+    border: 2px solid currentColor;
+  }
+  
+  .mobile-card {
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Landscape Mobile Layout */
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-container {
+    padding: calc(var(--padding-sm) / 2);
+  }
+  
+  .mobile-card-hand {
+    height: 80px;
+  }
+  
+  .mobile-modal {
+    max-height: 85vh;
+  }
+}
+
+/* Device-Specific Viewport Handling */
+@supports (height: 100dvh) {
+  .mobile-full-height {
+    height: 100dvh;
+  }
+}
+
+@supports not (height: 100dvh) {
+  .mobile-full-height {
+    height: 100vh;
+  }
+}

@@ -1,0 +1,30 @@
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.breakpoints
+.config/
+.local/
+.cache/
+.replit
+replit.nix
+
+# Build output
+*.log
+*.tsbuildinfo
+
+# OS junk
+desktop.ini
+
+# Archive of old files (already in git history)
+archive/

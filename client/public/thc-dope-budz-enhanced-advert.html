@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THC Dope Budz - The Ultimate Web3 Cannabis Empire Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a4a2a 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
+            position: relative;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(34,197,94,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            animation: drift 20s ease-in-out infinite;
+        }
+        
+        @keyframes drift {
+            0%, 100% { transform: translateX(0px) translateY(0px); }
+            50% { transform: translateX(20px) translateY(-10px); }
+        }
+        
+        .hero-content {
+            z-index: 2;
+            position: relative;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #22c55e 0%, #84cc16 50%, #eab308 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+        
+        .hero .subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            color: #a3a3a3;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-card {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(34, 197, 94, 0.6);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #22c55e, #84cc16);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #a3a3a3;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            padding: 1.25rem 3rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(34, 197, 94, 0.4);
+        }
+        
+        .features {
+            padding: 6rem 0;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, #22c55e, #84cc16);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 3rem;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #22c55e;
+        }
+        
+        .feature-description {
+            color: #a3a3a3;
+            line-height: 1.6;
+        }
+        
+        .rewards {
+            padding: 6rem 0;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(132, 204, 22, 0.1) 100%);
+        }
+        
+        .rewards h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .rewards-subtitle {
+            text-align: center;
+            color: #a3a3a3;
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .rewards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        
+        .reward-tier {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .reward-tier.gold {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+        }
+        
+        .reward-tier.silver {
+            border-color: #6b7280;
+            background: rgba(107, 114, 128, 0.1);
+        }
+        
+        .reward-tier.bronze {
+            border-color: #d97706;
+            background: rgba(217, 119, 6, 0.1);
+        }
+        
+        .reward-amount {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .reward-tier.gold .reward-amount { color: #fbbf24; }
+        .reward-tier.silver .reward-amount { color: #6b7280; }
+        .reward-tier.bronze .reward-amount { color: #d97706; }
+        
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 3rem 0;
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .footer-link {
+            color: #22c55e;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-link:hover {
+            color: #84cc16;
+        }
+        
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="floating">🍃 THC Dope Budz</h1>
+                <p class="subtitle">The most immersive Web3 cannabis empire game with real blockchain rewards, NFT-powered AI assistants, and up to 1,400 BUDZ tokens per round!</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number pulse">70</span>
+                        <span class="stat-label">Achievements Available</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number pulse">1,400</span>
+                        <span class="stat-label">Max BUDZ Per Round</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number pulse">16</span>
+                        <span class="stat-label">Unique Trading Cities</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number pulse">24/7</span>
+                        <span class="stat-label">Daily Rewards</span>
+                    </div>
+                </div>
+                
+                <a href="https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev" class="cta-button">
+                    🚀 Play Now & Earn BUDZ
+                    <span>→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="features">
+        <div class="container">
+            <h2>Revolutionary Game Features</h2>
+            <div class="features-grid">
+                <div class="feature-card floating">
+                    <span class="feature-icon">🤖</span>
+                    <h3 class="feature-title">NFT-Gated AI Assistant</h3>
+                    <p class="feature-description">THC GROWERZ NFT holders unlock "The Plug" - a personalized AI assistant with strain-specific insights, market analysis, and trading strategies tailored to your playstyle.</p>
+                </div>
+                
+                <div class="feature-card floating">
+                    <span class="feature-icon">🎯</span>
+                    <h3 class="feature-title">70 Achievement System</h3>
+                    <p class="feature-description">Master the game through comprehensive challenges. From "Chain Smoker" (15 smoking days) to "Empire Builder" (max reputation), earn up to 1,400 BUDZ tokens per completed round.</p>
+                </div>
+                
+                <div class="feature-card floating">
+                    <span class="feature-icon">🌍</span>
+                    <h3 class="feature-title">16 Dynamic Cities</h3>
+                    <p class="feature-description">Trade across diverse markets from Miami's premium rates to Detroit's industrial prices. Each city features unique risk levels, specialties, and profit opportunities.</p>
+                </div>
+                
+                <div class="feature-card floating">
+                    <span class="feature-icon">🎵</span>
+                    <h3 class="feature-title">Adaptive Soundtrack</h3>
+                    <p class="feature-description">Experience dynamic music that responds to your heat level, time of day, and game events. From calm trading beats to intense police chase themes.</p>
+                </div>
+                
+                <div class="feature-card floating">
+                    <span class="feature-icon">💎</span>
+                    <h3 class="feature-title">Multi-Token Economy</h3>
+                    <p class="feature-description">Earn and trade BUDZ, GBUX, and THC LABZ tokens through elite gameplay. Real Solana blockchain integration with authentic token contracts and live price feeds.</p>
+                </div>
+                
+                <div class="feature-card floating">
+                    <span class="feature-icon">🔥</span>
+                    <h3 class="feature-title">Cannabis Mechanics</h3>
+                    <p class="feature-description">Smoke premium strains for gameplay buffs! Each strain provides unique analytical improvements and enhanced market insights based on THC GROWERZ traits.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="rewards">
+        <div class="container">
+            <h2>🏆 Daily Championship Rewards</h2>
+            <p class="rewards-subtitle">Compete for real BUDZ tokens with daily payouts at midnight CST</p>
+            
+            <div class="rewards-grid">
+                <div class="reward-tier gold">
+                    <div class="reward-amount">1,000 BUDZ</div>
+                    <h4>🥇 Top 3 Players</h4>
+                    <p>Daily Champions - Elite performance deserves elite rewards</p>
+                </div>
+                
+                <div class="reward-tier silver">
+                    <div class="reward-amount">500 BUDZ</div>
+                    <h4>🥈 Ranks 4-7</h4>
+                    <p>Strong Performers - Consistent excellence pays off</p>
+                </div>
+                
+                <div class="reward-tier bronze">
+                    <div class="reward-amount">100 BUDZ</div>
+                    <h4>🥉 Ranks 8-10</h4>
+                    <p>Top 10 Club - Join the cannabis trading elite</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev" class="cta-button">
+                    💰 Start Earning Today
+                    <span>→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://discord.gg/Eu4w7MfAKh" class="footer-link">Join Discord</a>
+                <a href="https://fb72299d-1a72-4e29-b287-00d4857c6c32-00-2m86q42xxaggo.janeway.replit.dev" class="footer-link">Play Game</a>
+                <a href="#" class="footer-link">Leaderboard</a>
+                <a href="#" class="footer-link">NFT Collection</a>
+            </div>
+            <p style="color: #666; font-size: 0.9rem;">
+                © 2025 THC Labz. Experience the ultimate Web3 cannabis empire game.<br>
+                Play responsibly. Must be 21+ in legal jurisdictions.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

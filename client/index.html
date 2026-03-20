@@ -1,0 +1,189 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="THC Dope Warz" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <title>THC Dope Warz</title>
+    
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- Puter.js — free AI image generation -->
+    <script src="https://js.puter.com/v2/"></script>
+    <!-- Load AdMob configuration -->
+    <script src="/admob-config.js"></script>
+    
+    <!-- Basic error suppression for extension conflicts -->
+    <script>
+      // Simple error suppression to prevent extension conflicts
+      (function() {
+        'use strict';
+        
+        function initializeProtection() {
+          console.log('🛡️ THC Labz - Basic protection initialized');
+          
+          // Suppress common extension errors
+          const originalErrorHandler = window.onerror;
+          window.onerror = function(message, source, lineno, colno, error) {
+            const msg = String(message);
+            if (msg.includes('evmAsk') || 
+                msg.includes('Cannot redefine property') || 
+                msg.includes('Could not establish connection') ||
+                msg.includes('Receiving end does not exist') ||
+                msg.includes('contentScript.js')) {
+              console.log('🛡️ Suppressed extension error');
+              return true;
+            }
+            return originalErrorHandler ? originalErrorHandler(message, source, lineno, colno, error) : false;
+          };
+          
+          window.addEventListener('error', function(e) {
+            if (e.message && (
+              e.message.includes('evmAsk') || 
+              e.message.includes('Cannot redefine property') ||
+              e.message.includes('Could not establish connection') ||
+              e.message.includes('Receiving end does not exist') ||
+              e.message.includes('contentScript.js')
+            )) {
+              console.log('🛡️ Suppressed extension error');
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return false;
+            }
+          }, true);
+          
+          window.addEventListener('unhandledrejection', function(e) {
+            const reason = String(e.reason);
+            if (reason.includes('evmAsk') || 
+                reason.includes('Could not establish connection')) {
+              console.log('🛡️ Suppressed unhandled rejection');
+              e.preventDefault();
+            }
+          });
+          
+          console.log('🛡️ THC Labz - Protection system active');
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeProtection, 100);
+          });
+        } else {
+          setTimeout(initializeProtection, 100);
+        }
+      })();
+    </script>
+
+    
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        /* Prevent document-level scroll — the app handles its own */
+        overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        font-family: 'LEMON MILK', 'Arial Black', sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        /* Prevent iOS/Android rubber-band scroll on the body */
+        overflow: hidden;
+        overscroll-behavior: none;
+        background-color: #000000;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+
+      /* iOS safe-area — apply to root, not body, so it doesn't fight overflow:hidden */
+      #root {
+        width: 100%;
+        /* Use dvh (dynamic viewport height) so mobile browser chrome doesn't clip content */
+        height: 100dvh;
+        /* Fallback for browsers that don't support dvh */
+        height: 100vh;
+        /* Allow app screens to scroll; game screens set overflow:hidden on their own container */
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* iOS momentum scrolling */
+        -webkit-overflow-scrolling: touch;
+        /* Stop rubber-band at list ends */
+        overscroll-behavior-y: none;
+        /* Safe-area insets for notched phones */
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      /* iOS Safari: dvh not supported — use fill-available */
+      @supports (-webkit-touch-callout: none) {
+        #root {
+          height: -webkit-fill-available;
+        }
+      }
+
+      /* Prevent zoom on input focus — iOS requirement is font-size >= 16px */
+      input, textarea, select {
+        font-size: 16px !important;
+        -webkit-appearance: none;
+      }
+
+      /* Canvas — game canvases handle their own sizing */
+      canvas {
+        display: block;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        user-select: none;
+        -webkit-user-select: none;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: optimize-contrast;
+      }
+
+      /* Buttons — minimum 44×44px touch target (Apple HIG / WCAG 2.5.5) */
+      button, [role="button"] {
+        min-height: 44px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        cursor: pointer;
+      }
+
+      /* Smooth font rendering on high-DPI displays */
+      @media screen and (-webkit-min-device-pixel-ratio: 2) {
+        * {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+      }
+
+      /* Landscape mobile — tighten vertical space */
+      @media (orientation: landscape) and (max-height: 500px) {
+        #root {
+          overflow-y: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
