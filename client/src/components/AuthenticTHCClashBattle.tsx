@@ -2864,7 +2864,12 @@ export default function AuthenticTHCClashBattle({
                       <motion.div
                         key={card.id}
                         initial={{ y: 60, opacity: 0, scale: 0.7 }}
-                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        animate={canAfford ? {
+                          y: 0,
+                          opacity: 1,
+                          scale: 1,
+                          boxShadow: ['0 0 0px rgba(74,222,128,0)', '0 0 12px rgba(74,222,128,0.6)', '0 0 0px rgba(74,222,128,0)'],
+                        } : { y: 0, opacity: 1, scale: 1 }}
                         transition={{ type: 'spring', stiffness: 280, damping: 20, delay: slotIndex * 0.06 }}
                         draggable
                         onDragStart={() => handleCardDragStart(card)}
@@ -2881,10 +2886,6 @@ export default function AuthenticTHCClashBattle({
                               : 'opacity-60 border-gray-600 cursor-not-allowed'
                           }
                         `}
-                        animate={canAfford ? {
-                          y: 0,
-                          boxShadow: ['0 0 0px rgba(74,222,128,0)', '0 0 12px rgba(74,222,128,0.6)', '0 0 0px rgba(74,222,128,0)'],
-                        } : { y: 0 }}
                         whileHover={canAfford ? { y: -8, scale: 1.08 } : {}}
                         whileTap={{ scale: 0.93 }}
                       >

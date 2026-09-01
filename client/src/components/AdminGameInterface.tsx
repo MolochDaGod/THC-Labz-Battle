@@ -1811,6 +1811,7 @@ export default function AdminGameInterface({ onNavigate, user, onLogout }: Admin
           box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
       `}</style>
+      </div>
     </div>
   );
 }

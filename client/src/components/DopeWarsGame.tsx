@@ -12275,7 +12275,6 @@ function DopeWarsGame({}: DopeWarsGameProps = {}) {
         }}
       />
 
-      </div>
     </div>
   );
 }

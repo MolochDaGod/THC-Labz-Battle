@@ -1197,11 +1197,7 @@ export default function ThePlugAssistant({ connectedWallet, gameState, onMission
               );
             })}
           </div>
-        </div>lassName="block text-xs mt-1">🔒</span>}
-                </button>
-              );
-            })}
-          </div>
+        </div>
 
           {/* Content */}
           <div className="p-4 max-h-64 overflow-y-auto">

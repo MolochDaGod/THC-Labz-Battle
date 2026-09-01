@@ -253,7 +253,7 @@ function getAuthenticTrait(traitType: string, index: number): string {
 }
 
 // Load all authentic THC GROWERZ NFTs from your provided hash list ONLY
-export function generateAllGrowerNFTs(): CompleteNFT[] {
+export async function generateAllGrowerNFTs(): Promise<CompleteNFT[]> {
   const nfts: CompleteNFT[] = [];
   
   // Load authentic hash list - using ONLY the real THC GROWERZ mint addresses you provided

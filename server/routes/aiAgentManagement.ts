@@ -558,7 +558,7 @@ router.post('/purchase-pack', async (req, res) => {
     if (allCards.length === 0) return res.status(503).json({ success: false, error: 'No cards available' });
 
     const weights = WEIGHTS[packType];
-    function pickCard(pool: any[]): any {
+    const pickCard = (pool: any[]): any => {
       const total = Object.values(weights).reduce((s, v) => s + v, 0);
       let rand = Math.random() * total;
       let picked = 'common';
@@ -566,7 +566,7 @@ router.post('/purchase-pack', async (req, res) => {
       const rarityCards = pool.filter(c => c.rarity === picked);
       const p = rarityCards.length > 0 ? rarityCards : pool;
       return p[Math.floor(Math.random() * p.length)];
-    }
+    };
 
     const drawnCards = [pickCard(allCards), pickCard(allCards), pickCard(allCards)];
 

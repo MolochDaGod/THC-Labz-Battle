@@ -530,6 +530,7 @@ const VisualBattleSystem: React.FC<VisualBattleSystemProps> = ({
     setTowers(initialTowers);
   }, [adminGameboard]);
 
+  useEffect(() => {
     // Tower initialization moved to admin gameboard useEffect above
 
     // Initialize player deck (6-card battle deck)
@@ -1782,14 +1783,6 @@ const VisualBattleSystem: React.FC<VisualBattleSystemProps> = ({
       }
       
       console.log(`🎯 Player deployed ${card.name} (${card.class}) at precise position (${spawnX}, ${spawnY}) on ${deployLane} lane`);
-    }
-  };
-
-  const deployCard = (card: BattleCard, lane: 'left' | 'right') => {
-    if (gameState.playerElixir >= card.cost) {
-      const spawnX = lane === 'left' ? 4 * BASE_CELL_SIZE : 14 * BASE_CELL_SIZE;
-      const spawnY = 23 * BASE_CELL_SIZE; // Player spawn area in grid
-      deployCardAtPosition(card, spawnX, spawnY);
     }
   };
 
