@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Sparkles, Copy, Check, ExternalLink, Zap, Coins, Flame, Layers } from 'lucide-react';
 import { CLASSIFICATION_CARD_DATABASE, type ClassificationCard } from '../../../shared/classificationCardDatabase';
 import GAME_CONFIG from '../config/gameConfig';
 
@@ -269,6 +269,7 @@ function dbCardToClassification(raw: any): ClassificationCard {
 
 // ── Main Library Component ────────────────────────────
 export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps) {
+  const [activeTab, setActiveTab]       = useState<'library' | 'badbudz'>('library');
   const [filterRarity, setFilterRarity] = useState('all');
   const [filterType, setFilterType]     = useState('all');
   const [filterClass, setFilterClass]   = useState('all');
@@ -276,6 +277,13 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
   const [selected, setSelected]         = useState<ClassificationCard | null>(null);
   const [ownedIds, setOwnedIds]         = useState<Set<string>>(new Set());
   const [extraOwnedCards, setExtraOwnedCards] = useState<ClassificationCard[]>([]);
+
+  // Bad Seed Incubator / cNFT Minting State
+  const [mintCurrency, setMintCurrency]   = useState<'THC' | 'SOL'>('THC');
+  const [isMinting, setIsMinting]         = useState(false);
+  const [mintProgress, setMintProgress]   = useState(0);
+  const [mintedCard, setMintedCard]       = useState<any | null>(null);
+  const [copiedUuid, setCopiedUuid]       = useState(false);
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -327,6 +335,62 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
     return acc;
   }, {} as Record<string, number>);
 
+  const handleMintSeed = () => {
+    if (isMinting) return;
+    setIsMinting(true);
+    setMintProgress(0);
+    setMintedCard(null);
+
+    const interval = setInterval(() => {
+      setMintProgress(p => {
+        if (p >= 100) {
+          clearInterval(interval);
+          setIsMinting(false);
+
+          // Rarity roll
+          const roll = Math.random();
+          let strain = 'Regz';
+          let rarity = 'Common';
+          let border = '#9ca3af';
+          let glow = 'rgba(156,163,175,0.6)';
+
+          if (roll < 0.04) {
+            strain = 'Runtz'; rarity = 'Legendary'; border = '#f59e0b'; glow = 'rgba(245,158,11,0.8)';
+          } else if (roll < 0.14) {
+            strain = 'Purple Haze'; rarity = 'Epic'; border = '#a855f7'; glow = 'rgba(168,85,247,0.8)';
+          } else if (roll < 0.32) {
+            strain = 'Sour D Purple'; rarity = 'Rare'; border = '#3b82f6'; glow = 'rgba(59,130,246,0.8)';
+          } else if (roll < 0.62) {
+            strain = 'Sour Diesel'; rarity = 'Uncommon'; border = '#22c55e'; glow = 'rgba(34,197,94,0.8)';
+          }
+
+          const txId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+          setMintedCard({
+            name: 'Bad Seed (cNFT)',
+            strain,
+            rarity,
+            border,
+            glow,
+            txId: `tx_sol_${txId}...`,
+            uuid: 'CARD-20260901000000-0002BF-3864B262',
+            cost: 1,
+            hp: 2,
+            lore: 'Bad Seed - Hold on to this, you know you will see some BadBudz.',
+          });
+          return 100;
+        }
+        return p + 12;
+      });
+    }, 120);
+  };
+
+  const copyBadSeedUuid = () => {
+    navigator.clipboard.writeText('CARD-20260901000000-0002BF-3864B262');
+    setCopiedUuid(true);
+    setTimeout(() => setCopiedUuid(false), 2000);
+  };
+
   return (
     <div style={{
       minHeight: '100dvh', color: '#fff',
@@ -366,83 +430,379 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
             </button>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 16, fontWeight: 900, color: '#39ff14', letterSpacing: 1, textShadow: '0 0 14px rgba(57,255,20,0.7)' }}>
-                CARD LIBRARY
+                {activeTab === 'library' ? 'CARD LIBRARY' : 'BADBUDZ & BAD SEED MINT'}
               </div>
               <div style={{ fontSize: 8, color: 'rgba(57,255,20,0.5)', letterSpacing: 2, marginTop: 1 }}>
-                {allCards.length} CARDS · 4 TIERS · SKILL TREES
+                {activeTab === 'library'
+                  ? `${allCards.length} CARDS · 4 TIERS · SKILL TREES`
+                  : 'GENESIS cNFT LAUNCHPAD · 2D CODEX & 3D STUDIO'}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#39ff14' }}>{sorted.length}</div>
-              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.35)' }}>SHOWING</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#39ff14' }}>
+                {activeTab === 'library' ? sorted.length : 'cNFT'}
+              </div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.35)' }}>
+                {activeTab === 'library' ? 'SHOWING' : 'SOLANA'}
+              </div>
             </div>
           </div>
 
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="🔍  Search cards by name..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(57,255,20,0.2)',
-              borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 11,
-              fontFamily: "'LEMON MILK', sans-serif", outline: 'none', marginBottom: 8,
-            }}
-          />
-
-          {/* Rarity filter with pot leaves */}
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
-            <button onClick={() => setFilterRarity('all')} style={filterPill(filterRarity === 'all', '#39ff14')}>
-              🃏 ALL ({allCards.length})
+          {/* Top Section Nav Tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <button
+              onClick={() => setActiveTab('library')}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 8,
+                border: activeTab === 'library' ? '1.5px solid #39ff14' : '1px solid rgba(255,255,255,0.12)',
+                background: activeTab === 'library' ? 'rgba(57,255,20,0.16)' : 'rgba(0,0,0,0.5)',
+                color: activeTab === 'library' ? '#39ff14' : '#888',
+                fontSize: 10, fontWeight: 900, cursor: 'pointer', transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                boxShadow: activeTab === 'library' ? '0 0 14px rgba(57,255,20,0.3)' : 'none',
+              }}
+            >
+              <Layers size={13} /> STANDARD LIBRARY
             </button>
-            {RARITY_ORDER.map(r => {
-              const rm = RARITY[r];
-              return (
-                <button key={r} onClick={() => setFilterRarity(r)} style={filterPill(filterRarity === r, rm.border)}>
-                  <span style={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle', marginRight: 3 }}>
-                    {Array.from({ length: rm.leaves }).map((_, i) => (
-                      <img key={i} src="/card-art/weed-leaf.png" style={{ width: 10, height: 10, objectFit: 'contain', filter: `drop-shadow(0 0 2px ${rm.border})` }} />
-                    ))}
-                  </span>
-                  {r.toUpperCase()} ({rarityCounts[r]})
-                </button>
-              );
-            })}
+            <button
+              onClick={() => setActiveTab('badbudz')}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 8,
+                border: activeTab === 'badbudz' ? '1.5px solid #ffeaa0' : '1px solid rgba(255,255,255,0.12)',
+                background: activeTab === 'badbudz' ? 'linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(34,197,94,0.2) 100%)' : 'rgba(0,0,0,0.5)',
+                color: activeTab === 'badbudz' ? '#ffeaa0' : '#888',
+                fontSize: 10, fontWeight: 900, cursor: 'pointer', transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                boxShadow: activeTab === 'badbudz' ? '0 0 16px rgba(255,215,0,0.35)' : 'none',
+              }}
+            >
+              <Sparkles size={13} /> BADBUDZ &amp; BAD SEED MINT
+            </button>
           </div>
 
-          {/* Type + Class filters */}
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {['all', 'minion', 'tower', 'building', 'spell'].map(t => {
-              const meta = TYPE_META[t];
-              return (
-                <button key={t} onClick={() => setFilterType(t)} style={filterPill(filterType === t, '#fb923c', true)}>
-                  {t === 'all' ? '🗂 ALL' : `${meta?.icon || ''} ${t.toUpperCase()}`}
+          {activeTab === 'library' && (
+            <>
+              {/* Search */}
+              <input
+                type="text"
+                placeholder="🔍  Search cards by name..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(57,255,20,0.2)',
+                  borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 11,
+                  fontFamily: "'LEMON MILK', sans-serif", outline: 'none', marginBottom: 8,
+                }}
+              />
+
+              {/* Rarity filter with pot leaves */}
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+                <button onClick={() => setFilterRarity('all')} style={filterPill(filterRarity === 'all', '#39ff14')}>
+                  🃏 ALL ({allCards.length})
                 </button>
-              );
-            })}
-            <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
-            {['all', 'melee', 'ranged', 'magical', 'tank'].map(c => {
-              const meta = CLASS_META[c];
-              return (
-                <button key={c} onClick={() => setFilterClass(c)} style={filterPill(filterClass === c, '#a78bfa', true)}>
-                  {c === 'all' ? '⚡ ALL' : `${meta?.icon || ''} ${c.toUpperCase()}`}
-                </button>
-              );
-            })}
-          </div>
+                {RARITY_ORDER.map(r => {
+                  const rm = RARITY[r];
+                  return (
+                    <button key={r} onClick={() => setFilterRarity(r)} style={filterPill(filterRarity === r, rm.border)}>
+                      <span style={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle', marginRight: 3 }}>
+                        {Array.from({ length: rm.leaves }).map((_, i) => (
+                          <img key={i} src="/card-art/weed-leaf.png" style={{ width: 10, height: 10, objectFit: 'contain', filter: `drop-shadow(0 0 2px ${rm.border})` }} />
+                        ))}
+                      </span>
+                      {r.toUpperCase()} ({rarityCounts[r]})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Type + Class filters */}
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {['all', 'minion', 'tower', 'building', 'spell'].map(t => {
+                  const meta = TYPE_META[t];
+                  return (
+                    <button key={t} onClick={() => setFilterType(t)} style={filterPill(filterType === t, '#fb923c', true)}>
+                      {t === 'all' ? '🗂 ALL' : `${meta?.icon || ''} ${t.toUpperCase()}`}
+                    </button>
+                  );
+                })}
+                <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
+                {['all', 'melee', 'ranged', 'magical', 'tank'].map(c => {
+                  const meta = CLASS_META[c];
+                  return (
+                    <button key={c} onClick={() => setFilterClass(c)} style={filterPill(filterClass === c, '#a78bfa', true)}>
+                      {c === 'all' ? '⚡ ALL' : `${meta?.icon || ''} ${c.toUpperCase()}`}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ── Card Grid ──────────────────────────────── */}
-      <div style={{
-        maxWidth: 700, margin: '0 auto',
-        padding: '14px 12px 100px',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: 14,
-      }}>
+      {/* ── Main Content Area ──────────────────────── */}
+      {activeTab === 'badbudz' ? (
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '14px 14px 100px' }}>
+          
+          {/* Hero Banner */}
+          <div style={{
+            position: 'relative',
+            background: 'linear-gradient(135deg, rgba(20,40,20,0.85) 0%, rgba(10,20,10,0.95) 100%)',
+            border: '2px solid rgba(255,215,0,0.4)',
+            borderRadius: 16, padding: '20px', marginBottom: 16,
+            boxShadow: '0 0 30px rgba(34,197,94,0.25), inset 0 0 20px rgba(255,215,0,0.1)',
+            overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{
+                width: 100, height: 100, borderRadius: 16,
+                background: 'radial-gradient(circle, rgba(57,255,20,0.2) 0%, rgba(0,0,0,0.8) 100%)',
+                border: '2px solid #ffeaa0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 20px rgba(255,234,160,0.4)',
+                flexShrink: 0,
+              }}>
+                <img
+                  src="https://duelyst.grudge-studio.com/tcg-chrome/thc/bad-seed.png"
+                  alt="Bad Seed"
+                  style={{ width: '85%', height: '85%', objectFit: 'contain' }}
+                  onError={e => {
+                    (e.target as HTMLImageElement).src = 'https://dopebudz.thc-labz.xyz/images/grudge-thc-logo.png';
+                  }}
+                />
+              </div>
+
+              <div style={{ flex: 1, minWidth: 240 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{
+                    background: '#78350f', color: '#ffeaa0', border: '1px solid #ffeaa0',
+                    fontSize: 8, fontWeight: 900, padding: '2px 8px', borderRadius: 4, letterSpacing: 1,
+                  }}>
+                    GENESIS EPIC cNFT
+                  </span>
+                  <span style={{ fontSize: 9, color: '#39ff14', fontWeight: 900 }}>
+                    THC-LABZ BATTLE SET
+                  </span>
+                </div>
+                <h2 style={{
+                  fontSize: 22, fontWeight: 900, color: '#fff', margin: '0 0 6px 0',
+                  textShadow: '0 0 12px rgba(57,255,20,0.6)', letterSpacing: 1,
+                }}>
+                  BAD SEED
+                </h2>
+                <div style={{
+                  fontSize: 11, color: '#ffeaa0', fontStyle: 'italic', marginBottom: 10, lineHeight: 1.4,
+                }}>
+                  "Bad Seed - Hold on to this, you know you will see some BadBudz."
+                </div>
+
+                {/* UUID Box */}
+                <div
+                  onClick={copyBadSeedUuid}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(57,255,20,0.3)',
+                    padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                  title="Click to copy Grudge UUID"
+                >
+                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                    UUID: CARD-20260901000000-0002BF-3864B262
+                  </span>
+                  {copiedUuid ? (
+                    <Check size={12} color="#39ff14" />
+                  ) : (
+                    <Copy size={12} color="#ffeaa0" />
+                  )}
+                  {copiedUuid && <span style={{ fontSize: 8, color: '#39ff14', fontWeight: 900 }}>COPIED!</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* cNFT Mint & Incubator Card */}
+          <div style={{
+            background: 'rgba(10,20,10,0.95)',
+            border: '1.5px solid rgba(57,255,20,0.25)',
+            borderRadius: 16, padding: '18px', marginBottom: 16,
+            boxShadow: '0 0 25px rgba(0,0,0,0.8)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#39ff14', letterSpacing: 1 }}>
+                  BAD SEED cNFT INCUBATOR
+                </div>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                  MINT TO UNLOCK EXCLUSIVE BADBUDZ STRAINS &amp; ON-CHAIN PASSIVES
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  onClick={() => setMintCurrency('THC')}
+                  style={{
+                    padding: '5px 10px', borderRadius: 6, fontSize: 9, fontWeight: 900, cursor: 'pointer',
+                    border: mintCurrency === 'THC' ? '1px solid #39ff14' : '1px solid rgba(255,255,255,0.1)',
+                    background: mintCurrency === 'THC' ? 'rgba(57,255,20,0.2)' : 'rgba(0,0,0,0.4)',
+                    color: mintCurrency === 'THC' ? '#39ff14' : '#888',
+                  }}
+                >
+                  50 THC
+                </button>
+                <button
+                  onClick={() => setMintCurrency('SOL')}
+                  style={{
+                    padding: '5px 10px', borderRadius: 6, fontSize: 9, fontWeight: 900, cursor: 'pointer',
+                    border: mintCurrency === 'SOL' ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                    background: mintCurrency === 'SOL' ? 'rgba(168,85,247,0.2)' : 'rgba(0,0,0,0.4)',
+                    color: mintCurrency === 'SOL' ? '#c084fc' : '#888',
+                  }}
+                >
+                  0.05 SOL
+                </button>
+              </div>
+            </div>
+
+            {/* Mint Action Button */}
+            <button
+              onClick={handleMintSeed}
+              disabled={isMinting}
+              style={{
+                width: '100%', padding: '14px', borderRadius: 12,
+                background: isMinting
+                  ? 'rgba(255,255,255,0.1)'
+                  : 'linear-gradient(135deg, #15803d 0%, #166534 50%, #047857 100%)',
+                border: '1.5px solid #39ff14',
+                color: '#fff', fontSize: 13, fontWeight: 900, letterSpacing: 1.5,
+                cursor: isMinting ? 'default' : 'pointer',
+                boxShadow: isMinting ? 'none' : '0 0 20px rgba(57,255,20,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                marginBottom: 12, transition: 'all 0.15s',
+              }}
+            >
+              {isMinting ? (
+                <>
+                  <Sparkles size={16} className="animate-spin" />
+                  INCUBATING BAD SEED... {mintProgress}%
+                </>
+              ) : (
+                <>
+                  <Zap size={16} color="#ffeaa0" />
+                  MINT BAD SEED ({mintCurrency === 'THC' ? '50 THC' : '0.05 SOL'})
+                </>
+              )}
+            </button>
+
+            {/* Minted Reveal Box */}
+            {mintedCard && (
+              <div style={{
+                background: 'rgba(0,0,0,0.75)', border: `2px solid ${mintedCard.border}`,
+                boxShadow: `0 0 20px ${mintedCard.glow}`,
+                borderRadius: 12, padding: '14px', marginTop: 12,
+                animation: 'fadeIn 0.3s ease',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, color: '#39ff14' }}>✨ MINT SUCCESSFUL!</span>
+                  <span style={{ fontSize: 8, color: mintedCard.border, fontWeight: 900 }}>{mintedCard.rarity.toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 2 }}>
+                  {mintedCard.name} · {mintedCard.strain}
+                </div>
+                <div style={{ fontSize: 9, color: '#ffeaa0', fontStyle: 'italic', marginBottom: 8 }}>
+                  {mintedCard.lore}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+                  <span>UUID: {mintedCard.uuid}</span>
+                  <span>TX: {mintedCard.txId}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Rarity & Drop Rates Matrix */}
+          <div style={{
+            background: 'rgba(5,13,5,0.85)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 14, padding: '14px', marginBottom: 16,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 900, color: '#ffeaa0', letterSpacing: 1, marginBottom: 10 }}>
+              🌿 BADBUDZ STRAIN INCUBATION ODDS
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+              {[
+                { s: 'Regz', r: 'Common', p: '38%', c: '#9ca3af' },
+                { s: 'Sour Diesel', r: 'Uncommon', p: '30%', c: '#22c55e' },
+                { s: 'Sour D Purp', r: 'Rare', p: '18%', c: '#3b82f6' },
+                { s: 'Purple Haze', r: 'Epic', p: '10%', c: '#a855f7' },
+                { s: 'Runtz', r: 'Legendary', p: '4%', c: '#f59e0b' },
+              ].map(item => (
+                <div key={item.s} style={{
+                  background: 'rgba(0,0,0,0.5)', border: `1px solid ${item.c}44`,
+                  borderRadius: 8, padding: '8px 4px', textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 8, fontWeight: 900, color: item.c }}>{item.r.toUpperCase()}</div>
+                  <div style={{ fontSize: 10, fontWeight: 900, color: '#fff', marginTop: 2 }}>{item.p}</div>
+                  <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{item.s}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA: Launch BadBudz 2D Codex & 3D Pack Studio */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(20,10,30,0.9) 0%, rgba(10,25,15,0.9) 100%)',
+            border: '1.5px solid #a855f7',
+            borderRadius: 16, padding: '18px', textAlign: 'center',
+            boxShadow: '0 0 25px rgba(168,85,247,0.25)',
+          }}>
+            <h3 style={{ fontSize: 14, fontWeight: 900, color: '#c084fc', margin: '0 0 6px 0', letterSpacing: 1 }}>
+              BADBUDZ 3D PACK OPENING STUDIO &amp; 2D CODEX
+            </h3>
+            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', margin: '0 0 14px 0', lineHeight: 1.5 }}>
+              Open animated packs, inspect custom THC-Labz frames with corner circles, high contrast numerals, and export transparent card animations.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a
+                href="https://duelyst.grudge-studio.com/badbudz"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '10px 18px', borderRadius: 10,
+                  background: 'linear-gradient(135deg, #7e22ce 0%, #4c1d95 100%)',
+                  border: '1px solid #c084fc', color: '#fff',
+                  fontSize: 10, fontWeight: 900, textDecoration: 'none',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  boxShadow: '0 0 15px rgba(168,85,247,0.4)',
+                }}
+              >
+                <Sparkles size={14} /> LAUNCH BADBUDZ STUDIO <ExternalLink size={12} />
+              </a>
+              <a
+                href="https://market.thc-labz.xyz/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '10px 14px', borderRadius: 10,
+                  background: 'rgba(0,0,0,0.6)', border: '1px solid #22c55e', color: '#4ade80',
+                  fontSize: 10, fontWeight: 900, textDecoration: 'none',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Coins size={14} /> FLOWER &amp; SEED MARKET <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ── Card Grid ──────────────────────────────── */
+        <div style={{
+          maxWidth: 700, margin: '0 auto',
+          padding: '14px 12px 100px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 14,
+        }}>
         {sorted.map(card => (
           <LibraryCard
             key={card.id}
@@ -451,7 +811,8 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
             onClick={() => setSelected(card)}
           />
         ))}
-      </div>
+        </div>
+      )}
 
       {/* ── Detail Modal ───────────────────────────── */}
       {selected && (
