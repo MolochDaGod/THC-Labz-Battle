@@ -2,9 +2,11 @@
  * Game-ready card face — same CraftPix / Duelyst TCG chrome as
  * duelyst.grudge-studio.com (LAYOUT.json thc gold / weed frames).
  * Art breathes in the window. Cost/ATK/HP sit on the crystal slots.
+ * Ability ribbon = Codex playStyles (slots/*.png). Named abilities use tcg-chrome/objects icons.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ClassificationCard } from '../../../shared/classificationCardDatabase';
+import { PLAY_STYLE_SLOTS } from '../../../shared/mapCodexPlaySets';
 
 const CHROME = 'https://duelyst.grudge-studio.com/tcg-chrome';
 
@@ -30,15 +32,6 @@ const WEED = {
 
 const W = 195;
 const H = 284;
-
-const STYLE_ICON: Record<string, string> = {
-  melee: `${CHROME}/slots/attack.png`,
-  ranged: `${CHROME}/slots/mana.png`,
-  splash: `${CHROME}/slots/ability.png`,
-  flying: `${CHROME}/slots/rarity.png`,
-  tank: `${CHROME}/slots/type.png`,
-  charge: `${CHROME}/slots/health.png`,
-};
 
 function pct(n: number, total: number) {
   return `${(n / total) * 100}%`;
@@ -92,6 +85,10 @@ export default function DuelystPlayCard({
   const style = playKey(card);
   const ability = (card.abilities && card.abilities[0]) || card.type;
   const setLabel = (card.cardSet || 'badbudz').toUpperCase();
+  const onKeys = new Set(
+    (card.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(card.keywords || []),
+  );
+  if (!onKeys.size) onKeys.add(style);
 
   return (
     <button
@@ -130,20 +127,7 @@ export default function DuelystPlayCard({
         overflow: 'hidden',
         background: '#07050c',
       }}>
-        <img
-          src={card.image}
-          alt=""
-          draggable={false}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            objectPosition: 'center 20%',
-            imageRendering: 'pixelated',
-            animation: 'duelystBreathe 2.4s ease-in-out infinite',
-          }}
-          onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0'; }}
-        />
+        <CodexIdleArt card={card} />
       </div>
 
       <img
@@ -186,19 +170,50 @@ export default function DuelystPlayCard({
         {setLabel} · {ability}
       </div>
 
-      <img
-        src={STYLE_ICON[style] || STYLE_ICON.melee}
-        alt={style}
-        title={style}
-        style={{
+      <div style={{
+        position: 'absolute',
+        left: '8%', top: '56%',
+        width: '84%', height: '8%',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        pointerEvents: 'none',
+      }}>
+        {PLAY_STYLE_SLOTS.map((slot) => {
+          const on = onKeys.has(slot.key);
+          return (
+            <img
+              key={slot.key}
+              src={slot.icon}
+              alt={slot.label}
+              title={slot.label}
+              style={{
+                width: '14%', height: 'auto',
+                imageRendering: 'pixelated',
+                opacity: on ? 1 : 0.28,
+                filter: on ? 'drop-shadow(0 0 4px #f5d76e)' : 'grayscale(0.8)',
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {(card.abilityIcons || []).slice(0, 3).length > 0 && (
+        <div style={{
           position: 'absolute',
-          left: '6%', top: '57%',
-          width: '9%', height: 'auto',
-          imageRendering: 'pixelated',
+          right: '6%', top: '42%',
+          display: 'flex', flexDirection: 'column', gap: 2,
           pointerEvents: 'none',
-          filter: 'drop-shadow(0 0 4px #f5d76e)',
-        }}
-      />
+        }}>
+          {(card.abilityIcons || []).slice(0, 3).map((src, i) => (
+            <img
+              key={src + i}
+              src={src}
+              alt={card.abilities[i] || 'ability'}
+              title={card.abilities[i]}
+              style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
+            />
+          ))}
+        </div>
+      )}
 
       <Gem cx={skin.cost.cx} cy={skin.cost.cy} r={skin.cost.r} kind="mana" value={glitch ? costDigit : card.cost} hot={glitch} />
       {card.attack > 0 && <Gem cx={skin.attack.cx} cy={skin.attack.cy} r={skin.attack.r} kind="attack" value={card.attack} />}
@@ -227,5 +242,110 @@ function Gem({
         {value}
       </span>
     </div>
+  );
+}
+
+function parsePlistFrames(xml: string): Array<{ name: string; x: number; y: number; w: number; h: number }> {
+  const out: Array<{ name: string; x: number; y: number; w: number; h: number }> = [];
+  const re = /<key>([^<]+)<\/key>\s*<dict>\s*<key>frame<\/key>\s*<string>\{\{(\d+),(\d+)\},\{(\d+),(\d+)\}\}<\/string>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml))) {
+    out.push({ name: m[1], x: +m[2], y: +m[3], w: +m[4], h: +m[5] });
+  }
+  return out;
+}
+
+function pickIdleFrame(frames: Array<{ name: string; x: number; y: number; w: number; h: number }>) {
+  const idle = frames.find((f) => /breathing|idle/i.test(f.name)) || frames[0];
+  return idle;
+}
+
+function CodexIdleArt({ card }: { card: ClassificationCard }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [fallback, setFallback] = useState(false);
+
+  useEffect(() => {
+    let dead = false;
+    setFallback(false);
+    const kind = card.artKind;
+    const run = async () => {
+      try {
+        if (kind === 'duelyst-plist' && card.sheet && card.plist) {
+          const [xml, blob] = await Promise.all([
+            fetch(card.plist).then((r) => { if (!r.ok) throw new Error('plist'); return r.text(); }),
+            fetch(card.sheet).then((r) => { if (!r.ok) throw new Error('sheet'); return r.blob(); }),
+          ]);
+          const frames = parsePlistFrames(xml);
+          const fr = pickIdleFrame(frames);
+          if (!fr) throw new Error('no frame');
+          const bmp = await createImageBitmap(blob);
+          if (dead) return;
+          const c = canvasRef.current;
+          if (!c) return;
+          c.width = fr.w;
+          c.height = fr.h;
+          const ctx = c.getContext('2d');
+          if (!ctx) return;
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, fr.w, fr.h);
+          ctx.drawImage(bmp, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
+          return;
+        }
+        if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
+          const src = card.idleStrip || card.image;
+          const blob = await fetch(src).then((r) => { if (!r.ok) throw new Error('strip'); return r.blob(); });
+          const bmp = await createImageBitmap(blob);
+          const cell = Math.min(bmp.width, bmp.height);
+          if (dead) return;
+          const c = canvasRef.current;
+          if (!c) return;
+          c.width = cell;
+          c.height = cell;
+          const ctx = c.getContext('2d');
+          if (!ctx) return;
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, cell, cell);
+          ctx.drawImage(bmp, 0, 0, cell, cell, 0, 0, cell, cell);
+          return;
+        }
+        throw new Error('portrait');
+      } catch {
+        if (!dead) setFallback(true);
+      }
+    };
+    void run();
+    return () => { dead = true; };
+  }, [card.id, card.artKind, card.sheet, card.plist, card.idleStrip, card.image]);
+
+  if (fallback) {
+    return (
+      <img
+        src={card.image}
+        alt=""
+        draggable={false}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          objectPosition: 'center 20%',
+          imageRendering: 'pixelated',
+          animation: 'duelystBreathe 2.4s ease-in-out infinite',
+        }}
+        onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+      />
+    );
+  }
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        imageRendering: 'pixelated',
+        animation: 'duelystBreathe 2.4s ease-in-out infinite',
+      }}
+    />
   );
 }

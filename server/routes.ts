@@ -2059,7 +2059,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return LIBRARY_CARDS.filter((c) => c.cardSet === cardSet);
     }
     const live = allCards.length ? allCards : LIBRARY_CARDS;
-    return live;
+    const play = live.filter((c: any) => {
+      const cs = String(c.card_set || c.cardSet || '').toLowerCase();
+      const id = String(c.id || '').toLowerCase();
+      return cs === 'badbudz' || cs === 'grudawars' || id.startsWith('badbudz:') || id.startsWith('grudawars:');
+    });
+    return play.length ? play : LIBRARY_CARDS;
   }
 
   app.get('/api/card-shop/balance/:walletAddress', async (req, res) => {

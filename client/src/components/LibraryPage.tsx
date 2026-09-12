@@ -266,15 +266,22 @@ function dbCardToClassification(raw: any): ClassificationCard {
     id,
     name:        raw.cardName || data.name || id,
     image:       data.image   || '/thc-clash-bg.png',
-    cost:        Number(data.cost)   || 1,
-    attack:      Number(data.attack) || 50,
-    health:      Number(data.health) || 100,
+    cost:        Number.isFinite(Number(data.cost)) ? Number(data.cost) : 1,
+    attack:      Number.isFinite(Number(data.attack)) ? Number(data.attack) : 0,
+    health:      Number.isFinite(Number(data.health)) ? Number(data.health) : 0,
     description: data.description   || 'Opened from a pack.',
     rarity:      (data.rarity?.toLowerCase() || 'common') as ClassificationCard['rarity'],
     class:       (data.class  || 'melee')  as ClassificationCard['class'],
     type:        (data.type   || 'minion') as ClassificationCard['type'],
     subtype:     data.subtype,
     abilities:   Array.isArray(data.abilities) ? data.abilities : (typeof data.abilities === 'string' ? JSON.parse(data.abilities || '[]') : []),
+    abilityIcons: Array.isArray(data.abilityIcons) ? data.abilityIcons : undefined,
+    playStyles: Array.isArray(data.playStyles) ? data.playStyles : undefined,
+    artKind: data.artKind,
+    sheet: data.sheet,
+    plist: data.plist,
+    idleStrip: data.idleStrip,
+    statScale: data.statScale,
     abilityDesc: data.abilityDesc,
     traitRequirements: [],
     isNFTConnected: false,
@@ -1527,7 +1534,9 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
                         fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4,
                         opacity: unlocked ? 1 : 0.5,
                       }}>
-                        {unlocked ? '◈' : '🔒'} {ab}
+                        {card.abilityIcons?.[i] ? (
+                          <img src={card.abilityIcons[i]} alt="" style={{ width: 12, height: 12, imageRendering: 'pixelated' }} />
+                        ) : unlocked ? '◈' : '🔒'} {ab}
                         {!unlocked && (
                           <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)' }}>
                             T{i + 1}

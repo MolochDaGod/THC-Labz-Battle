@@ -1,0 +1,1373 @@
+{
+  "use": "DopeBudz city PVE battle games",
+  "product": "dopebudz.thc-labz.xyz / battle.thc-labz.xyz",
+  "not": [
+    "Duelyst (held)",
+    "Nexus Nemesis TCG",
+    "hometown as a 13th city",
+    "second user_cards"
+  ],
+  "cities": [
+    "Bronx",
+    "Brooklyn",
+    "Manhattan",
+    "Queens",
+    "Compton",
+    "Miami",
+    "Chicago",
+    "Los Angeles",
+    "San Francisco",
+    "Las Vegas",
+    "New Orleans",
+    "Atlanta"
+  ],
+  "cityCount": 12,
+  "perCity": {
+    "goons": 5,
+    "boss": 1
+  },
+  "slotCount": 72,
+  "season1Used": 55,
+  "growerzGenerated": 17,
+  "citiesRoster": [
+    {
+      "city": "Bronx",
+      "boss": {
+        "id": "image-22",
+        "name": "Chronos the Hash Specter",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "magical",
+        "type": "minion",
+        "cost": 8,
+        "attack": 380,
+        "health": 600,
+        "abilities": [
+          "Temporal Rewind",
+          "Hash Aura",
+          "Spectral Form",
+          "Phase Shift"
+        ],
+        "image": "/card-art/chronos-hash-specter.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-0",
+          "name": "Recon Bud Turret",
+          "role": "goon",
+          "rarity": "common",
+          "class": "ranged",
+          "type": "building",
+          "cost": 2,
+          "attack": 60,
+          "health": 300,
+          "abilities": [
+            "Bud Launch",
+            "Resin Burst"
+          ],
+          "image": "/card-art/recon-bud-turret.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-1",
+          "name": "Sapling Watch Post",
+          "role": "goon",
+          "rarity": "common",
+          "class": "ranged",
+          "type": "tower",
+          "cost": 1,
+          "attack": 45,
+          "health": 220,
+          "abilities": [
+            "Low Profile",
+            "Cheap Shot"
+          ],
+          "image": "/card-art/sapling-watch-post.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-11",
+          "name": "Bud Tender",
+          "role": "goon",
+          "rarity": "common",
+          "class": "melee",
+          "type": "minion",
+          "cost": 1,
+          "attack": 85,
+          "health": 120,
+          "abilities": [
+            "Rush",
+            "Harvest Strike"
+          ],
+          "image": "/card-art/bud-tender.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-38",
+          "name": "Rookie Scout",
+          "role": "goon",
+          "rarity": "common",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 70,
+          "health": 110,
+          "abilities": [
+            "Recon",
+            "Volley Shot"
+          ],
+          "image": "/card-art/rookie-scout.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-40",
+          "name": "Sprout Soldier",
+          "role": "goon",
+          "rarity": "common",
+          "class": "melee",
+          "type": "minion",
+          "cost": 1,
+          "attack": 75,
+          "health": 100,
+          "abilities": [
+            "Tenacity",
+            "Underdog"
+          ],
+          "image": "/card-art/sprout-soldier.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Brooklyn",
+      "boss": {
+        "id": "image-23",
+        "name": "Solara the Sungrown Sentinel",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "ranged",
+        "type": "minion",
+        "cost": 8,
+        "attack": 360,
+        "health": 640,
+        "abilities": [
+          "Solar Ray",
+          "Sungrown Ascendance",
+          "Daybreak Aura",
+          "Scorched Earth"
+        ],
+        "image": "/card-art/solara-sungrown-sentinel.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-2",
+          "name": "Strain Sentry Post",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "tower",
+          "cost": 2,
+          "attack": 80,
+          "health": 420,
+          "abilities": [
+            "Resin Blast",
+            "Fortified"
+          ],
+          "image": "/card-art/strain-sentry-post.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-10",
+          "name": "Trimmer Champion",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "tank",
+          "type": "minion",
+          "cost": 3,
+          "attack": 90,
+          "health": 520,
+          "abilities": [
+            "Iron Apron",
+            "Thorns",
+            "Frontline"
+          ],
+          "image": "/card-art/trimmer-champion.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-12",
+          "name": "Terpene Sharpshooter",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 3,
+          "attack": 120,
+          "health": 160,
+          "abilities": [
+            "Terpene Trail",
+            "Eagle Eye"
+          ],
+          "image": "/card-art/terpene-sharpshooter.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-29",
+          "name": "Kush Crossbow Monk",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 3,
+          "attack": 115,
+          "health": 155,
+          "abilities": [
+            "Pierce Shot",
+            "Meditate"
+          ],
+          "image": "/card-art/kush-crossbow-monk.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-31",
+          "name": "Hash Hawk",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 100,
+          "health": 140,
+          "abilities": [
+            "Swoop Strike",
+            "Evasion"
+          ],
+          "image": "/card-art/hash-hawk.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Manhattan",
+      "boss": {
+        "id": "image-24",
+        "name": "Gruntox the Resin Titan",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "melee",
+        "type": "minion",
+        "cost": 7,
+        "attack": 420,
+        "health": 780,
+        "abilities": [
+          "Titan Slam",
+          "Rosin Mountain",
+          "Unstoppable Force",
+          "Ground Quake"
+        ],
+        "image": "/card-art/gruntox-resin-titan.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-32",
+          "name": "Resin Blade Runner",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 2,
+          "attack": 130,
+          "health": 140,
+          "abilities": [
+            "Resin Coat",
+            "Speed Demon"
+          ],
+          "image": "/card-art/resin-blade-runner.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-33",
+          "name": "Cannachemist",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 3,
+          "attack": 105,
+          "health": 165,
+          "abilities": [
+            "Terpene Flask",
+            "Lab Coat"
+          ],
+          "image": "/card-art/cannachemist.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-34",
+          "name": "Pollen Puncher",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 2,
+          "attack": 125,
+          "health": 160,
+          "abilities": [
+            "Pollen Cloud",
+            "Heavy Handed"
+          ],
+          "image": "/card-art/pollen-puncher.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-35",
+          "name": "Sativa Sniper",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 3,
+          "attack": 135,
+          "health": 130,
+          "abilities": [
+            "Ultra Range",
+            "Head Rush"
+          ],
+          "image": "/card-art/sativa-sniper.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-36",
+          "name": "Entourage Sage",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 2,
+          "attack": 90,
+          "health": 175,
+          "abilities": [
+            "Entourage Aura",
+            "Synergy Stack"
+          ],
+          "image": "/card-art/entourage-sage.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Queens",
+      "boss": {
+        "id": "image-25",
+        "name": "Raclavin The Dank King",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "tank",
+        "type": "minion",
+        "cost": 7,
+        "attack": 300,
+        "health": 1100,
+        "abilities": [
+          "Ironbark Armor",
+          "Root Network",
+          "Ancient Regrowth",
+          "Spell Deflect"
+        ],
+        "image": "/card-art/raclavin-the-dank-king.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-37",
+          "name": "Trim Machine",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "building",
+          "cost": 4,
+          "attack": 35,
+          "health": 800,
+          "abilities": [
+            "Cost Reduction",
+            "Resin Orb"
+          ],
+          "image": "/card-art/trim-machine.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "terp-tracker",
+          "name": "Terp Tracker",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 95,
+          "health": 150,
+          "abilities": [
+            "Terpene Trail Track",
+            "Scout Mark"
+          ],
+          "image": "/card-art/terp-tracker.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-18",
+          "name": "Smoke Screen",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "spell",
+          "cost": 2,
+          "attack": 0,
+          "health": 0,
+          "abilities": [
+            "Blind Zone",
+            "Lingering Smoke"
+          ],
+          "image": "/card-art/smoke-screen.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "seed-indica",
+          "name": "Forbidden Indica Bomb",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "spell",
+          "cost": 3,
+          "attack": 180,
+          "health": 0,
+          "abilities": [
+            "Concussive Blast",
+            "Indica Haze"
+          ],
+          "image": "/card-art/seed-indica.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-4",
+          "name": "Dank Deadeye",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 4,
+          "attack": 180,
+          "health": 220,
+          "abilities": [
+            "Mark Target",
+            "Headshot"
+          ],
+          "image": "/card-art/dank-deadeye.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Compton",
+      "boss": {
+        "id": "image-26",
+        "name": "Cryocannis the Terp Stalker",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "ranged",
+        "type": "minion",
+        "cost": 8,
+        "attack": 340,
+        "health": 580,
+        "abilities": [
+          "Stealth Approach",
+          "Cryo Spike Barrage",
+          "Thermal Vision",
+          "Permafrost"
+        ],
+        "image": "/card-art/cryocannis-terp-stalker.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-5",
+          "name": "Kush Ranger",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 4,
+          "attack": 165,
+          "health": 260,
+          "abilities": [
+            "Mobile Assault",
+            "Terrain Expert"
+          ],
+          "image": "/card-art/kush-ranger.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-14",
+          "name": "Pheno Hunter",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 3,
+          "attack": 155,
+          "health": 210,
+          "abilities": [
+            "Pheno Tag",
+            "Strain Scan"
+          ],
+          "image": "/card-art/pheno-hunter.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-15",
+          "name": "The Law",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "tank",
+          "type": "minion",
+          "cost": 4,
+          "attack": 145,
+          "health": 460,
+          "abilities": [
+            "Rosin Armor",
+            "Sticky Charge"
+          ],
+          "image": "/card-art/the-law.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-16",
+          "name": "Budwitch",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "magical",
+          "type": "minion",
+          "cost": 3,
+          "attack": 160,
+          "health": 190,
+          "abilities": [
+            "Hex Bolt",
+            "Confusion Curse"
+          ],
+          "image": "/card-art/budwitch.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-20",
+          "name": "Clone Sniper",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 4,
+          "attack": 200,
+          "health": 190,
+          "abilities": [
+            "Genetic Precision",
+            "Clone Protocol"
+          ],
+          "image": "/card-art/clone-sniper.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Miami",
+      "boss": {
+        "id": "image-28",
+        "name": "Zephyrix the Wind Grower",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "ranged",
+        "type": "minion",
+        "cost": 7,
+        "attack": 350,
+        "health": 610,
+        "abilities": [
+          "Pollen Storm",
+          "Crosswind Shield",
+          "Genetic Scatter",
+          "Aerial Dominance"
+        ],
+        "image": "/card-art/zephyrix.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-39",
+          "name": "Hash Hex Caster",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "magical",
+          "type": "minion",
+          "cost": 4,
+          "attack": 170,
+          "health": 200,
+          "abilities": [
+            "Death Hex",
+            "Chain Burn"
+          ],
+          "image": "/card-art/hash-hex-caster.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-41",
+          "name": "Resin Berserker",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "melee",
+          "type": "minion",
+          "cost": 4,
+          "attack": 210,
+          "health": 240,
+          "abilities": [
+            "Resin Ignition",
+            "Berserker Rage"
+          ],
+          "image": "/card-art/resin-berserker.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-42",
+          "name": "Trichome Warlock",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "magical",
+          "type": "minion",
+          "cost": 4,
+          "attack": 175,
+          "health": 205,
+          "abilities": [
+            "Life Siphon",
+            "Trichome Shield"
+          ],
+          "image": "/card-art/trichome-warlock.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-30",
+          "name": "Harvest Blade Storm",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "melee",
+          "type": "spell",
+          "cost": 3,
+          "attack": 220,
+          "health": 0,
+          "abilities": [
+            "Blade Vortex",
+            "Shred Armor"
+          ],
+          "image": "/card-art/harvest-blade-storm.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "token-sthc",
+          "name": "STHC Protocol Strike",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "magical",
+          "type": "spell",
+          "cost": 3,
+          "attack": 150,
+          "health": 0,
+          "abilities": [
+            "Protocol Burst",
+            "Vulnerability Mark"
+          ],
+          "image": "/card-art/token-sthc.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Chicago",
+      "boss": {
+        "id": "beast-dank-hound",
+        "name": "Terry the Don",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "melee",
+        "type": "minion",
+        "cost": 6,
+        "attack": 310,
+        "health": 520,
+        "abilities": [
+          "Terp Scan",
+          "GBUX Medallion",
+          "Hound Frenzy",
+          "Loyalty Pact"
+        ],
+        "image": "/card-art/beast-dank-hound.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "canister-co2",
+          "name": "CO2 Extraction Bomb",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "magical",
+          "type": "spell",
+          "cost": 4,
+          "attack": 240,
+          "health": 0,
+          "abilities": [
+            "Pressure Burst",
+            "Cryo-Lock"
+          ],
+          "image": "/card-art/canister-co2.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "jar-live-rosin",
+          "name": "Live Rosin Protocol",
+          "role": "goon",
+          "rarity": "rare",
+          "class": "magical",
+          "type": "spell",
+          "cost": 3,
+          "attack": 0,
+          "health": 0,
+          "abilities": [
+            "Rosin Soak",
+            "Mobility Drain"
+          ],
+          "image": "/card-art/jar-live-rosin.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-6",
+          "name": "Hydroponic Fortress",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "ranged",
+          "type": "tower",
+          "cost": 5,
+          "attack": 200,
+          "health": 1100,
+          "abilities": [
+            "Nutrient Bolt",
+            "Self-Sustaining",
+            "Fortified Core"
+          ],
+          "image": "/card-art/hydroponic-fortress.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-7",
+          "name": "Chronic Citadel",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "ranged",
+          "type": "building",
+          "cost": 4,
+          "attack": 220,
+          "health": 900,
+          "abilities": [
+            "Mana Surge",
+            "Resource Drain"
+          ],
+          "image": "/card-art/chronic-citadel.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-13",
+          "name": "Dab Rig Marksman",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 5,
+          "attack": 280,
+          "health": 300,
+          "abilities": [
+            "Dab Cannon",
+            "Concentrates Expert"
+          ],
+          "image": "/card-art/dab-rig-marksman.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Los Angeles",
+      "boss": {
+        "id": "beast-mary-jane",
+        "name": "Mary Jane",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "magical",
+        "type": "minion",
+        "cost": 7,
+        "attack": 365,
+        "health": 590,
+        "abilities": [
+          "Teleport",
+          "Seed Bomb Barrage",
+          "Grow Magic Aura",
+          "Holiday Surge"
+        ],
+        "image": "/card-art/beast-mary-jane.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "image-17",
+          "name": "Cosmic Terpene Shaman",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "magical",
+          "type": "minion",
+          "cost": 5,
+          "attack": 260,
+          "health": 280,
+          "abilities": [
+            "Spirit Gust",
+            "Terpene Tornado",
+            "Ancestral Ward"
+          ],
+          "image": "/card-art/cosmic-terpene-shaman.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-21",
+          "name": "Widow Maker Gunner",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 5,
+          "attack": 290,
+          "health": 290,
+          "abilities": [
+            "Widow Spin",
+            "Web Shot"
+          ],
+          "image": "/card-art/widow-maker-gunner.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-27",
+          "name": "Blade of the Budmaster",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "melee",
+          "type": "minion",
+          "cost": 5,
+          "attack": 320,
+          "health": 350,
+          "abilities": [
+            "Crystal Cleave",
+            "Budmaster Aura",
+            "Last Stand"
+          ],
+          "image": "/card-art/blade-of-the-budmaster.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-43",
+          "name": "Aurora Pheno Witch",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "magical",
+          "type": "minion",
+          "cost": 5,
+          "attack": 255,
+          "health": 310,
+          "abilities": [
+            "Aurora Beam",
+            "Pheno Convert",
+            "Lunar Cycle"
+          ],
+          "image": "/card-art/aurora-pheno-witch.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "image-19",
+          "name": "Terp Tsunami",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "magical",
+          "type": "spell",
+          "cost": 4,
+          "attack": 350,
+          "health": 0,
+          "abilities": [
+            "Wave Crush",
+            "Drown Zone",
+            "Tidal Pull"
+          ],
+          "image": "/card-art/terp-tsunami.png",
+          "source": "season-1-classification"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "San Francisco",
+      "boss": {
+        "id": "beast-cosmic-bear",
+        "name": "Ursus the Cosmic Budlord",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "melee",
+        "type": "minion",
+        "cost": 8,
+        "attack": 400,
+        "health": 720,
+        "abilities": [
+          "Cosmic Gravity",
+          "Star Paw Slam",
+          "Cannabis Crown",
+          "Orbital Pull"
+        ],
+        "image": "/card-art/ursus-cosmic-budlord.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "jar-full-spectrum",
+          "name": "Full Spectrum Extract",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "magical",
+          "type": "spell",
+          "cost": 4,
+          "attack": 0,
+          "health": 0,
+          "abilities": [
+            "Entourage Effect",
+            "Genetic Surge"
+          ],
+          "image": "/card-art/jar-full-spectrum.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "grow-house",
+          "name": "Cannabis Greenhouse",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "ranged",
+          "type": "tower",
+          "cost": 5,
+          "attack": 0,
+          "health": 800,
+          "abilities": [
+            "Bud Production",
+            "Archer Mode",
+            "Greenhouse Repair"
+          ],
+          "image": "/card-art/grow-house.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "token-void-warp",
+          "name": "Void Warp Token",
+          "role": "goon",
+          "rarity": "epic",
+          "class": "magical",
+          "type": "spell",
+          "cost": 5,
+          "attack": 380,
+          "health": 0,
+          "abilities": [
+            "Graviton Pull",
+            "Void Crush",
+            "Dimensional Tear"
+          ],
+          "image": "/card-art/token-void-warp.png",
+          "source": "season-1-classification"
+        },
+        {
+          "id": "pve_gz_budling_brick",
+          "name": "Budling Brick",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 2,
+          "attack": 70,
+          "health": 220,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-budling-brick.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_nug_runner",
+          "name": "Nug Runner",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 90,
+          "health": 160,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-nug-runner.png",
+          "source": "growerz-generated"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Las Vegas",
+      "boss": {
+        "id": "beast-crystal-mantis",
+        "name": "Terpene Mantis Prime",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "melee",
+        "type": "minion",
+        "cost": 9,
+        "attack": 440,
+        "health": 650,
+        "abilities": [
+          "Prism Wings",
+          "Shard Blades",
+          "Crystal Exo-Shell",
+          "Terpene Prism Blast"
+        ],
+        "image": "/card-art/terpene-mantis-prime.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "pve_gz_pot_body",
+          "name": "Pot Body",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "tank",
+          "type": "minion",
+          "cost": 3,
+          "attack": 50,
+          "health": 340,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-pot-body.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_cola_sprout",
+          "name": "Cola Sprout",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 2,
+          "attack": 80,
+          "health": 180,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-cola-sprout.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_trim_leaf",
+          "name": "Trim Leaf",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 1,
+          "attack": 55,
+          "health": 140,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-trim-leaf.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_dank_hound",
+          "name": "Dank Hound",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 3,
+          "attack": 110,
+          "health": 200,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-dank-hound.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_mary_jane",
+          "name": "Mary Jane Goon",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 3,
+          "attack": 100,
+          "health": 190,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-mary-jane.png",
+          "source": "growerz-generated"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "New Orleans",
+      "boss": {
+        "id": "beast-cactus-golem",
+        "name": "Resin Colossus",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "tank",
+        "type": "minion",
+        "cost": 8,
+        "attack": 350,
+        "health": 950,
+        "abilities": [
+          "Living Amber",
+          "Stone Resin Skin",
+          "Cactus Spine Storm",
+          "Ancient Heal"
+        ],
+        "image": "/card-art/resin-colossus.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "pve_gz_grench",
+          "name": "Grench Enforcer",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "tank",
+          "type": "minion",
+          "cost": 4,
+          "attack": 90,
+          "health": 380,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-grench.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_cosmic_cub",
+          "name": "Cosmic Cub",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 3,
+          "attack": 95,
+          "health": 210,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-cosmic-cub.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_crystal_mite",
+          "name": "Crystal Mite",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 85,
+          "health": 150,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-crystal-mite.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_cactus_punk",
+          "name": "Cactus Punk",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 3,
+          "attack": 105,
+          "health": 230,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-cactus-punk.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_neon_nug",
+          "name": "Neon Nug",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 88,
+          "health": 155,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-neon-nug.png",
+          "source": "growerz-generated"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    },
+    {
+      "city": "Atlanta",
+      "boss": {
+        "id": "token-thc-genesis",
+        "name": "THC Genesis Coin",
+        "role": "boss",
+        "rarity": "legendary",
+        "class": "magical",
+        "type": "spell",
+        "cost": 6,
+        "attack": 500,
+        "health": 0,
+        "abilities": [
+          "Genesis Detonation",
+          "Tower Reset",
+          "Ancestral Echo"
+        ],
+        "image": "/card-art/token-thc-genesis.png",
+        "source": "season-1-classification"
+      },
+      "goons": [
+        {
+          "id": "pve_gz_halo_bud",
+          "name": "Halo Bud",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 3,
+          "attack": 92,
+          "health": 175,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-halo-bud.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_blunt_mouth",
+          "name": "Blunt Mouth",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 2,
+          "attack": 78,
+          "health": 170,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-blunt-mouth.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_floral_fist",
+          "name": "Floral Fist",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "melee",
+          "type": "minion",
+          "cost": 3,
+          "attack": 102,
+          "health": 205,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-floral-fist.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_white_eye",
+          "name": "White Eye",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "ranged",
+          "type": "minion",
+          "cost": 2,
+          "attack": 96,
+          "health": 145,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-white-eye.png",
+          "source": "growerz-generated"
+        },
+        {
+          "id": "pve_gz_plant_halo",
+          "name": "Plant Halo",
+          "role": "goon",
+          "rarity": "uncommon",
+          "class": "magical",
+          "type": "minion",
+          "cost": 3,
+          "attack": 87,
+          "health": 185,
+          "abilities": [
+            "Growerz Blood",
+            "Street Fight"
+          ],
+          "image": "/card-art/pve-plant-halo.png",
+          "source": "growerz-generated"
+        }
+      ],
+      "goonCount": 5,
+      "bossCount": 1
+    }
+  ]
+}
