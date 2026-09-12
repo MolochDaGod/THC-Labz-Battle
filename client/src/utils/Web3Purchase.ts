@@ -20,6 +20,8 @@ export const PACK_USD_PRICES: Record<string, number> = {
   'green-bag':   0.10,
   'dank-pack':   0.30,
   'legend-kush': 0.75,
+  'badbudz-pack': 0.50,
+  'grudawars-pack': 0.40,
 };
 
 // In-game BUDZ balance (DB credit) prices
@@ -27,6 +29,8 @@ export const PACK_GBUX_PRICES: Record<string, number> = {
   'green-bag':   20,
   'dank-pack':   60,
   'legend-kush': 150,
+  'badbudz-pack': 100,
+  'grudawars-pack': 80,
 };
 
 // GBUX = in-game BUDZ balance (no wallet needed)

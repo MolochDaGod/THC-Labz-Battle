@@ -2,6 +2,16 @@
 // Card Types: minion, tower, spell | Classes: ranged, melee, magical, tank
 // New special types: AOE spells (tokens/seeds/canisters), enhancements/debuffs (jars), buildings (grow houses)
 
+export type CardSetId = 'clash' | 'badbudz' | 'grudawars';
+export type CardRarity =
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'mythic'
+  | 'glitch';
+
 export interface ClassificationCard {
   id: string;
   name: string;
@@ -10,7 +20,7 @@ export interface ClassificationCard {
   attack: number;
   health: number;
   description: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  rarity: CardRarity;
   class: 'ranged' | 'magical' | 'tank' | 'melee';
   type: 'tower' | 'minion' | 'spell';
   subtype?: 'aoe-spell' | 'enhancement' | 'debuff' | 'building' | 'beast';
@@ -22,6 +32,36 @@ export interface ClassificationCard {
   isNFTConnected: boolean;
   nftTraitBonus?: { traitType: string; traitValue: string; bonusEffect: string };
   rarityBackground?: string;
+  cardSet?: CardSetId;
+  backgroundId?: string;
+  backgroundBonus?: boolean;
+  glitchCost?: boolean;
+}
+
+/** Rarity frames + Growerz background plates used by library filters and the 1% pack bonus. */
+export const CARD_BACKGROUNDS: Array<{ id: string; label: string; src: string; tier: CardRarity }> = [
+  { id: 'common-grey', label: 'Grey', src: '/card-backgrounds/common-grey.png', tier: 'common' },
+  { id: 'uncommon-purple', label: 'Purple', src: '/card-backgrounds/uncommon-purple.png', tier: 'uncommon' },
+  { id: 'rare-green', label: 'Green', src: '/card-backgrounds/rare-green.png', tier: 'rare' },
+  { id: 'epic-gold', label: 'Gold', src: '/card-backgrounds/epic-gold.png', tier: 'epic' },
+  { id: 'legendary-weed', label: 'Weed', src: '/card-backgrounds/legendary-weed.png', tier: 'legendary' },
+  { id: 'growerz-beige', label: 'Beige', src: '/card-backgrounds/growerz/beige.png', tier: 'uncommon' },
+  { id: 'growerz-dark-gray', label: 'Dark Gray', src: '/card-backgrounds/growerz/dark-gray.png', tier: 'rare' },
+  { id: 'growerz-green', label: 'Growerz Green', src: '/card-backgrounds/growerz/green.png', tier: 'rare' },
+  { id: 'growerz-gold', label: 'Growerz Gold', src: '/card-backgrounds/growerz/gold.png', tier: 'epic' },
+  { id: 'growerz-sunrise', label: 'Sunrise', src: '/card-backgrounds/growerz/sunrise.png', tier: 'epic' },
+  { id: 'growerz-solana', label: 'Solana', src: '/card-backgrounds/growerz/solana.png', tier: 'mythic' },
+  { id: 'growerz-thc-labz', label: 'THC Labz', src: '/card-backgrounds/growerz/thc-labz.png', tier: 'mythic' },
+  { id: 'growerz-starz', label: 'Starz & Stripez', src: '/card-backgrounds/growerz/starz-and-stripez.png', tier: 'glitch' },
+];
+
+export const GROWERZ_BACKGROUNDS = CARD_BACKGROUNDS.filter((b) => b.id.startsWith('growerz-'));
+
+export function defaultBackgroundForRarity(rarity: string) {
+  const r = String(rarity || 'common').toLowerCase();
+  if (r === 'mythic') return CARD_BACKGROUNDS.find((b) => b.id === 'growerz-solana')!;
+  if (r === 'glitch') return CARD_BACKGROUNDS.find((b) => b.id === 'growerz-starz')!;
+  return CARD_BACKGROUNDS.find((b) => b.tier === r) || CARD_BACKGROUNDS[0];
 }
 
 export const CLASSIFICATION_CARD_DATABASE: ClassificationCard[] = [
@@ -768,9 +808,335 @@ export function generateUserDeck(userNFTData: any, userNFTTraits: Array<{trait_t
   if (heroCard) deck.push(heroCard);
   const available = getAvailableCardsForUser(userNFTTraits);
   const sorted = available.sort((a, b) => {
-    const order = { legendary: 5, epic: 4, rare: 3, uncommon: 2, common: 1 };
-    return order[b.rarity] - order[a.rarity];
+    const order: Record<string, number> = {
+      glitch: 7, mythic: 6, legendary: 5, epic: 4, rare: 3, uncommon: 2, common: 1,
+    };
+    return (order[b.rarity] || 0) - (order[a.rarity] || 0);
   });
   for (let i = 0; i < 7 && i < sorted.length; i++) deck.push(sorted[i]);
   return deck;
+}
+
+function stampSet(card: ClassificationCard, set: CardSetId): ClassificationCard {
+  const bg = defaultBackgroundForRarity(card.rarity);
+  return {
+    ...card,
+    cardSet: set,
+    backgroundId: card.backgroundId || bg.id,
+    rarityBackground: card.rarityBackground || bg.src,
+  };
+}
+
+/**
+ * BadBudz pack pool — same Clash cost/ATK/HP/abilities as the matching local-art
+ * Season 1 cards. New ids so the library can share the set without cloning bag rows.
+ */
+export const BADBUDZ_CARDS: ClassificationCard[] = [
+  stampSet({
+    id: 'badbudz:seed', name: 'Bad Seed', image: 'https://duelyst.grudge-studio.com/tcg-chrome/thc/bad-seed.png',
+    cost: 1, attack: 0, health: 2, rarity: 'epic', class: 'magical', type: 'minion',
+    description: 'Hold on to this, you know you will see some BadBudz. Genesis incubator seed — hatch after a 24h Battle grow.',
+    abilities: ['Incubate', 'Genesis'],
+    abilityDesc: 'Incubate: After 24h on a Battle grow slot, hatches into an epic-or-better BadBudz unit. Genesis: Cannot be played as a troop until hatched.',
+    traitRequirements: [], isNFTConnected: true,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:recon-turret', name: 'Recon Bud Turret', image: '/card-art/recon-bud-turret.png',
+    cost: 2, attack: 60, health: 300, rarity: 'common', class: 'ranged', type: 'tower',
+    description: 'A basic guard turret sprouted from a clipped bud. Fires seed pellets at the nearest enemy without hesitation.',
+    abilities: ['Sentinel', 'Rapid Fire'],
+    abilityDesc: 'Sentinel: Never loses target lock on moving units. Rapid Fire: Every 5th shot fires in a burst of 3.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:strain-sentry', name: 'Strain Sentry Post', image: '/card-art/strain-sentry-post.png',
+    cost: 2, attack: 80, health: 420, rarity: 'uncommon', class: 'ranged', type: 'tower',
+    description: 'Upgraded watch post infused with terpene concentrate. Shoots pressurized resin blasts that slow anything they hit.',
+    abilities: ['Resin Blast', 'Fortified'],
+    abilityDesc: 'Resin Blast: Shots slow targets by 15% for 2 sec. Fortified: Takes 10% less damage from all melee attacks.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:rampart', name: "Grower's Rampart", image: '/card-art/growers-rampart.png',
+    cost: 3, attack: 95, health: 550, rarity: 'uncommon', class: 'ranged', type: 'tower',
+    description: 'A fortified grow-room outpost manned by seasoned cultivators. Passively boosts adjacent towers and slowly repairs itself.',
+    abilities: ['Tower Aura', 'Reinforced Walls'],
+    abilityDesc: 'Tower Aura: Adjacent towers gain +15 ATK. Reinforced Walls: Tower repairs itself for 12 HP per second.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:pollen', name: 'Pollen Puncher', image: '/card-art/pollen-puncher.png',
+    cost: 2, attack: 125, health: 160, rarity: 'uncommon', class: 'melee', type: 'minion',
+    description: 'Hands permanently stained bright yellow — this bruiser coats enemies in pollen that chokes their abilities on contact.',
+    abilities: ['Pollen Cloud', 'Heavy Handed'],
+    abilityDesc: 'Pollen Cloud: On hit, 30% chance to silence enemy abilities for 3 seconds. Heavy Handed: Knocks back enemies on kill.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:sage', name: 'Entourage Sage', image: '/card-art/entourage-sage.png',
+    cost: 2, attack: 90, health: 175, rarity: 'uncommon', class: 'magical', type: 'minion',
+    description: 'Channels the entourage effect to amplify all nearby allies. Alone she is weak; surrounded she is extraordinary.',
+    abilities: ['Entourage Aura', 'Synergy Stack'],
+    abilityDesc: 'Entourage Aura: Nearby allied minions gain +12% ATK. Synergy Stack: Effect stacks additively if multiple Sages are deployed simultaneously.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:trim-machine', name: 'Trim Machine', image: '/card-art/trim-machine.png',
+    cost: 4, attack: 35, health: 800, rarity: 'uncommon', class: 'magical', type: 'tower', subtype: 'building',
+    description: 'A golden grow colossus that processes the entire operation. Its slow resin orbs deal minimal damage — but while it stands, every unit in your hand costs 1 less elixir.',
+    abilities: ['Cost Reduction', 'Resin Orb'],
+    abilityDesc: 'Cost Reduction: All cards in hand cost 1 less elixir while Trim Machine is on the field. Resin Orb: Fires a slow-moving sticky projectile every 3s dealing 35 damage.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:indica-bomb', name: 'Forbidden Indica Bomb', image: '/card-art/seed-indica.png',
+    cost: 3, attack: 180, health: 0, rarity: 'uncommon', class: 'magical', type: 'spell', subtype: 'aoe-spell',
+    description: 'Launch a dense indica seed at the target tile. It absorbs atmospheric pressure mid-flight and detonates in a concussive blast that knocks survivors off their feet.',
+    abilities: ['Concussive Blast', 'Indica Haze'],
+    abilityDesc: 'Concussive Blast: Deals 180 damage to all enemies in 2-tile radius. Indica Haze: All surviving hit targets are slowed by 35% for 4 seconds.',
+    aoeRadius: 2, traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:kush-ranger', name: 'Kush Ranger', image: '/card-art/kush-ranger.png',
+    cost: 4, attack: 165, health: 260, rarity: 'rare', class: 'ranged', type: 'minion',
+    description: 'A battle-hardened ranger who has patrolled the kush highlands for decades. Fires continuously while moving and ignores terrain penalties.',
+    abilities: ['Mobile Assault', 'Terrain Expert'],
+    abilityDesc: 'Mobile Assault: Continues to fire while moving at full attack speed. Terrain Expert: Cannot be slowed, rooted, or penalized by any ground effects.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:the-law', name: 'The Law', image: '/card-art/the-law.png',
+    cost: 4, attack: 145, health: 460, rarity: 'rare', class: 'tank', type: 'minion',
+    description: 'Armored in tactical gear and hardened resin plating, The Law enforces order on the battlefield — immune to fear, immune to pain.',
+    abilities: ['Rosin Armor', 'Sticky Charge'],
+    abilityDesc: 'Rosin Armor: Reduces all incoming damage by 20%. Sticky Charge: When it charges, the first enemy hit is ensnared in rosin for 2.5 seconds.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:berserker', name: 'Resin Berserker', image: '/card-art/resin-berserker.png',
+    cost: 4, attack: 210, health: 240, rarity: 'rare', class: 'melee', type: 'minion',
+    description: 'Coated head-to-toe in combustible sticky resin that he ignites mid-battle. Everything he touches burns, and he loves every second of it.',
+    abilities: ['Resin Ignition', 'Berserker Rage'],
+    abilityDesc: 'Resin Ignition: Every 4th attack ignites target causing 80 burn damage over 4 sec. Berserker Rage: Below 30% HP gains +50% attack speed and +40% movement speed.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:aurora', name: 'Aurora Pheno Witch', image: '/card-art/aurora-pheno-witch.png',
+    cost: 5, attack: 255, health: 310, rarity: 'epic', class: 'magical', type: 'minion',
+    description: 'The rarest phenotype ever cultivated. She bends aurora light into weapons and transforms fallen enemies into healing nodes for her allies.',
+    abilities: ['Aurora Beam', 'Pheno Convert', 'Lunar Cycle'],
+    abilityDesc: 'Aurora Beam: Primary attack is a sustained piercing laser through all enemies in a line. Pheno Convert: On kill, fallen enemy becomes a healing node restoring 50 HP/sec to nearby allies. Lunar Cycle: Every 30 sec resets all ability cooldowns for all allied units on the field.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:tsunami', name: 'Terp Tsunami', image: '/card-art/terp-tsunami.png',
+    cost: 4, attack: 350, health: 0, rarity: 'epic', class: 'magical', type: 'spell', subtype: 'aoe-spell',
+    description: 'Unleash a cascading wave of super-concentrated terpenes. This tidal force erases entire lanes of enemies in one devastating surge.',
+    abilities: ['Wave Crush', 'Drown Zone', 'Tidal Pull'],
+    abilityDesc: 'Wave Crush: Deals 350 damage to all enemies in a 3-tile lane. Drown Zone: Soaked area deals 50 damage/sec for 5 additional seconds. Tidal Pull: All hit enemies are dragged backwards 2 tiles.',
+    aoeRadius: 3, traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:greenhouse', name: 'Cannabis Greenhouse', image: '/card-art/grow-house.png',
+    cost: 5, attack: 0, health: 800, rarity: 'epic', class: 'ranged', type: 'tower', subtype: 'building',
+    description: 'A glass greenhouse fortified for battle. Continuously grows and deploys Bud Tender soldiers for free. Toggle to grow Kush Archers instead.',
+    abilities: ['Bud Production', 'Archer Mode', 'Greenhouse Repair'],
+    abilityDesc: 'Bud Production: Spawns 1 Bud Tender every 12 seconds at no mana cost. Archer Mode: Toggle to spawn 1 Kush Archer (ranged, 2-cost stats) every 16 seconds. Greenhouse Repair: Self-heals at 50 HP per second.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:citadel', name: 'Chronic Citadel', image: '/card-art/chronic-citadel.png',
+    cost: 5, attack: 240, health: 950, rarity: 'epic', class: 'ranged', type: 'tower',
+    description: 'The most fortified structure in the entire grow kingdom. Dual-barrel resin cannons fire simultaneously on two separate targets.',
+    abilities: ['Dual Barrels', 'Overcharge'],
+    abilityDesc: 'Dual Barrels: Simultaneously attacks 2 different targets. Overcharge: Once per battle charges all shots — next 5 attacks deal triple damage.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:terry', name: 'Terry the Don', image: '/card-art/beast-dank-hound.png',
+    cost: 6, attack: 310, health: 520, rarity: 'legendary', class: 'melee', type: 'minion', subtype: 'beast',
+    description: "The grow's most dangerous guard dog. His terpene-scanning goggles detect enemies across the entire field, and his GBUX medallion recharges with every confirmed kill.",
+    abilities: ['Terp Scan', 'GBUX Medallion', 'Hound Frenzy', 'Loyalty Pact'],
+    abilityDesc: 'Terp Scan: Permanently reveals all invisible and stealthed units on the field. GBUX Medallion: Player earns 5 GBUX per kill scored by this unit. Hound Frenzy: Below 40% HP — attack speed triples and becomes immune to all crowd control. Loyalty Pact: Cannot be confused, converted, or mind-controlled by any enemy ability.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:mary-jane', name: 'Mary Jane', image: '/card-art/beast-mary-jane.png',
+    cost: 7, attack: 365, health: 590, rarity: 'legendary', class: 'magical', type: 'minion', subtype: 'beast',
+    description: 'The most powerful mage in the grow kingdom. Her hat conceals a bottomless sack of enchanted seeds. She repositions across dimensions at will and heals her entire army.',
+    abilities: ['Teleport', 'Seed Bomb Barrage', 'Grow Magic Aura', 'Holiday Surge'],
+    abilityDesc: 'Teleport: Instantly relocates to any tile on the board (8 sec cooldown). Seed Bomb Barrage: Active — throws 5 homing seed bombs at the highest-HP enemy (30 sec cooldown, each deals 280 damage). Grow Magic Aura: All allied minions regenerate 20 HP/sec passively. Holiday Surge: Once per battle — heals all allies to 100% HP and simultaneously deals 400 damage to all enemies.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:raclavin', name: 'Raclavin The Dank King', image: '/card-art/raclavin-the-dank-king.png',
+    cost: 7, attack: 300, health: 1100, rarity: 'legendary', class: 'tank', type: 'minion', subtype: 'beast',
+    description: 'The undisputed Dank King. Raclavin rules the grow with a money-crowned staff and a cannabis-leaf shield. His presence alone tilts the battlefield in your favour.',
+    abilities: ['Ironbark Armor', 'Root Network', 'Ancient Regrowth', 'Spell Deflect'],
+    abilityDesc: 'Ironbark Armor: Minimum damage per hit is capped at 10 regardless of source. Root Network: All allied towers within 3 tiles gain +200 HP permanently. Ancient Regrowth: Heals 80 HP per second continuously. Spell Deflect: All offensive spells aimed at Raclavin are reflected back at the caster.',
+    traitRequirements: [], isNFTConnected: true,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:zephyrix', name: 'Zephyrix the Wind Grower', image: '/card-art/zephyrix.png',
+    cost: 7, attack: 350, health: 610, rarity: 'legendary', class: 'ranged', type: 'minion', subtype: 'beast',
+    description: 'Master of wind-pollination and aerial combat. Zephyrix calls cannabis pollen storms that make entire enemy armies attack each other in total confusion.',
+    abilities: ['Pollen Storm', 'Crosswind Shield', 'Genetic Scatter', 'Aerial Dominance'],
+    abilityDesc: 'Pollen Storm: Fills 4-tile radius with pollen — enemies attack random targets for 8 sec. Crosswind Shield: Ranged projectiles have 40% chance to be deflected away. Genetic Scatter: On kill, drops seeds that grow into free Bud Tender units. Aerial Dominance: +50% attack range and flies over all obstacles.',
+    traitRequirements: [], isNFTConnected: true,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:ursus', name: 'Ursus the Cosmic Budlord', image: '/card-art/ursus-cosmic-budlord.png',
+    cost: 8, attack: 400, health: 720, rarity: 'legendary', class: 'melee', type: 'minion', subtype: 'beast',
+    description: 'A cosmic purple bear crowned with living cannabis leaves. Ursus channels gravitational forces from distant grow planets — everything orbits him and everything eventually gets crushed.',
+    abilities: ['Cosmic Gravity', 'Star Paw Slam', 'Cannabis Crown', 'Orbital Pull'],
+    abilityDesc: 'Cosmic Gravity: All enemies on the entire field move 30% slower while Ursus is alive. Star Paw Slam: Every 10 sec performs a massive ground slam dealing 450 damage in 3-tile radius. Cannabis Crown: Heals 50 HP/sec and grants all allied beast-subtype units +15% ATK. Orbital Pull: Each attack pulls a random distant enemy to melee range.',
+    traitRequirements: [], isNFTConnected: true,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:colossus', name: 'Resin Colossus', image: '/card-art/resin-colossus.png',
+    cost: 8, attack: 350, health: 950, rarity: 'legendary', class: 'tank', type: 'minion', subtype: 'beast',
+    description: 'An ancient cactus-golem whose body drips with living amber resin. Centuries of battles have fused its stone skin into near-indestructibility — spells literally shatter off its chest.',
+    abilities: ['Living Amber', 'Stone Resin Skin', 'Cactus Spine Storm', 'Ancient Heal'],
+    abilityDesc: 'Living Amber: Any melee attacker who hits Resin Colossus gets entangled in resin for 3 seconds. Stone Resin Skin: Magical damage reduced by 60%. Cactus Spine Storm: Every 15 sec fires 12 spines in all directions each dealing 150 damage. Ancient Heal: Heals 120 HP/sec — highest regeneration in the entire game.',
+    traitRequirements: [], isNFTConnected: true,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:genesis', name: 'THC Genesis Coin', image: '/card-art/token-thc-genesis.png',
+    cost: 6, attack: 500, health: 0, rarity: 'legendary', class: 'magical', type: 'spell', subtype: 'aoe-spell',
+    description: 'The original THC genesis token. Detonating it releases the primordial terpene frequency — every single enemy on the entire field takes devastating damage at the same instant.',
+    abilities: ['Genesis Detonation', 'Tower Reset', 'Ancestral Echo'],
+    abilityDesc: 'Genesis Detonation: Deals 500 damage to every enemy on the field simultaneously. Tower Reset: Immediately resets all friendly tower attack cooldowns to zero. Ancestral Echo: Leaves a persistent field for 8 seconds dealing 80 dmg/sec to any enemy that enters it.',
+    aoeRadius: 999, traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+  stampSet({
+    id: 'badbudz:void-myth', name: 'Nope Void Myth', image: '/card-art/token-void-warp.png',
+    cost: 8, attack: 420, health: 0, rarity: 'mythic', class: 'magical', type: 'spell', subtype: 'aoe-spell',
+    description: 'A glitched Nope token. Tears a dimensional void that should not exist in the grow — mythic pack-only.',
+    abilities: ['Graviton Pull', 'Void Crush', 'Dimensional Tear'],
+    abilityDesc: 'Graviton Pull: All enemies within 3 tiles are instantly dragged to the target point. Void Crush: All pulled enemies take 420 damage from the collapse. Dimensional Tear: The void persists for 4 seconds continuously pulling new enemies who wander into range.',
+    aoeRadius: 3, traitRequirements: [], isNFTConnected: false,
+  }, 'badbudz'),
+];
+
+/**
+ * GrudaWars pack pool — Clash-scale stats copied from matching class/rarity
+ * Season 1 cards. Local Battle art only (no invented Duelyst numbers).
+ */
+export const GRUDAWARS_CARDS: ClassificationCard[] = [
+  stampSet({
+    id: 'grudawars:scout', name: 'Gruda Scout', image: '/card-art/kush-ranger.png',
+    cost: 2, attack: 70, health: 110, rarity: 'uncommon', class: 'ranged', type: 'minion',
+    description: 'Forward observer for the Gruda line. Reveals cloaked units and fans seed-shot into a lane.',
+    abilities: ['Recon', 'Volley Shot'],
+    abilityDesc: 'Recon: Reveals cloaked units within 2 tiles. Volley Shot: Every 8 seconds fires 3 seeds in a fan arc.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:brute', name: 'Gruda Brute', image: '/card-art/pollen-puncher.png',
+    cost: 2, attack: 125, health: 160, rarity: 'uncommon', class: 'melee', type: 'minion',
+    description: 'Front-line Gruda bruiser. Coats enemies in pollen that chokes abilities on contact.',
+    abilities: ['Pollen Cloud', 'Heavy Handed'],
+    abilityDesc: 'Pollen Cloud: On hit, 30% chance to silence enemy abilities for 3 seconds. Heavy Handed: Knocks back enemies on kill.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:blade', name: 'Gruda Blade', image: '/card-art/resin-berserker.png',
+    cost: 4, attack: 210, health: 240, rarity: 'rare', class: 'melee', type: 'minion',
+    description: 'Rush melee of the Gruda host. Ignites resin mid-strike and rages as HP drops.',
+    abilities: ['Rush', 'Resin Ignition', 'Berserker Rage'],
+    abilityDesc: 'Rush: Moves 20% faster on deploy. Resin Ignition: Every 4th attack ignites target causing 80 burn over 4 sec. Berserker Rage: Below 30% HP gains +50% attack speed.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:bolt', name: 'Gruda Bolt', image: '/card-art/recon-bud-turret.png',
+    cost: 4, attack: 165, health: 260, rarity: 'rare', class: 'ranged', type: 'minion',
+    description: 'Mobile Gruda marksman. Fires while moving and ignores terrain slow.',
+    abilities: ['Range', 'Mobile Assault', 'Terrain Expert'],
+    abilityDesc: 'Range: +1 tile attack reach. Mobile Assault: Continues to fire while moving at full attack speed. Terrain Expert: Cannot be slowed or rooted by ground effects.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:warden', name: 'Gruda Warden', image: '/card-art/resin-colossus.png',
+    cost: 4, attack: 145, health: 460, rarity: 'rare', class: 'tank', type: 'minion',
+    description: 'Armored Gruda hold-point. Taunts nearby enemies and fortifies incoming hits.',
+    abilities: ['Taunt', 'Fortify', 'Rosin Armor'],
+    abilityDesc: 'Taunt: Forces nearby enemies to target this unit. Fortify: +15% damage reduction while stationary. Rosin Armor: Reduces all incoming damage by 20%.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:seer', name: 'Gruda Seer', image: '/card-art/aurora-pheno-witch.png',
+    cost: 5, attack: 255, health: 310, rarity: 'epic', class: 'magical', type: 'minion',
+    description: 'Gruda battle-mage. Piercing aurora beam, splash on kill, ward on allies.',
+    abilities: ['Splash', 'Ward', 'Aurora Beam'],
+    abilityDesc: 'Aurora Beam: Piercing laser through all enemies in a line. Splash: On kill, nearby enemies take 40% of the killing blow. Ward: Allied minions within 2 tiles gain a 120 HP shield on deploy.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:citadel', name: 'Gruda Citadel', image: '/card-art/chronic-citadel.png',
+    cost: 5, attack: 240, health: 950, rarity: 'epic', class: 'ranged', type: 'tower',
+    description: 'Dual-barrel Gruda keep. Locks two targets and overcharges once per fight.',
+    abilities: ['Dual Barrels', 'Overcharge'],
+    abilityDesc: 'Dual Barrels: Simultaneously attacks 2 different targets. Overcharge: Once per battle the next 5 attacks deal triple damage.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:king', name: 'Gruda King', image: '/card-art/raclavin-the-dank-king.png',
+    cost: 7, attack: 300, health: 1100, rarity: 'legendary', class: 'tank', type: 'minion', subtype: 'beast',
+    description: 'Commander of the Gruda line. Caps incoming hits, roots allied towers, regenerates continuously.',
+    abilities: ['Commander', 'Fortify', 'Ironbark Armor', 'Ancient Regrowth'],
+    abilityDesc: 'Commander: Allied minions gain +10% ATK while the King lives. Ironbark Armor: Minimum damage per hit is capped at 10. Root Network: Allied towers within 3 tiles gain +200 HP. Ancient Regrowth: Heals 80 HP per second.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:colossus', name: 'Gruda Colossus', image: '/card-art/resin-colossus.png',
+    cost: 8, attack: 350, health: 950, rarity: 'legendary', class: 'tank', type: 'minion', subtype: 'beast',
+    description: 'Siege-body of the Gruda host. Entangles melee attackers and shrugs off magic.',
+    abilities: ['Living Amber', 'Stone Resin Skin', 'Ancient Heal'],
+    abilityDesc: 'Living Amber: Melee attackers who hit this unit are entangled for 3 seconds. Stone Resin Skin: Magical damage reduced by 60%. Ancient Heal: Heals 120 HP/sec.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+  stampSet({
+    id: 'grudawars:myth', name: 'Gruda Myth', image: '/card-art/zephyrix.png',
+    cost: 8, attack: 400, health: 720, rarity: 'mythic', class: 'magical', type: 'minion', subtype: 'beast',
+    description: 'Air + splash mythic of the Gruda set. Pollen storm confuses armies; wind deflects shot.',
+    abilities: ['Air', 'Splash', 'Pollen Storm', 'Aerial Dominance'],
+    abilityDesc: 'Air: Flies over obstacles. Splash: Attacks hit a 1-tile radius. Pollen Storm: Enemies in 4 tiles attack random targets for 8 sec. Aerial Dominance: +50% attack range.',
+    traitRequirements: [], isNFTConnected: false,
+  }, 'grudawars'),
+];
+
+export const CLASH_CARDS: ClassificationCard[] = CLASSIFICATION_CARD_DATABASE.map((c) => stampSet(c, 'clash'));
+
+/** Full shareable library — Clash Season 1 + BadBudz pack set + GrudaWars pack set. */
+export const LIBRARY_CARDS: ClassificationCard[] = [
+  ...CLASH_CARDS,
+  ...BADBUDZ_CARDS,
+  ...GRUDAWARS_CARDS,
+];
+
+export function cardsForSet(set: string): ClassificationCard[] {
+  const s = String(set || 'all').toLowerCase();
+  if (s === 'all') return LIBRARY_CARDS;
+  return LIBRARY_CARDS.filter((c) => c.cardSet === s);
+}
+
+/** 1% pack roll: Growerz background bonus, +1 cost stored, displayed cost glitches. */
+export function applyBackgroundGlitch(card: ClassificationCard): ClassificationCard {
+  if (Math.random() >= 0.01) {
+    return { ...card, backgroundBonus: false, glitchCost: false };
+  }
+  const bg = GROWERZ_BACKGROUNDS[Math.floor(Math.random() * GROWERZ_BACKGROUNDS.length)];
+  const atk = Number(card.attack || 0);
+  const hp = Number(card.health || 0);
+  return {
+    ...card,
+    backgroundBonus: true,
+    glitchCost: true,
+    backgroundId: bg.id,
+    rarityBackground: bg.src,
+    cost: Number(card.cost || 0) + 1,
+    attack: atk + Math.round(atk * 0.08) + 15,
+    health: hp > 0 ? hp + Math.round(hp * 0.1) + 25 : hp,
+    rarity: card.rarity === 'legendary' || card.rarity === 'mythic' ? 'glitch' : card.rarity,
+  };
 }

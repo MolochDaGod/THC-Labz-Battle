@@ -178,6 +178,19 @@ async function ownedCards(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+async function libraryCatalog(req: VercelRequest, res: VercelResponse) {
+  const { LIBRARY_CARDS } = await import('../shared/classificationCardDatabase');
+  const set = String(req.query.set || 'all').toLowerCase();
+  const cards = set === 'all' ? LIBRARY_CARDS : LIBRARY_CARDS.filter((c: any) => c.cardSet === set);
+  res.json({
+    success: true,
+    set,
+    count: cards.length,
+    share: `https://thc-labz-battle.vercel.app/library${set !== 'all' ? `?set=${encodeURIComponent(set)}` : ''}`,
+    cards,
+  });
+}
+
 async function adminCardsList(_req: VercelRequest, res: VercelResponse) {
   const db = getDb();
   if (!db) return res.json([]);
@@ -239,6 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Cards
     if (path.startsWith('cards/owned/') && req.method === 'GET') return ownedCards(req, res);
+    if (path === 'cards/library' && req.method === 'GET') return libraryCatalog(req, res);
     if (path === 'admin/cards' && req.method === 'GET') return adminCardsList(req, res);
 
     // Card shop

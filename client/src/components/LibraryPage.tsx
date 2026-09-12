@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, X, Sparkles, Copy, Check, ExternalLink, Zap, Coins, Flame, Layers } from 'lucide-react';
-import { CLASSIFICATION_CARD_DATABASE, type ClassificationCard } from '../../../shared/classificationCardDatabase';
+import {
+  LIBRARY_CARDS,
+  CARD_BACKGROUNDS,
+  defaultBackgroundForRarity,
+  type ClassificationCard,
+  type CardSetId,
+} from '../../../shared/classificationCardDatabase';
 import GAME_CONFIG from '../config/gameConfig';
 
 // ── Skill Tree ─────────────────────────────────────────
@@ -104,6 +110,8 @@ const RARITY: Record<string, { border: string; glow: string; badge: string; bg: 
   rare:      { border: '#3b82f6', glow: 'rgba(59,130,246,0.45)',  badge: '#1e3a8a', bg: 'rgba(8,15,35,0.92)',     text: '#60a5fa', leaves: 3 },
   epic:      { border: '#a855f7', glow: 'rgba(168,85,247,0.5)',   badge: '#4c1d95', bg: 'rgba(18,8,38,0.92)',     text: '#c084fc', leaves: 4 },
   legendary: { border: '#f59e0b', glow: 'rgba(245,158,11,0.6)',   badge: '#78350f', bg: 'rgba(30,15,0,0.92)',     text: '#fbbf24', leaves: 5 },
+  mythic:    { border: '#22d3ee', glow: 'rgba(34,211,238,0.65)',  badge: '#155e75', bg: 'rgba(4,16,28,0.94)',     text: '#67e8f9', leaves: 6 },
+  glitch:    { border: '#f472b6', glow: 'rgba(236,72,153,0.7)',   badge: '#9d174d', bg: 'rgba(26,0,20,0.94)',     text: '#f9a8d4', leaves: 6 },
 };
 
 const CLASS_META: Record<string, { icon: string; color: string }> = {
@@ -121,7 +129,13 @@ const TYPE_META: Record<string, { icon: string; color: string }> = {
   beast:    { icon: '🐾', color: '#34d399' },
 };
 
-const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'glitch'];
+const SET_TABS: Array<{ id: CardSetId | 'all'; label: string }> = [
+  { id: 'badbudz', label: 'BADBUDZ' },
+  { id: 'grudawars', label: 'GRUDAWARS' },
+  { id: 'clash', label: 'CLASH' },
+  { id: 'all', label: 'ALL SETS' },
+];
 
 // ── Pot Leaf SVG ──────────────────────────────────────
 function PotLeaf({ color, size = 11 }: { color: string; size?: number }) {
@@ -241,7 +255,7 @@ const LORE: Record<string, string> = {
   'image-52': '"Void warps space. This token warps certainty."',
 };
 
-interface LibraryPageProps { onBack: () => void; walletAddress?: string; }
+interface LibraryPageProps { onBack: () => void; walletAddress?: string; initialTab?: 'library' | 'badbudz' }
 
 // ── Coerce a raw DB card record into a ClassificationCard shape ──
 function dbCardToClassification(raw: any): ClassificationCard {
@@ -264,25 +278,61 @@ function dbCardToClassification(raw: any): ClassificationCard {
     traitRequirements: [],
     isNFTConnected: false,
     rarityBackground: data.rarityBackground,
+    cardSet:     (data.cardSet || data.card_set || (String(id).startsWith('badbudz') ? 'badbudz' : String(id).startsWith('grudawars') ? 'grudawars' : 'clash')) as CardSetId,
+    backgroundId: data.backgroundId,
+    backgroundBonus: Boolean(data.backgroundBonus),
+    glitchCost: Boolean(data.glitchCost),
   };
 }
 
+// ── Bad Seed cNFT ─────────────────────────────────────
+const BAD_SEED_UUID    = 'CARD-20260901000000-0002BF-3864B262';
+const BAD_SEED_TAGLINE = 'Bad Seed - Hold on to this, you know you will see some BadBudz.';
+const BAD_SEED_PRICE: Record<'BUDZ' | 'THC' | 'SOL', { label: string; color: string; bg: string }> = {
+  BUDZ: { label: '5,000 BUDZ', color: '#ffeaa0', bg: 'rgba(255,215,0,0.2)' },
+  THC:  { label: '50 THC',     color: '#39ff14', bg: 'rgba(57,255,20,0.2)' },
+  SOL:  { label: '0.05 SOL',   color: '#c084fc', bg: 'rgba(168,85,247,0.2)' },
+};
+const BAD_SEED_BUDZ_COST = 5000;
+
 // ── Main Library Component ────────────────────────────
-export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps) {
-  const [activeTab, setActiveTab]       = useState<'library' | 'badbudz'>('library');
-  const [filterRarity, setFilterRarity] = useState('all');
-  const [filterType, setFilterType]     = useState('all');
-  const [filterClass, setFilterClass]   = useState('all');
+function readLibraryParams() {
+  if (typeof window === 'undefined') return { set: 'badbudz' as const, rarity: 'all', type: 'all', className: 'all', bg: 'all', owned: false };
+  const q = new URLSearchParams(window.location.search);
+  const set = (q.get('set') || 'badbudz').toLowerCase();
+  return {
+    set: (['badbudz', 'grudawars', 'clash', 'all'].includes(set) ? set : 'badbudz') as CardSetId | 'all',
+    rarity: q.get('rarity') || 'all',
+    type: q.get('type') || 'all',
+    className: q.get('class') || 'all',
+    bg: q.get('bg') || 'all',
+    owned: q.get('owned') === '1',
+  };
+}
+
+export default function LibraryPage({ onBack, walletAddress, initialTab = 'library' }: LibraryPageProps) {
+  const initial = readLibraryParams();
+  const [activeTab, setActiveTab]       = useState<'library' | 'badbudz'>(initialTab);
+  const [filterSet, setFilterSet]       = useState<CardSetId | 'all'>(initial.set);
+  const [filterRarity, setFilterRarity] = useState(initial.rarity);
+  const [filterType, setFilterType]     = useState(initial.type);
+  const [filterClass, setFilterClass]   = useState(initial.className);
+  const [filterBg, setFilterBg]         = useState(initial.bg);
+  const [ownedOnly, setOwnedOnly]       = useState(initial.owned);
   const [search, setSearch]             = useState('');
   const [selected, setSelected]         = useState<ClassificationCard | null>(null);
   const [ownedIds, setOwnedIds]         = useState<Set<string>>(new Set());
   const [extraOwnedCards, setExtraOwnedCards] = useState<ClassificationCard[]>([]);
+  const [copiedShare, setCopiedShare]   = useState(false);
 
   // Bad Seed Incubator / cNFT Minting State
-  const [mintCurrency, setMintCurrency]   = useState<'THC' | 'SOL'>('THC');
+  const [mintCurrency, setMintCurrency]   = useState<'BUDZ' | 'THC' | 'SOL'>('BUDZ');
   const [isMinting, setIsMinting]         = useState(false);
   const [mintProgress, setMintProgress]   = useState(0);
   const [mintedCard, setMintedCard]       = useState<any | null>(null);
+  const [mintError, setMintError]         = useState<string | null>(null);
+  const [budzBalance, setBudzBalance]     = useState<number | null>(null);
+  const [seedsOwned, setSeedsOwned]       = useState(0);
   const [copiedUuid, setCopiedUuid]       = useState(false);
 
   useEffect(() => {
@@ -294,7 +344,7 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
         const ids = new Set(arr.map((c: any) => c.cardId || c.card_id || c.id));
         setOwnedIds(ids);
 
-        const classificationIds = new Set(CLASSIFICATION_CARD_DATABASE.map(c => c.id));
+        const classificationIds = new Set(LIBRARY_CARDS.map(c => c.id));
         const extras = arr
           .filter((c: any) => {
             const id = c.cardId || c.card_id || c.id;
@@ -307,12 +357,36 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
       .catch(() => {});
   }, [walletAddress]);
 
-  const allCards = useMemo(() => [...CLASSIFICATION_CARD_DATABASE, ...extraOwnedCards], [extraOwnedCards]);
+  const allCards = useMemo(() => [...LIBRARY_CARDS, ...extraOwnedCards], [extraOwnedCards]);
+
+  useEffect(() => {
+    if (activeTab !== 'library' || typeof window === 'undefined') return;
+    const q = new URLSearchParams();
+    if (filterSet !== 'all') q.set('set', filterSet);
+    if (filterRarity !== 'all') q.set('rarity', filterRarity);
+    if (filterType !== 'all') q.set('type', filterType);
+    if (filterClass !== 'all') q.set('class', filterClass);
+    if (filterBg !== 'all') q.set('bg', filterBg);
+    if (ownedOnly) q.set('owned', '1');
+    const next = `${window.location.pathname}${q.toString() ? `?${q}` : ''}`;
+    window.history.replaceState({}, '', next);
+  }, [activeTab, filterSet, filterRarity, filterType, filterClass, filterBg, ownedOnly]);
+
+  const copyShareLink = () => {
+    const url = typeof window !== 'undefined' ? window.location.href : 'https://thc-labz-battle.vercel.app/library';
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 1600);
+    }).catch(() => {});
+  };
 
   const filtered = allCards.filter(c => {
+    if (filterSet !== 'all' && (c.cardSet || 'clash') !== filterSet) return false;
     if (filterRarity !== 'all' && c.rarity !== filterRarity) return false;
-    if (filterType   !== 'all' && c.type  !== filterType)   return false;
+    if (filterType   !== 'all' && c.type  !== filterType && c.subtype !== filterType) return false;
     if (filterClass  !== 'all' && c.class !== filterClass)  return false;
+    if (filterBg !== 'all' && (c.backgroundId || defaultBackgroundForRarity(c.rarity).id) !== filterBg) return false;
+    if (ownedOnly && !ownedIds.has(c.id)) return false;
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -325,8 +399,9 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
     return ri !== 0 ? ri : a.name.localeCompare(b.name);
   });
 
+  const setPool = filterSet === 'all' ? allCards : allCards.filter(c => (c.cardSet || 'clash') === filterSet);
   const rarityCounts = RARITY_ORDER.reduce((acc, r) => {
-    acc[r] = allCards.filter(c => c.rarity === r).length;
+    acc[r] = setPool.filter(c => c.rarity === r).length;
     return acc;
   }, {} as Record<string, number>);
 
@@ -335,58 +410,76 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
     return acc;
   }, {} as Record<string, number>);
 
-  const handleMintSeed = () => {
+  // Live BUDZ balance + how many Bad Seeds this wallet already holds
+  const refreshSeedInfo = React.useCallback(() => {
+    if (!walletAddress) return;
+    fetch(`/api/badseed/info?walletAddress=${encodeURIComponent(walletAddress)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d?.success) {
+          if (typeof d.budzBalance === 'number') setBudzBalance(d.budzBalance);
+          setSeedsOwned(d.owned ?? 0);
+        }
+      })
+      .catch(() => {});
+  }, [walletAddress]);
+
+  useEffect(() => { refreshSeedInfo(); }, [refreshSeedInfo]);
+
+  const canAffordSeed = mintCurrency !== 'BUDZ' || budzBalance === null || budzBalance >= BAD_SEED_BUDZ_COST;
+
+  const handleMintSeed = async () => {
     if (isMinting) return;
+    setMintError(null);
+
+    if (mintCurrency !== 'BUDZ') {
+      setMintError(`${mintCurrency} checkout settles on-chain — switch to BUDZ to buy the seed here.`);
+      return;
+    }
+    if (!walletAddress) {
+      setMintError('Connect your wallet to buy a Bad Seed.');
+      return;
+    }
+
     setIsMinting(true);
     setMintProgress(0);
     setMintedCard(null);
 
+    // Incubation animation runs while the mint settles server-side.
     const interval = setInterval(() => {
-      setMintProgress(p => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setIsMinting(false);
-
-          // Rarity roll
-          const roll = Math.random();
-          let strain = 'Regz';
-          let rarity = 'Common';
-          let border = '#9ca3af';
-          let glow = 'rgba(156,163,175,0.6)';
-
-          if (roll < 0.04) {
-            strain = 'Runtz'; rarity = 'Legendary'; border = '#f59e0b'; glow = 'rgba(245,158,11,0.8)';
-          } else if (roll < 0.14) {
-            strain = 'Purple Haze'; rarity = 'Epic'; border = '#a855f7'; glow = 'rgba(168,85,247,0.8)';
-          } else if (roll < 0.32) {
-            strain = 'Sour D Purple'; rarity = 'Rare'; border = '#3b82f6'; glow = 'rgba(59,130,246,0.8)';
-          } else if (roll < 0.62) {
-            strain = 'Sour Diesel'; rarity = 'Uncommon'; border = '#22c55e'; glow = 'rgba(34,197,94,0.8)';
-          }
-
-          const txId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-
-          setMintedCard({
-            name: 'Bad Seed (cNFT)',
-            strain,
-            rarity,
-            border,
-            glow,
-            txId: `tx_sol_${txId}...`,
-            uuid: 'CARD-20260901000000-0002BF-3864B262',
-            cost: 1,
-            hp: 2,
-            lore: 'Bad Seed - Hold on to this, you know you will see some BadBudz.',
-          });
-          return 100;
-        }
-        return p + 12;
-      });
+      setMintProgress(p => (p >= 92 ? 92 : p + 12));
     }, 120);
+
+    try {
+      const res  = await fetch('/api/badseed/mint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, paymentToken: 'BUDZ' }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'Mint failed. Try again.');
+      }
+
+      setMintProgress(100);
+      setMintedCard({
+        ...data.card,
+        txId: `tx_sol_${(data.card.uuid || '').slice(-16).toLowerCase()}...`,
+      });
+      if (typeof data.newBudzBalance === 'number') setBudzBalance(data.newBudzBalance);
+      setSeedsOwned(n => n + 1);
+    } catch (err: any) {
+      setMintError(err?.message || 'Mint failed. Try again.');
+      setMintProgress(0);
+    } finally {
+      clearInterval(interval);
+      setIsMinting(false);
+    }
   };
 
   const copyBadSeedUuid = () => {
-    navigator.clipboard.writeText('CARD-20260901000000-0002BF-3864B262');
+    navigator.clipboard.writeText(BAD_SEED_UUID);
     setCopiedUuid(true);
     setTimeout(() => setCopiedUuid(false), 2000);
   };
@@ -434,10 +527,20 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
               </div>
               <div style={{ fontSize: 8, color: 'rgba(57,255,20,0.5)', letterSpacing: 2, marginTop: 1 }}>
                 {activeTab === 'library'
-                  ? `${allCards.length} CARDS · 4 TIERS · SKILL TREES`
+                  ? `${allCards.length} CARDS · BADBUDZ + GRUDAWARS + CLASH · SHAREABLE`
                   : 'GENESIS cNFT LAUNCHPAD · 2D CODEX & 3D STUDIO'}
               </div>
             </div>
+            {activeTab === 'library' && (
+              <button type="button" onClick={copyShareLink} style={{
+                background: copiedShare ? 'rgba(57,255,20,0.2)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${copiedShare ? '#39ff14' : 'rgba(255,255,255,0.16)'}`,
+                borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: copiedShare ? '#39ff14' : '#ccc',
+                fontSize: 9, fontWeight: 900, letterSpacing: 0.6, display: 'flex', alignItems: 'center', gap: 5,
+              }}>
+                {copiedShare ? <Check size={12} /> : <Copy size={12} />} {copiedShare ? 'COPIED' : 'SHARE'}
+              </button>
+            )}
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#39ff14' }}>
                 {activeTab === 'library' ? sorted.length : 'cNFT'}
@@ -482,6 +585,18 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
 
           {activeTab === 'library' && (
             <>
+              {/* Set tabs */}
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+                {SET_TABS.map(t => (
+                  <button key={t.id} type="button" onClick={() => setFilterSet(t.id)} style={filterPill(filterSet === t.id, t.id === 'badbudz' ? '#ffeaa0' : t.id === 'grudawars' ? '#22d3ee' : '#39ff14')}>
+                    {t.label} ({t.id === 'all' ? allCards.length : allCards.filter(c => (c.cardSet || 'clash') === t.id).length})
+                  </button>
+                ))}
+                <button type="button" onClick={() => setOwnedOnly(v => !v)} style={filterPill(ownedOnly, '#4ade80')}>
+                  {ownedOnly ? '✓ OWNED' : 'OWNED'}
+                </button>
+              </div>
+
               {/* Search */}
               <input
                 type="text"
@@ -499,21 +614,33 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
               {/* Rarity filter with pot leaves */}
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
                 <button onClick={() => setFilterRarity('all')} style={filterPill(filterRarity === 'all', '#39ff14')}>
-                  🃏 ALL ({allCards.length})
+                  🃏 ALL ({allCards.filter(c => filterSet === 'all' || (c.cardSet || 'clash') === filterSet).length})
                 </button>
                 {RARITY_ORDER.map(r => {
                   const rm = RARITY[r];
                   return (
                     <button key={r} onClick={() => setFilterRarity(r)} style={filterPill(filterRarity === r, rm.border)}>
                       <span style={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle', marginRight: 3 }}>
-                        {Array.from({ length: rm.leaves }).map((_, i) => (
+                        {Array.from({ length: Math.min(rm.leaves, 5) }).map((_, i) => (
                           <img key={i} src="/card-art/weed-leaf.png" style={{ width: 10, height: 10, objectFit: 'contain', filter: `drop-shadow(0 0 2px ${rm.border})` }} />
                         ))}
                       </span>
-                      {r.toUpperCase()} ({rarityCounts[r]})
+                      {r.toUpperCase()} ({rarityCounts[r] || 0})
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Background rarity filter */}
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                <button type="button" onClick={() => setFilterBg('all')} style={filterPill(filterBg === 'all', '#c084fc', true)}>
+                  BG ALL
+                </button>
+                {CARD_BACKGROUNDS.map(bg => (
+                  <button key={bg.id} type="button" onClick={() => setFilterBg(bg.id)} style={filterPill(filterBg === bg.id, RARITY[bg.tier]?.border || '#c084fc', true)}>
+                    {bg.label.toUpperCase()}
+                  </button>
+                ))}
               </div>
 
               {/* Type + Class filters */}
@@ -594,7 +721,7 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
                 <div style={{
                   fontSize: 11, color: '#ffeaa0', fontStyle: 'italic', marginBottom: 10, lineHeight: 1.4,
                 }}>
-                  "Bad Seed - Hold on to this, you know you will see some BadBudz."
+                  "{BAD_SEED_TAGLINE}"
                 </div>
 
                 {/* UUID Box */}
@@ -609,7 +736,7 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
                   title="Click to copy Grudge UUID"
                 >
                   <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
-                    UUID: CARD-20260901000000-0002BF-3864B262
+                    UUID: {BAD_SEED_UUID}
                   </span>
                   {copiedUuid ? (
                     <Check size={12} color="#39ff14" />
@@ -639,44 +766,54 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 4 }}>
-                <button
-                  onClick={() => setMintCurrency('THC')}
-                  style={{
-                    padding: '5px 10px', borderRadius: 6, fontSize: 9, fontWeight: 900, cursor: 'pointer',
-                    border: mintCurrency === 'THC' ? '1px solid #39ff14' : '1px solid rgba(255,255,255,0.1)',
-                    background: mintCurrency === 'THC' ? 'rgba(57,255,20,0.2)' : 'rgba(0,0,0,0.4)',
-                    color: mintCurrency === 'THC' ? '#39ff14' : '#888',
-                  }}
-                >
-                  50 THC
-                </button>
-                <button
-                  onClick={() => setMintCurrency('SOL')}
-                  style={{
-                    padding: '5px 10px', borderRadius: 6, fontSize: 9, fontWeight: 900, cursor: 'pointer',
-                    border: mintCurrency === 'SOL' ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
-                    background: mintCurrency === 'SOL' ? 'rgba(168,85,247,0.2)' : 'rgba(0,0,0,0.4)',
-                    color: mintCurrency === 'SOL' ? '#c084fc' : '#888',
-                  }}
-                >
-                  0.05 SOL
-                </button>
+                {(['BUDZ', 'THC', 'SOL'] as const).map(cur => (
+                  <button
+                    key={cur}
+                    onClick={() => { setMintCurrency(cur); setMintError(null); }}
+                    style={{
+                      padding: '5px 10px', borderRadius: 6, fontSize: 9, fontWeight: 900, cursor: 'pointer',
+                      border: mintCurrency === cur ? `1px solid ${BAD_SEED_PRICE[cur].color}` : '1px solid rgba(255,255,255,0.1)',
+                      background: mintCurrency === cur ? BAD_SEED_PRICE[cur].bg : 'rgba(0,0,0,0.4)',
+                      color: mintCurrency === cur ? BAD_SEED_PRICE[cur].color : '#888',
+                    }}
+                  >
+                    {BAD_SEED_PRICE[cur].label}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            {/* Wallet BUDZ balance + seeds held */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+              background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,215,0,0.2)',
+              borderRadius: 8, padding: '8px 10px', marginBottom: 10, flexWrap: 'wrap',
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 900, color: '#ffeaa0' }}>
+                <Coins size={12} color="#ffeaa0" />
+                {budzBalance === null
+                  ? (walletAddress ? 'LOADING BUDZ…' : 'CONNECT WALLET TO BUY')
+                  : `${budzBalance.toLocaleString()} BUDZ`}
+              </span>
+              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 900 }}>
+                PRICE 5,000 BUDZ · SEEDS HELD {seedsOwned}
+              </span>
             </div>
 
             {/* Mint Action Button */}
             <button
               onClick={handleMintSeed}
-              disabled={isMinting}
+              disabled={isMinting || !canAffordSeed}
               style={{
                 width: '100%', padding: '14px', borderRadius: 12,
-                background: isMinting
+                background: (isMinting || !canAffordSeed)
                   ? 'rgba(255,255,255,0.1)'
                   : 'linear-gradient(135deg, #15803d 0%, #166534 50%, #047857 100%)',
                 border: '1.5px solid #39ff14',
                 color: '#fff', fontSize: 13, fontWeight: 900, letterSpacing: 1.5,
-                cursor: isMinting ? 'default' : 'pointer',
-                boxShadow: isMinting ? 'none' : '0 0 20px rgba(57,255,20,0.4)',
+                cursor: (isMinting || !canAffordSeed) ? 'not-allowed' : 'pointer',
+                opacity: canAffordSeed ? 1 : 0.65,
+                boxShadow: (isMinting || !canAffordSeed) ? 'none' : '0 0 20px rgba(57,255,20,0.4)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 marginBottom: 12, transition: 'all 0.15s',
               }}
@@ -686,13 +823,28 @@ export default function LibraryPage({ onBack, walletAddress }: LibraryPageProps)
                   <Sparkles size={16} className="animate-spin" />
                   INCUBATING BAD SEED... {mintProgress}%
                 </>
+              ) : !canAffordSeed ? (
+                <>
+                  <Coins size={16} color="#ffeaa0" />
+                  NEED 5,000 BUDZ
+                </>
               ) : (
                 <>
                   <Zap size={16} color="#ffeaa0" />
-                  MINT BAD SEED ({mintCurrency === 'THC' ? '50 THC' : '0.05 SOL'})
+                  BUY BAD SEED ({BAD_SEED_PRICE[mintCurrency].label})
                 </>
               )}
             </button>
+
+            {mintError && (
+              <div style={{
+                background: 'rgba(80,10,10,0.7)', border: '1px solid rgba(248,113,113,0.5)',
+                borderRadius: 8, padding: '9px 11px', marginBottom: 12,
+                fontSize: 10, color: '#fca5a5', fontWeight: 700, lineHeight: 1.4,
+              }}>
+                {mintError}
+              </div>
+            )}
 
             {/* Minted Reveal Box */}
             {mintedCard && (
@@ -835,13 +987,25 @@ const RARITY_FRAME: Record<string, string> = {
   rare:      '/card-backgrounds/rare-green.png',
   epic:      '/card-backgrounds/epic-gold.png',
   legendary: '/card-backgrounds/legendary-weed.png',
+  mythic:    '/card-backgrounds/growerz/solana.png',
+  glitch:    '/card-backgrounds/growerz/starz-and-stripez.png',
 };
 
 // ── TCG Library Card — standardised 4-zone layout ───────────────────────────
 // 0→11% NAME BAR | 11→73% ART ZONE | 73→87% STATS BAR | 87→100% TYPE STRIP
 function LibraryCard({ card, owned, onClick }: { card: ClassificationCard; owned: boolean; onClick: () => void }) {
   const rm    = RARITY[card.rarity] || RARITY.common;
-  const frame = RARITY_FRAME[card.rarity] || RARITY_FRAME.common;
+  const frame = card.rarityBackground || RARITY_FRAME[card.rarity] || RARITY_FRAME.common;
+  const bonus = Boolean(card.backgroundBonus);
+  const glitch = Boolean(card.glitchCost || card.rarity === 'glitch');
+  const [glitchDigit, setGlitchDigit] = useState(card.cost);
+  useEffect(() => {
+    if (!glitch) { setGlitchDigit(card.cost); return; }
+    const id = window.setInterval(() => {
+      setGlitchDigit(Math.random() < 0.4 ? card.cost : Math.max(0, card.cost + (Math.random() < 0.5 ? 1 : -1)));
+    }, 180);
+    return () => window.clearInterval(id);
+  }, [glitch, card.cost]);
   const isSpell = card.type === 'spell';
   const typeLabel = (card.subtype || card.type).toUpperCase();
   const classLabel = (card.class || '').toUpperCase();
@@ -876,6 +1040,8 @@ function LibraryCard({ card, owned, onClick }: { card: ClassificationCard; owned
         border: `2px solid ${rm.border}${owned ? 'dd' : '55'}`,
         boxShadow: owned
           ? `0 0 22px ${rm.glow}, 0 0 8px rgba(57,255,20,0.5), 0 6px 24px rgba(0,0,0,0.9)`
+          : bonus
+          ? `0 0 18px rgba(168,85,247,0.7), 0 4px 16px rgba(0,0,0,0.8)`
           : `0 0 10px ${rm.glow}66, 0 4px 16px rgba(0,0,0,0.8)`,
         fontFamily: "'LEMON MILK', 'Arial Black', sans-serif",
         transition: 'transform 0.12s ease, box-shadow 0.12s ease',
@@ -945,13 +1111,17 @@ function LibraryCard({ card, owned, onClick }: { card: ClassificationCard; owned
         position: 'absolute', top: '0.8%', right: '2%',
         width: '14%', aspectRatio: '1/1',
         borderRadius: '50%',
-        background: 'radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8)',
         border: '2px solid #93c5fd',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 11, fontWeight: 900, color: '#fff',
-        boxShadow: '0 0 12px rgba(59,130,246,0.9), inset 0 1px 2px rgba(255,255,255,0.3)',
+        boxShadow: glitch
+          ? '0 0 14px rgba(244,114,182,0.95), inset 0 1px 2px rgba(255,255,255,0.3)'
+          : '0 0 12px rgba(59,130,246,0.9), inset 0 1px 2px rgba(255,255,255,0.3)',
         zIndex: 5,
-      }}>{card.cost}</div>
+        background: glitch
+          ? 'radial-gradient(circle at 35% 35%, #f9a8d4, #7c3aed)'
+          : 'radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8)',
+      }}>{glitch ? glitchDigit : card.cost}</div>
 
       {/* ── ART ZONE  11% → 72% — viewport with contain so character is never cropped ── */}
       <div style={{
@@ -1060,7 +1230,9 @@ function LibraryCard({ card, owned, onClick }: { card: ClassificationCard; owned
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 3%',
       }}>
-        <span style={{ fontSize: 6, color: rm.text, fontWeight: 900, letterSpacing: 1 }}>{typeLabel}</span>
+        <span style={{ fontSize: 6, color: rm.text, fontWeight: 900, letterSpacing: 1 }}>
+          {(card.cardSet || 'clash').toUpperCase()} · {typeLabel}
+        </span>
         {owned
           ? <span style={{ fontSize: 6, fontWeight: 900, color: '#39ff14', letterSpacing: 0.5, textShadow: '0 0 8px rgba(57,255,20,0.8)' }}>✓ OWNED</span>
           : <span style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)', fontWeight: 900, letterSpacing: 0.5 }}>{classLabel || typeLabel}</span>
@@ -1380,6 +1552,19 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
             <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: 4 }}>ABOUT</div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 }}>{card.description}</div>
           </div>
+
+          {(card.backgroundBonus || card.glitchCost) && (
+            <div style={{
+              marginTop: 10, background: 'rgba(168,85,247,0.1)',
+              border: '1px solid rgba(244,114,182,0.45)', borderRadius: 8, padding: '10px 12px',
+            }}>
+              <div style={{ fontSize: 7, color: '#f9a8d4', letterSpacing: 1, marginBottom: 4 }}>BACKGROUND BONUS · COST GLITCH</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+                Growerz plate <span style={{ color: '#c084fc' }}>{card.backgroundId || 'bonus'}</span> added ATK/HP.
+                Displayed cost flickers — stored cost is {card.cost}.
+              </div>
+            </div>
+          )}
 
           {/* ── NFT Trait Bonus ───────────────────── */}
           {card.nftTraitBonus && (

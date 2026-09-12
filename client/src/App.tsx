@@ -146,6 +146,15 @@ function LoadingScreen() {
 
 type GameScreen = 'login' | 'hub' | 'team-builder' | 'pre-battle' | 'battle' | 'results' | 'settings' | 'admin' | 'collection' | 'download' | 'profile' | 'history' | 'shop' | 'account' | 'trade' | 'library';
 
+// The card library is publicly linkable. /battle/library is the production BadBudz
+// landing + Bad Seed mint URL; /library opens the plain card library.
+function resolveLibraryPath(path: string): 'library' | 'badbudz' | null {
+  const p = path.replace(/\/+$/, '').toLowerCase() || '/';
+  if (p === '/battle/library' || p === '/badbudz' || p === '/bad-seed' || p === '/badseed') return 'badbudz';
+  if (p === '/library') return 'library';
+  return null;
+}
+
 function App() {
   const [appReady, setAppReady] = useState(false);
   const [screen, setScreen] = useState<GameScreen>('login');
@@ -179,6 +188,7 @@ function App() {
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [battleResult, setBattleResult] = useState<{ winner: 'player' | 'ai'; results: any } | null>(null);
   const [gameZones, setGameZones] = useState<any[]>([]);
+  const [libraryTab, setLibraryTab] = useState<'library' | 'badbudz'>('library');
 
   // Fetch real-time token balances from wallet
   useEffect(() => {
@@ -283,6 +293,8 @@ function App() {
     
     const handlePopState = () => {
       const path = window.location.pathname;
+      const lib = resolveLibraryPath(path);
+      if (lib) { setLibraryTab(lib); setScreen('library'); return; }
       if (path === '/admin') setScreen('admin');
       else if (path === '/settings') setScreen('settings');
       else if (path === '/collection') setScreen('collection');
@@ -302,6 +314,8 @@ function App() {
   useEffect(() => {
     if (appReady) {
       const path = window.location.pathname;
+      const lib = resolveLibraryPath(path);
+      if (lib) { setLibraryTab(lib); setScreen('library'); return; }
       if (path === '/admin') { setScreen('admin'); return; }
       if (path === '/download') { setScreen('download'); return; }
       if (path === '/collection') { setScreen('collection'); return; }
@@ -534,7 +548,7 @@ function App() {
         );
 
       case 'library':
-        return <LibraryPage onBack={() => navigateTo('hub')} walletAddress={user?.walletAddress} />;
+        return <LibraryPage onBack={() => navigateTo('hub')} walletAddress={user?.walletAddress} initialTab={libraryTab} />;
 
       case 'collection':
         return <GrowerzCollection />;

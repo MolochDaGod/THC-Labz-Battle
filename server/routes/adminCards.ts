@@ -1,8 +1,8 @@
 import express from 'express';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { storage } from '../storage';
 import { adminCards } from '../../shared/adminSchema';
-import { CLASSIFICATION_CARD_DATABASE } from '../../shared/classificationCardDatabase';
+import { CLASSIFICATION_CARD_DATABASE, LIBRARY_CARDS } from '../../shared/classificationCardDatabase';
 
 const router = express.Router();
 
@@ -18,10 +18,11 @@ router.get('/cards', async (req, res) => {
     }
     
     const cards = await db.select().from(adminCards);
-    
+    await db.execute(sql`ALTER TABLE admin_cards ADD COLUMN IF NOT EXISTS card_set text DEFAULT 'clash'`).catch(() => null);
+
     // If no admin cards exist, initialize with classification database
     if (cards.length === 0) {
-      const initialCards = CLASSIFICATION_CARD_DATABASE.map(card => ({
+      const initialCards = LIBRARY_CARDS.map(card => ({
         id: card.id,
         name: card.name,
         cost: card.cost,
@@ -47,9 +48,32 @@ router.get('/cards', async (req, res) => {
       });
     }
 
+    const have = new Set(cards.map((c: any) => String(c.id)));
+    for (const card of LIBRARY_CARDS) {
+      if (have.has(card.id)) continue;
+      try {
+        await db.execute(sql`
+          INSERT INTO admin_cards (id, name, cost, attack, health, description, rarity, class, type, image, abilities, is_active, card_set)
+          VALUES (
+            ${card.id}, ${card.name}, ${card.cost}, ${card.attack}, ${card.health},
+            ${card.description}, ${card.rarity}, ${card.class}, ${card.type}, ${card.image},
+            ${JSON.stringify(card.abilities || [])}, true, ${card.cardSet || 'clash'}
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            cost = EXCLUDED.cost,
+            attack = EXCLUDED.attack,
+            health = EXCLUDED.health,
+            rarity = EXCLUDED.rarity,
+            abilities = EXCLUDED.abilities,
+            card_set = EXCLUDED.card_set,
+            is_active = true
+        `);
+      } catch { /* column may not exist on older DBs */ }
+    }
+
     res.json({
       success: true,
-      cards: cards
+      cards: await db.select().from(adminCards)
     });
   } catch (error) {
     console.error('Error fetching admin cards:', error);

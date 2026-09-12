@@ -23,6 +23,11 @@ import nftMintingRoutes from "./routes/nftMinting";
 import userCardsOwnershipRoutes from "./routes/userCardsOwnership";
 import cardTradesRoutes from "./routes/cardTrades";
 import { adminCards } from "../shared/adminSchema";
+import {
+  LIBRARY_CARDS,
+  applyBackgroundGlitch,
+  type ClassificationCard,
+} from "../shared/classificationCardDatabase";
 
 import { crossmintService } from "./crossmint";
 import { desc, sql, eq } from "drizzle-orm";
@@ -870,6 +875,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error swapping tokens:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ─── BAD SEED cNFT ───────────────────────────────────────────────────
+  // BadBudz genesis seed. Bought in-game with BUDZ; THC / SOL checkout is on-chain.
+  const BAD_SEED = {
+    baseCardId: 'CARD-20260901000000-0002BF-3864B262',
+    name: 'Bad Seed',
+    tagline: 'Bad Seed - Hold on to this, you know you will see some BadBudz.',
+    image: 'https://duelyst.grudge-studio.com/tcg-chrome/thc/bad-seed.png',
+    budzCost: 5000,
+    thcCost: 50,
+    solCost: 0.05,
+    strains: [
+      { weight: 0.04, strain: 'Runtz',         rarity: 'Legendary', border: '#f59e0b', glow: 'rgba(245,158,11,0.8)' },
+      { weight: 0.10, strain: 'Purple Haze',   rarity: 'Epic',      border: '#a855f7', glow: 'rgba(168,85,247,0.8)' },
+      { weight: 0.18, strain: 'Sour D Purple', rarity: 'Rare',      border: '#3b82f6', glow: 'rgba(59,130,246,0.8)' },
+      { weight: 0.30, strain: 'Sour Diesel',   rarity: 'Uncommon',  border: '#22c55e', glow: 'rgba(34,197,94,0.8)' },
+      { weight: 0.38, strain: 'Regz',          rarity: 'Common',    border: '#9ca3af', glow: 'rgba(156,163,175,0.6)' },
+    ],
+  };
+
+  function rollBadSeedStrain() {
+    let roll = Math.random();
+    for (const s of BAD_SEED.strains) {
+      if (roll < s.weight) return s;
+      roll -= s.weight;
+    }
+    return BAD_SEED.strains[BAD_SEED.strains.length - 1];
+  }
+
+  function grudgeUuid(prefix = 'CARD') {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    const stamp = `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}`;
+    const hex = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16).toUpperCase()).join('');
+    return `${prefix}-${stamp}-${hex(6)}-${hex(8)}`;
+  }
+
+  app.get("/api/badseed/info", async (req, res) => {
+    try {
+      const wallet = typeof req.query.walletAddress === 'string' ? req.query.walletAddress : undefined;
+      let budzBalance: number | null = null;
+      let owned = 0;
+      const db = storage.getDb();
+      if (wallet && db) {
+        const rows = await db.select({ budzBalance: users.budzBalance })
+          .from(users).where(sql`${users.walletAddress} = ${wallet}`).limit(1);
+        budzBalance = rows[0]?.budzBalance ?? 0;
+        try {
+          const ownedRows: any = await db.execute(sql`
+            SELECT COUNT(*)::int AS n FROM user_cards
+            WHERE wallet_address = ${wallet} AND source = 'bad-seed-mint'
+          `);
+          owned = Number((ownedRows?.rows ?? ownedRows)?.[0]?.n ?? 0);
+        } catch {}
+      }
+      res.json({
+        success: true,
+        badSeed: {
+          uuid: BAD_SEED.baseCardId,
+          name: BAD_SEED.name,
+          tagline: BAD_SEED.tagline,
+          image: BAD_SEED.image,
+          budzCost: BAD_SEED.budzCost,
+          thcCost: BAD_SEED.thcCost,
+          solCost: BAD_SEED.solCost,
+          odds: BAD_SEED.strains.map(s => ({ strain: s.strain, rarity: s.rarity, chance: s.weight })),
+        },
+        budzBalance,
+        owned,
+      });
+    } catch (err) {
+      console.error('Bad Seed info error:', err);
+      res.status(500).json({ error: 'Failed to load Bad Seed info' });
+    }
+  });
+
+  app.post("/api/badseed/mint", async (req, res) => {
+    try {
+      const { walletAddress, paymentToken } = req.body as {
+        walletAddress?: string;
+        paymentToken?: string;
+      };
+      const token = (paymentToken || 'BUDZ').toUpperCase();
+      if (!walletAddress) return res.status(400).json({ error: 'Wallet address required' });
+      if (token !== 'BUDZ') {
+        return res.status(400).json({ error: `${token} checkout settles on-chain. Use BUDZ to buy here.` });
+      }
+
+      const db = storage.getDb();
+      if (!db) return res.status(503).json({ error: 'Database unavailable' });
+
+      const userRows = await db.select().from(users)
+        .where(sql`${users.walletAddress} = ${walletAddress}`).limit(1);
+      if (!userRows[0]) return res.status(404).json({ error: 'User not found. Visit the hub first.' });
+
+      const balance = userRows[0].budzBalance ?? 0;
+      if (balance < BAD_SEED.budzCost) {
+        return res.status(402).json({
+          error: `Insufficient BUDZ. Need ${BAD_SEED.budzCost}, have ${balance}.`,
+          required: BAD_SEED.budzCost,
+          balance,
+        });
+      }
+
+      await db.update(users)
+        .set({ budzBalance: balance - BAD_SEED.budzCost })
+        .where(sql`${users.walletAddress} = ${walletAddress}`);
+
+      const pick = rollBadSeedStrain();
+      const uuid = grudgeUuid('CARD');
+      const card = {
+        id: uuid,
+        uuid,
+        baseCardId: BAD_SEED.baseCardId,
+        name: 'Bad Seed (cNFT)',
+        strain: pick.strain,
+        rarity: pick.rarity,
+        border: pick.border,
+        glow: pick.glow,
+        image: BAD_SEED.image,
+        cost: 1,
+        attack: 0,
+        health: 2,
+        type: 'minion',
+        class: 'magical',
+        description: BAD_SEED.tagline,
+        lore: BAD_SEED.tagline,
+        abilities: ['Incubate'],
+        mintedAt: new Date().toISOString(),
+        paidWith: 'BUDZ',
+        price: BAD_SEED.budzCost,
+      };
+
+      try {
+        await db.execute(sql`
+          INSERT INTO user_cards (wallet_address, card_id, card_name, card_data, source)
+          VALUES (${walletAddress}, ${uuid}, ${card.name}, ${JSON.stringify(card)}, 'bad-seed-mint')
+          ON CONFLICT (wallet_address, card_id) DO NOTHING
+        `);
+      } catch (persistErr) {
+        // Hand the BUDZ back if the seed could not be recorded.
+        await db.update(users)
+          .set({ budzBalance: balance })
+          .where(sql`${users.walletAddress} = ${walletAddress}`);
+        console.error('Bad Seed mint persist error:', persistErr);
+        return res.status(500).json({ error: 'Mint failed — your BUDZ was refunded.' });
+      }
+
+      const after = await db.select({ budzBalance: users.budzBalance })
+        .from(users).where(sql`${users.walletAddress} = ${walletAddress}`).limit(1);
+
+      console.log(`🌱 Bad Seed minted: ${walletAddress.slice(0, 8)}… → ${pick.strain} (${pick.rarity}) for ${BAD_SEED.budzCost} BUDZ`);
+      res.json({
+        success: true,
+        card,
+        newBudzBalance: after[0]?.budzBalance ?? balance - BAD_SEED.budzCost,
+        spent: BAD_SEED.budzCost,
+      });
+    } catch (err) {
+      console.error('Bad Seed mint error:', err);
+      res.status(500).json({ error: 'Failed to mint Bad Seed' });
     }
   });
 
@@ -1844,10 +2012,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ─── CARD PACK SHOP ────────────────────────────────────────────────
   const PACK_CONFIG = {
-    'green-bag':    { name: 'Green Bag',      gbuxCost: 20,  solCost: 0.002,  weights: { common: 100, uncommon: 0, rare: 0, epic: 0, legendary: 0 } },
-    'dank-pack':    { name: 'Dank Pack',      gbuxCost: 60,  solCost: 0.005,  weights: { common: 15, uncommon: 40, rare: 30, epic: 12, legendary: 3 } },
-    'legend-kush':  { name: 'Legendary Kush', gbuxCost: 150, solCost: 0.012,  weights: { common: 0,  uncommon: 5,  rare: 30, epic: 40, legendary: 25 } },
+    'green-bag':    { name: 'Green Bag',      gbuxCost: 20,  solCost: 0.002,  cardSet: undefined as string | undefined, weights: { common: 100, uncommon: 0, rare: 0, epic: 0, legendary: 0, mythic: 0 } },
+    'dank-pack':    { name: 'Dank Pack',      gbuxCost: 60,  solCost: 0.005,  cardSet: undefined as string | undefined, weights: { common: 15, uncommon: 40, rare: 30, epic: 12, legendary: 3, mythic: 0 } },
+    'legend-kush':  { name: 'Legendary Kush', gbuxCost: 150, solCost: 0.012,  cardSet: undefined as string | undefined, weights: { common: 0,  uncommon: 5,  rare: 30, epic: 40, legendary: 25, mythic: 0 } },
+    'badbudz-pack': { name: 'BadBudz Pack',    gbuxCost: 100, solCost: 0.008,  cardSet: 'badbudz', weights: { common: 0, uncommon: 10, rare: 25, epic: 45, legendary: 15, mythic: 5 } },
+    'grudawars-pack': { name: 'GrudaWars Pack', gbuxCost: 80, solCost: 0.006, cardSet: 'grudawars', weights: { common: 0, uncommon: 20, rare: 40, epic: 25, legendary: 12, mythic: 3 } },
   } as const;
+
+  app.get('/api/cards/library', (_req, res) => {
+    const set = String(_req.query.set || 'all').toLowerCase();
+    const cards = set === 'all' ? LIBRARY_CARDS : LIBRARY_CARDS.filter((c) => c.cardSet === set);
+    res.json({
+      success: true,
+      set,
+      count: cards.length,
+      share: `https://thc-labz-battle.vercel.app/library${set !== 'all' ? `?set=${set}` : ''}`,
+      cards,
+    });
+  });
 
   function weightedRarityPick(pool: any[], weights: Record<string, number>): any {
     const totalWeight = Object.values(weights).reduce((s, v) => s + v, 0);
@@ -1858,12 +2040,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cumulative += weight;
       if (rand <= cumulative) { pickedRarity = rarity; break; }
     }
-    const rarityCards = pool.filter(c => c.rarity === pickedRarity);
+    const rarityCards = pool.filter(c => String(c.rarity || '').toLowerCase() === pickedRarity);
     if (rarityCards.length === 0) {
       const fallback = pool.filter(c => c.rarity === 'common');
       return fallback[Math.floor(Math.random() * fallback.length)] || pool[0];
     }
     return rarityCards[Math.floor(Math.random() * rarityCards.length)];
+  }
+
+  function packPool(allCards: any[], cardSet?: string) {
+    if (cardSet) {
+      const ofSet = allCards.filter((c: any) => {
+        const cs = String(c.card_set || c.cardSet || '').toLowerCase();
+        const id = String(c.id || '').toLowerCase();
+        return cs === cardSet || id.startsWith(cardSet + ':');
+      });
+      if (ofSet.length) return ofSet;
+      return LIBRARY_CARDS.filter((c) => c.cardSet === cardSet);
+    }
+    const live = allCards.length ? allCards : LIBRARY_CARDS;
+    return live;
   }
 
   app.get('/api/card-shop/balance/:walletAddress', async (req, res) => {
@@ -1909,11 +2105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const allCards = await db.select().from(adminCards);
-      if (allCards.length === 0) return res.status(404).json({ error: 'No cards in collection' });
+      const pool = packPool(allCards, pack.cardSet);
+      if (!pool.length) return res.status(404).json({ error: 'No cards in collection' });
 
       const drawnCards: any[] = [];
       for (let i = 0; i < 3; i++) {
-        drawnCards.push(weightedRarityPick(allCards, pack.weights));
+        const picked = weightedRarityPick(pool, pack.weights);
+        drawnCards.push(applyBackgroundGlitch(picked as ClassificationCard));
       }
 
       // Persist cards to user_cards
@@ -1922,7 +2120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await db.execute(sql`
             INSERT INTO user_cards (wallet_address, card_id, card_name, card_data, source)
             VALUES (${walletAddress}, ${card.id}, ${card.name}, ${JSON.stringify(card)}, 'purchased')
-            ON CONFLICT (wallet_address, card_id) DO UPDATE SET card_name = EXCLUDED.card_name, source = 'purchased'
+            ON CONFLICT (wallet_address, card_id) DO UPDATE SET card_name = EXCLUDED.card_name, card_data = EXCLUDED.card_data, source = 'purchased'
           `);
         } catch {}
       }
