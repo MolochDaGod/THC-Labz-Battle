@@ -127,6 +127,28 @@ export default function DuelystPlayCard({
         overflow: 'hidden',
         background: '#07050c',
       }}>
+        {card.chromeBg && (
+          <img
+            src={card.chromeBg}
+            alt=""
+            draggable={false}
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover', pointerEvents: 'none',
+            }}
+          />
+        )}
+        {card.chromeBuds && (
+          <img
+            src={card.chromeBuds}
+            alt=""
+            draggable={false}
+            style={{
+              position: 'absolute', inset: '-8%', width: '116%', height: '116%',
+              objectFit: 'cover', opacity: 0.55, pointerEvents: 'none',
+            }}
+          />
+        )}
         <CodexIdleArt card={card} />
       </div>
 
@@ -247,7 +269,7 @@ function Gem({
 
 function parsePlistFrames(xml: string): Array<{ name: string; x: number; y: number; w: number; h: number }> {
   const out: Array<{ name: string; x: number; y: number; w: number; h: number }> = [];
-  const re = /<key>([^<]+)<\/key>\s*<dict>\s*<key>frame<\/key>\s*<string>\{\{(\d+),(\d+)\},\{(\d+),(\d+)\}\}<\/string>/g;
+  const re = /<key>([^<]+\.png)<\/key>[\s\S]*?<key>frame<\/key>\s*<string>\{\{(\d+),(\d+)\},\{(\d+),(\d+)\}\}<\/string>/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(xml))) {
     out.push({ name: m[1], x: +m[2], y: +m[3], w: +m[4], h: +m[5] });
@@ -256,29 +278,45 @@ function parsePlistFrames(xml: string): Array<{ name: string; x: number; y: numb
 }
 
 function pickIdleFrame(frames: Array<{ name: string; x: number; y: number; w: number; h: number }>) {
-  const idle = frames.find((f) => /breathing|idle/i.test(f.name)) || frames[0];
-  return idle;
+  return frames.find((f) => /_idle_000|_breathing_000|_idle|_breathing/i.test(f.name))
+    || frames.find((f) => /idle|breathing/i.test(f.name))
+    || frames[0];
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('img'));
+    img.src = src;
+  });
 }
 
 function CodexIdleArt({ card }: { card: ClassificationCard }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [fallback, setFallback] = useState(false);
+  const duelystId = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
+  const sheet = card.sheet || (card.artKind === 'duelyst-plist' ? `https://assets.grudge-studio.com/sprites/duelyst/units/${duelystId}.png` : '');
+  const plist = card.plist || (sheet ? `https://assets.grudge-studio.com/sprites/duelyst/plists/${duelystId}.plist` : '');
 
   useEffect(() => {
     let dead = false;
     setFallback(false);
-    const kind = card.artKind;
+    const kind = card.artKind || (card.idleStrip ? 'gw-strip' : sheet ? 'duelyst-plist' : 'portrait');
     const run = async () => {
       try {
-        if (kind === 'duelyst-plist' && card.sheet && card.plist) {
-          const [xml, blob] = await Promise.all([
-            fetch(card.plist).then((r) => { if (!r.ok) throw new Error('plist'); return r.text(); }),
-            fetch(card.sheet).then((r) => { if (!r.ok) throw new Error('sheet'); return r.blob(); }),
+        if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
+          setFallback(true);
+          return;
+        }
+        if (kind === 'duelyst-plist' && sheet && plist) {
+          const [xml, img] = await Promise.all([
+            fetch(plist, { mode: 'cors' }).then((r) => { if (!r.ok) throw new Error('plist'); return r.text(); }),
+            loadImage(sheet),
           ]);
-          const frames = parsePlistFrames(xml);
-          const fr = pickIdleFrame(frames);
+          const fr = pickIdleFrame(parsePlistFrames(xml));
           if (!fr) throw new Error('no frame');
-          const bmp = await createImageBitmap(blob);
           if (dead) return;
           const c = canvasRef.current;
           if (!c) return;
@@ -288,24 +326,7 @@ function CodexIdleArt({ card }: { card: ClassificationCard }) {
           if (!ctx) return;
           ctx.imageSmoothingEnabled = false;
           ctx.clearRect(0, 0, fr.w, fr.h);
-          ctx.drawImage(bmp, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
-          return;
-        }
-        if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
-          const src = card.idleStrip || card.image;
-          const blob = await fetch(src).then((r) => { if (!r.ok) throw new Error('strip'); return r.blob(); });
-          const bmp = await createImageBitmap(blob);
-          const cell = Math.min(bmp.width, bmp.height);
-          if (dead) return;
-          const c = canvasRef.current;
-          if (!c) return;
-          c.width = cell;
-          c.height = cell;
-          const ctx = c.getContext('2d');
-          if (!ctx) return;
-          ctx.imageSmoothingEnabled = false;
-          ctx.clearRect(0, 0, cell, cell);
-          ctx.drawImage(bmp, 0, 0, cell, cell, 0, 0, cell, cell);
+          ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
           return;
         }
         throw new Error('portrait');
@@ -315,23 +336,26 @@ function CodexIdleArt({ card }: { card: ClassificationCard }) {
     };
     void run();
     return () => { dead = true; };
-  }, [card.id, card.artKind, card.sheet, card.plist, card.idleStrip, card.image]);
+  }, [card.id, card.artKind, sheet, plist, card.idleStrip, card.image, duelystId]);
 
   if (fallback) {
+    const src = card.idleStrip || card.image || sheet;
+    if (!src) return null;
     return (
       <img
-        src={card.image}
+        src={src}
         alt=""
         draggable={false}
         style={{
+          position: 'relative',
+          zIndex: 1,
           width: '100%',
           height: '100%',
           objectFit: 'contain',
-          objectPosition: 'center 20%',
+          objectPosition: card.artKind === 'gw-strip' ? 'left top' : 'center 20%',
           imageRendering: 'pixelated',
           animation: 'duelystBreathe 2.4s ease-in-out infinite',
         }}
-        onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0'; }}
       />
     );
   }
@@ -340,6 +364,8 @@ function CodexIdleArt({ card }: { card: ClassificationCard }) {
     <canvas
       ref={canvasRef}
       style={{
+        position: 'relative',
+        zIndex: 1,
         width: '100%',
         height: '100%',
         objectFit: 'contain',
