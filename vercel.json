@@ -24,7 +24,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/api/:path*", "destination": "https://dope-budz-production.up.railway.app/api/:path*" },
     { "source": "/library", "destination": "/index.html" },
     { "source": "/battle/:path*", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }

@@ -27,7 +27,7 @@ export class AIAgentWalletService {
   private walletAddress: string =
     process.env.TREASURY_WALLET_ADDRESS ||
     process.env.AI_AGENT_WALLET ||
-    "98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK"; // AI Agent treasury wallet
+    "CLbdnF3UmE8nJPPTR8ZiPPJmYSEVm17nySNNHYUD5B2c"; // Grench AI agent / fleet treasury
   
   constructor() {
     if (AIAgentWalletService.instance) {

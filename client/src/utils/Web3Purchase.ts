@@ -1,5 +1,5 @@
 import {
-  Connection, PublicKey, Transaction, clusterApiUrl,
+  Connection, PublicKey, Transaction,
   SystemProgram, LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
 import {
@@ -12,9 +12,10 @@ export const GAME_TOKEN_MINT = 'BmwJNuAAjFdKMfE9sWFb1YJJReJJGHLFsENPLkhjLbuT'; /
 export const BUDZ_MINT       = '2i7TjYvmTfyU8P22x8HkX2Wv8nmEtsHbyR8QnThxnsiQ'; // BUDZ / GBUX (same token)
 
 // Treasury = AI agent wallet (configured via env, NOT the token mint)
+/** Grench AI agent — same public wallet as Dope-Budz fleet SSOT. Receives pack SOL/BUDZ. */
 export const TREASURY_WALLET =
   (import.meta as any).env?.VITE_TREASURY_WALLET ||
-  '98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK';
+  'CLbdnF3UmE8nJPPTR8ZiPPJmYSEVm17nySNNHYUD5B2c';
 
 export const PACK_USD_PRICES: Record<string, number> = {
   'green-bag':   0.10,
@@ -46,10 +47,16 @@ export interface TokenPrices {
   thcLabz: number;
 }
 
-const connection = new Connection(
-  (import.meta as any).env?.VITE_SOLANA_RPC || clusterApiUrl('mainnet-beta'),
-  'confirmed'
-);
+function rpcUrl(): string {
+  const env = (import.meta as any).env?.VITE_SOLANA_RPC;
+  if (env && !/api\.mainnet-beta\.solana\.com/i.test(env)) return env;
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/api/solana-rpc`;
+  }
+  return '/api/solana-rpc';
+}
+
+const connection = new Connection(rpcUrl(), 'confirmed');
 
 function getSolanaProvider(): any {
   const win = window as any;

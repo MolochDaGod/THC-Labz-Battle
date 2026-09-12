@@ -48,7 +48,7 @@ export type TokenSymbol = keyof typeof TOKENS;
 // Set VITE_TREASURY_WALLET env var to override
 export const TREASURY_WALLET =
   (import.meta as any).env?.VITE_TREASURY_WALLET ||
-  '98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK';
+  'CLbdnF3UmE8nJPPTR8ZiPPJmYSEVm17nySNNHYUD5B2c';
 
 export const PACK_USD_PRICES: Record<string, number> = {
   'green-bag':   0.10,
