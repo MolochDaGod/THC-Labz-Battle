@@ -46,6 +46,8 @@ export interface ClassificationCard {
   sheet?: string;
   plist?: string;
   idleStrip?: string;
+  /** Packed-sheet idle cell. Used as CSS sprite so the library never shows the full atlas. */
+  idleFrame?: { x: number; y: number; w: number; h: number; sheetW: number; sheetH: number };
   artKind?: 'duelyst-plist' | 'gw-strip' | 'portrait';
   chromeBg?: string;
   chromeBuds?: string;

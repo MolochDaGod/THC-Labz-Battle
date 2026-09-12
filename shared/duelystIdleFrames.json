@@ -1,0 +1,533 @@
+{
+  "f5_ankylos": {
+    "x": 786,
+    "y": 524,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_ankylos_breathing_000.png"
+  },
+  "f5_armada": {
+    "x": 786,
+    "y": 524,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_armada_breathing_000.png"
+  },
+  "f5_buildcommon": {
+    "x": 404,
+    "y": 808,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_buildcommon_breathing_000.png"
+  },
+  "f5_altgeneral": {
+    "x": 131,
+    "y": 262,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_altgeneral_breathing_000.png"
+  },
+  "f5_3rdgeneral": {
+    "x": 1310,
+    "y": 393,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_3rdgeneral_breathing_000.png"
+  },
+  "f5_brundlbeast": {
+    "x": 404,
+    "y": 101,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_brundlbeast_breathing_000.png"
+  },
+  "f5_altgeneraltier2": {
+    "x": 524,
+    "y": 1834,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 2048,
+    "frame": "f5_altgeneraltier2_breathing_000.png"
+  },
+  "f5_buildminion": {
+    "x": 404,
+    "y": 808,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_buildminion_breathing_000.png"
+  },
+  "f5_drogon": {
+    "x": 232,
+    "y": 1160,
+    "w": 115,
+    "h": 115,
+    "sheetW": 512,
+    "sheetH": 2048,
+    "frame": "f5_drogon_breathing_000.png"
+  },
+  "f5_catalystquillbeast": {
+    "x": 505,
+    "y": 707,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_catalystquillbeast_breathing_000.png"
+  },
+  "f5_earthwalker": {
+    "x": 324,
+    "y": 162,
+    "w": 80,
+    "h": 80,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_earthwalker_breathing_000.png"
+  },
+  "f5_dreadnaught": {
+    "x": 484,
+    "y": 847,
+    "w": 120,
+    "h": 120,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_dreadnaught_breathing_000.png"
+  },
+  "f5_egg": {
+    "x": 324,
+    "y": 0,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 512,
+    "frame": "f5_egg_breathing_000.png"
+  },
+  "f5_flumposaur": {
+    "x": 655,
+    "y": 131,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_flumposaur_breathing_000.png"
+  },
+  "f5_firebreather": {
+    "x": 303,
+    "y": 303,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_firebreather_breathing_000.png"
+  },
+  "f5_general": {
+    "x": 0,
+    "y": 405,
+    "w": 80,
+    "h": 80,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_general_breathing_000.png"
+  },
+  "f5_genesis": {
+    "x": 404,
+    "y": 101,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_genesis_breathing_000.png"
+  },
+  "f5_juggernaut": {
+    "x": 605,
+    "y": 0,
+    "w": 120,
+    "h": 120,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_juggernaut_breathing_000.png"
+  },
+  "f5_grandmasterkraigon": {
+    "x": 1179,
+    "y": 0,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_grandmasterkraigon_breathing_000.png"
+  },
+  "f5_grimrock": {
+    "x": 81,
+    "y": 891,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_grimrock_breathing_000.png"
+  },
+  "f5_gro": {
+    "x": 243,
+    "y": 891,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_gro_breathing_000.png"
+  },
+  "f5_kolossus": {
+    "x": 324,
+    "y": 0,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_kolossus_breathing_000.png"
+  },
+  "f5_kujata": {
+    "x": 324,
+    "y": 648,
+    "w": 80,
+    "h": 80,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_kujata_breathing_000.png"
+  },
+  "f5_gibblegup": {
+    "x": 404,
+    "y": 101,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_gibblegup_breathing_000.png"
+  },
+  "f5_mech": {
+    "x": 484,
+    "y": 363,
+    "w": 120,
+    "h": 120,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_mech_breathing_000.png"
+  },
+  "f5_minibeast": {
+    "x": 917,
+    "y": 262,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_minibeast_breathing_000.png"
+  },
+  "f5_mandrake": {
+    "x": 303,
+    "y": 707,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_mandrake_breathing_000.png"
+  },
+  "f5_lavalasher": {
+    "x": 786,
+    "y": 131,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_lavalasher_breathing_000.png"
+  },
+  "f5_molokihuntress": {
+    "x": 605,
+    "y": 121,
+    "w": 120,
+    "h": 120,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_molokihuntress_breathing_000.png"
+  },
+  "f5_magma": {
+    "x": 303,
+    "y": 909,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_magma_breathing_000.png"
+  },
+  "f5_mankatorwarbeast": {
+    "x": 162,
+    "y": 486,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_mankatorwarbeast_breathing_000.png"
+  },
+  "f5_megabrontodon": {
+    "x": 917,
+    "y": 0,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_megabrontodon_breathing_000.png"
+  },
+  "f5_oxalaia": {
+    "x": 786,
+    "y": 262,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_oxalaia_breathing_000.png"
+  },
+  "f5_ragnoramk2": {
+    "x": 655,
+    "y": 786,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 2048,
+    "frame": "f5_ragnoramk2_breathing_000.png"
+  },
+  "f5_ragebinder": {
+    "x": 605,
+    "y": 0,
+    "w": 120,
+    "h": 120,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_ragebinder_breathing_000.png"
+  },
+  "f5_primordialgazer": {
+    "x": 162,
+    "y": 729,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_primordialgazer_breathing_000.png"
+  },
+  "f5_omniseer": {
+    "x": 655,
+    "y": 393,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_omniseer_breathing_000.png"
+  },
+  "f5_orphanoftheaspect": {
+    "x": 444,
+    "y": 666,
+    "w": 110,
+    "h": 110,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_orphanoftheaspect_breathing_000.png"
+  },
+  "f5_pteryx": {
+    "x": 303,
+    "y": 808,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_pteryx_breathing_000.png"
+  },
+  "f5_mythronquest": {
+    "x": 404,
+    "y": 808,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_mythronquest_breathing_000.png"
+  },
+  "f5_silitharyoung": {
+    "x": 162,
+    "y": 648,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_silitharyoung_idle_000.png"
+  },
+  "f5_silitharelder": {
+    "x": 243,
+    "y": 729,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_silitharelder_breathing_000.png"
+  },
+  "f5_sister": {
+    "x": 505,
+    "y": 101,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_sister_breathing_000.png"
+  },
+  "f5_rancour": {
+    "x": 524,
+    "y": 1048,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 2048,
+    "frame": "f5_rancour_breathing_000.png"
+  },
+  "f5_sinergyunit": {
+    "x": 786,
+    "y": 524,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_sinergyunit_breathing_000.png"
+  },
+  "f5_rex": {
+    "x": 202,
+    "y": 909,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_rex_breathing_000.png"
+  },
+  "f5_spiritharvester": {
+    "x": 243,
+    "y": 486,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_spiritharvester_breathing_000.png"
+  },
+  "f5_silitharveteran": {
+    "x": 324,
+    "y": 324,
+    "w": 80,
+    "h": 80,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_silitharveteran_breathing_000.png"
+  },
+  "f5_unstableleviathan": {
+    "x": 162,
+    "y": 648,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_unstableleviathan_breathing_000.png"
+  },
+  "f5_upgradizon": {
+    "x": 705,
+    "y": 423,
+    "w": 140,
+    "h": 140,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_upgradizon_breathing_000.png"
+  },
+  "f5_thraex": {
+    "x": 404,
+    "y": 808,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_thraex_breathing_000.png"
+  },
+  "f5_tank": {
+    "x": 243,
+    "y": 324,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_tank_breathing_000.png"
+  },
+  "f5_unstableflump": {
+    "x": 1048,
+    "y": 262,
+    "w": 130,
+    "h": 130,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_unstableflump_breathing_000.png"
+  },
+  "f5_support": {
+    "x": 162,
+    "y": 81,
+    "w": 80,
+    "h": 80,
+    "sheetW": 512,
+    "sheetH": 1024,
+    "frame": "f5_support_breathing_000.png"
+  },
+  "f5_tier2general": {
+    "x": 575,
+    "y": 805,
+    "w": 114,
+    "h": 114,
+    "sheetW": 2048,
+    "sheetH": 1024,
+    "frame": "f5_tier2general_breathing_000.png"
+  },
+  "f5_valknu": {
+    "x": 404,
+    "y": 505,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_valknu_breathing_000.png"
+  },
+  "f5_visionar": {
+    "x": 404,
+    "y": 707,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_visionar_breathing_000.png"
+  },
+  "f5_vindicator": {
+    "x": 555,
+    "y": 555,
+    "w": 110,
+    "h": 110,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_vindicator_breathing_000.png"
+  },
+  "f5_wildinceptor": {
+    "x": 606,
+    "y": 505,
+    "w": 100,
+    "h": 100,
+    "sheetW": 1024,
+    "sheetH": 1024,
+    "frame": "f5_wildinceptor_breathing_000.png"
+  }
+}

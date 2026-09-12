@@ -9,7 +9,7 @@ import {
   type CardSetId,
 } from '../../../shared/classificationCardDatabase';
 import GAME_CONFIG from '../config/gameConfig';
-import DuelystPlayCard from './DuelystPlayCard';
+import DuelystPlayCard, { CardUnitArt } from './DuelystPlayCard';
 
 // ── Skill Tree ─────────────────────────────────────────
 interface SkillOption { id: string; name: string; desc: string; icon: string; }
@@ -1391,35 +1391,19 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
           fontFamily: "'LEMON MILK', sans-serif",
         }}
       >
-        {/* Art header — blurred backdrop + contain viewport so full character shows */}
-        <div style={{ position: 'relative', height: 260, overflow: 'hidden' }}>
-          {/* Blurred background fill */}
-          <img src={card.image} alt="" aria-hidden
-            style={{
-              position: 'absolute', inset: -20,
-              width: 'calc(100% + 40px)', height: 'calc(100% + 40px)',
-              objectFit: 'cover', objectPosition: 'center 20%',
-              filter: 'blur(18px) saturate(1.5) brightness(0.45)',
-            }}
-          />
-          {/* Rarity frame overlay on backdrop */}
+        <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#07050c' }}>
+          {card.chromeBg && (
+            <img src={card.chromeBg} alt="" aria-hidden
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
+            />
+          )}
           <div style={{
             position: 'absolute', inset: 0,
             background: `radial-gradient(ellipse at 50% 0%, ${rm.border}22 0%, transparent 60%)`,
           }} />
-          {/* Main character image — contain so nothing is ever cut off */}
-          <img
-            src={card.image}
-            alt={card.name}
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'contain', objectPosition: 'center 15%',
-              transform: 'scale(1.04)',
-              transformOrigin: 'center 30%',
-            }}
-            onError={e => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23228B22" width="100" height="100"/></svg>'; }}
-          />
+          <div style={{ position: 'absolute', left: '10%', right: '10%', top: '8%', bottom: '12%' }}>
+            <CardUnitArt card={card} />
+          </div>
           {/* Bottom fade into panel content */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(6,14,6,1) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)' }} />
 

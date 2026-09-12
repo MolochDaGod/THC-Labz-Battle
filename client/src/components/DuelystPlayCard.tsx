@@ -4,9 +4,10 @@
  * Art breathes in the window. Cost/ATK/HP sit on the crystal slots.
  * Ability ribbon = Codex playStyles (slots/*.png). Named abilities use tcg-chrome/objects icons.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ClassificationCard } from '../../../shared/classificationCardDatabase';
 import { PLAY_STYLE_SLOTS } from '../../../shared/mapCodexPlaySets';
+import IDLE_FRAMES from '../../../shared/duelystIdleFrames.json';
 
 const CHROME = 'https://duelyst.grudge-studio.com/tcg-chrome';
 
@@ -138,18 +139,7 @@ export default function DuelystPlayCard({
             }}
           />
         )}
-        {card.chromeBuds && (
-          <img
-            src={card.chromeBuds}
-            alt=""
-            draggable={false}
-            style={{
-              position: 'absolute', inset: '-8%', width: '116%', height: '116%',
-              objectFit: 'cover', opacity: 0.55, pointerEvents: 'none',
-            }}
-          />
-        )}
-        <CodexIdleArt card={card} />
+        <CardUnitArt card={card} />
       </div>
 
       <img
@@ -267,111 +257,71 @@ function Gem({
   );
 }
 
-function parsePlistFrames(xml: string): Array<{ name: string; x: number; y: number; w: number; h: number }> {
-  const out: Array<{ name: string; x: number; y: number; w: number; h: number }> = [];
-  const re = /<key>([^<]+\.png)<\/key>[\s\S]*?<key>frame<\/key>\s*<string>\{\{(\d+),(\d+)\},\{(\d+),(\d+)\}\}<\/string>/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(xml))) {
-    out.push({ name: m[1], x: +m[2], y: +m[3], w: +m[4], h: +m[5] });
-  }
-  return out;
-}
+type IdleFrame = { x: number; y: number; w: number; h: number; sheetW: number; sheetH: number };
 
-function pickIdleFrame(frames: Array<{ name: string; x: number; y: number; w: number; h: number }>) {
-  return frames.find((f) => /_idle_000|_breathing_000|_idle|_breathing/i.test(f.name))
-    || frames.find((f) => /idle|breathing/i.test(f.name))
-    || frames[0];
-}
+const FRAMES = IDLE_FRAMES as Record<string, IdleFrame>;
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('img'));
-    img.src = src;
-  });
-}
-
-function CodexIdleArt({ card }: { card: ClassificationCard }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [fallback, setFallback] = useState(false);
-  const duelystId = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
-  const sheet = card.sheet || (card.artKind === 'duelyst-plist' ? `https://assets.grudge-studio.com/sprites/duelyst/units/${duelystId}.png` : '');
-  const plist = card.plist || (sheet ? `https://assets.grudge-studio.com/sprites/duelyst/plists/${duelystId}.plist` : '');
-
-  useEffect(() => {
-    let dead = false;
-    setFallback(false);
-    const kind = card.artKind || (card.idleStrip ? 'gw-strip' : sheet ? 'duelyst-plist' : 'portrait');
-    const run = async () => {
-      try {
-        if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
-          setFallback(true);
-          return;
-        }
-        if (kind === 'duelyst-plist' && sheet && plist) {
-          const [xml, img] = await Promise.all([
-            fetch(plist, { mode: 'cors' }).then((r) => { if (!r.ok) throw new Error('plist'); return r.text(); }),
-            loadImage(sheet),
-          ]);
-          const fr = pickIdleFrame(parsePlistFrames(xml));
-          if (!fr) throw new Error('no frame');
-          if (dead) return;
-          const c = canvasRef.current;
-          if (!c) return;
-          c.width = fr.w;
-          c.height = fr.h;
-          const ctx = c.getContext('2d');
-          if (!ctx) return;
-          ctx.imageSmoothingEnabled = false;
-          ctx.clearRect(0, 0, fr.w, fr.h);
-          ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
-          return;
-        }
-        throw new Error('portrait');
-      } catch {
-        if (!dead) setFallback(true);
-      }
-    };
-    void run();
-    return () => { dead = true; };
-  }, [card.id, card.artKind, sheet, plist, card.idleStrip, card.image, duelystId]);
-
-  if (fallback) {
-    const src = card.idleStrip || card.image || sheet;
-    if (!src) return null;
-    return (
-      <img
-        src={src}
-        alt=""
-        draggable={false}
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          objectPosition: card.artKind === 'gw-strip' ? 'left top' : 'center 20%',
-          imageRendering: 'pixelated',
-          animation: 'duelystBreathe 2.4s ease-in-out infinite',
-        }}
-      />
-    );
-  }
-
+/** Duelyst Magmar / BadBudz idle cell — CSS sprite, never the full atlas. */
+function PackedIdleSprite({ sheet, fr }: { sheet: string; fr: IdleFrame }) {
+  const sizeX = (fr.sheetW / fr.w) * 100;
+  const sizeY = (fr.sheetH / fr.h) * 100;
+  const posX = fr.sheetW === fr.w ? 0 : (fr.x / (fr.sheetW - fr.w)) * 100;
+  const posY = fr.sheetH === fr.h ? 0 : (fr.y / (fr.sheetH - fr.h)) * 100;
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       style={{
-        position: 'relative',
-        zIndex: 1,
         width: '100%',
         height: '100%',
-        objectFit: 'contain',
+        backgroundImage: `url(${sheet})`,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: `${sizeX}% ${sizeY}%`,
+        backgroundPosition: `${posX}% ${posY}%`,
         imageRendering: 'pixelated',
         animation: 'duelystBreathe 2.4s ease-in-out infinite',
       }}
     />
   );
+}
+
+/** CraftPix idle strip — first square cell only (Codex stripFrames). */
+function GwIdleSprite({ src }: { src: string }) {
+  const [wide, setWide] = useState(true);
+  return (
+    <div style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        onLoad={(e) => {
+          const im = e.currentTarget;
+          setWide(im.naturalWidth >= im.naturalHeight);
+        }}
+        style={{
+          imageRendering: 'pixelated',
+          animation: 'duelystBreathe 2.4s ease-in-out infinite',
+          maxWidth: 'none',
+          objectFit: 'none',
+          objectPosition: 'left top',
+          ...(wide
+            ? { height: '100%', width: 'auto' }
+            : { width: '100%', height: 'auto' }),
+        }}
+      />
+    </div>
+  );
+}
+
+export function CardUnitArt({ card }: { card: ClassificationCard }) {
+  const duelystId = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
+  const fr = card.idleFrame || FRAMES[duelystId];
+  const sheet = card.sheet || (fr ? `https://assets.grudge-studio.com/sprites/duelyst/units/${duelystId}.png` : '');
+  const kind = card.artKind || (card.idleStrip ? 'gw-strip' : fr ? 'duelyst-plist' : 'portrait');
+
+  if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
+    return <GwIdleSprite src={card.idleStrip || card.image} />;
+  }
+  if (fr && sheet) {
+    return <PackedIdleSprite sheet={sheet} fr={fr} />;
+  }
+  return null;
 }
