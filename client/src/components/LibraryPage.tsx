@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, X, Sparkles, Copy, Check, ExternalLink, Zap, Coins, Flame, Layers } from 'lucide-react';
 import {
-  LIBRARY_CARDS,
+  BADBUDZ_CARDS,
+  GRUDAWARS_CARDS,
   CARD_BACKGROUNDS,
   defaultBackgroundForRarity,
   type ClassificationCard,
   type CardSetId,
 } from '../../../shared/classificationCardDatabase';
 import GAME_CONFIG from '../config/gameConfig';
+import DuelystPlayCard from './DuelystPlayCard';
 
 // ── Skill Tree ─────────────────────────────────────────
 interface SkillOption { id: string; name: string; desc: string; icon: string; }
@@ -130,11 +132,10 @@ const TYPE_META: Record<string, { icon: string; color: string }> = {
 };
 
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'glitch'];
-const SET_TABS: Array<{ id: CardSetId | 'all'; label: string }> = [
+const PLAY_CARDS: ClassificationCard[] = [...BADBUDZ_CARDS, ...GRUDAWARS_CARDS];
+const SET_TABS: Array<{ id: CardSetId; label: string }> = [
   { id: 'badbudz', label: 'BADBUDZ' },
   { id: 'grudawars', label: 'GRUDAWARS' },
-  { id: 'clash', label: 'CLASH' },
-  { id: 'all', label: 'ALL SETS' },
 ];
 
 // ── Pot Leaf SVG ──────────────────────────────────────
@@ -301,7 +302,7 @@ function readLibraryParams() {
   const q = new URLSearchParams(window.location.search);
   const set = (q.get('set') || 'badbudz').toLowerCase();
   return {
-    set: (['badbudz', 'grudawars', 'clash', 'all'].includes(set) ? set : 'badbudz') as CardSetId | 'all',
+    set: (set === 'grudawars' ? 'grudawars' : 'badbudz') as CardSetId,
     rarity: q.get('rarity') || 'all',
     type: q.get('type') || 'all',
     className: q.get('class') || 'all',
@@ -313,7 +314,7 @@ function readLibraryParams() {
 export default function LibraryPage({ onBack, walletAddress, initialTab = 'library' }: LibraryPageProps) {
   const initial = readLibraryParams();
   const [activeTab, setActiveTab]       = useState<'library' | 'badbudz'>(initialTab);
-  const [filterSet, setFilterSet]       = useState<CardSetId | 'all'>(initial.set);
+  const [filterSet, setFilterSet]       = useState<CardSetId>(initial.set);
   const [filterRarity, setFilterRarity] = useState(initial.rarity);
   const [filterType, setFilterType]     = useState(initial.type);
   const [filterClass, setFilterClass]   = useState(initial.className);
@@ -326,14 +327,15 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
   const [copiedShare, setCopiedShare]   = useState(false);
 
   // Bad Seed Incubator / cNFT Minting State
-  const [mintCurrency, setMintCurrency]   = useState<'BUDZ' | 'THC' | 'SOL'>('BUDZ');
-  const [isMinting, setIsMinting]         = useState(false);
-  const [mintProgress, setMintProgress]   = useState(0);
   const [mintedCard, setMintedCard]       = useState<any | null>(null);
   const [mintError, setMintError]         = useState<string | null>(null);
   const [budzBalance, setBudzBalance]     = useState<number | null>(null);
   const [seedsOwned, setSeedsOwned]       = useState(0);
   const [copiedUuid, setCopiedUuid]       = useState(false);
+  const [grows, setGrows]                 = useState<any[]>([]);
+  const [unplanted, setUnplanted]         = useState(0);
+  const [growBusy, setGrowBusy]           = useState(false);
+  const [harvestedCard, setHarvestedCard] = useState<any | null>(null);
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -344,7 +346,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
         const ids = new Set(arr.map((c: any) => c.cardId || c.card_id || c.id));
         setOwnedIds(ids);
 
-        const classificationIds = new Set(LIBRARY_CARDS.map(c => c.id));
+        const classificationIds = new Set(PLAY_CARDS.map(c => c.id));
         const extras = arr
           .filter((c: any) => {
             const id = c.cardId || c.card_id || c.id;
@@ -357,12 +359,18 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
       .catch(() => {});
   }, [walletAddress]);
 
-  const allCards = useMemo(() => [...LIBRARY_CARDS, ...extraOwnedCards], [extraOwnedCards]);
+  const allCards = useMemo(
+    () => [
+      ...PLAY_CARDS,
+      ...extraOwnedCards.filter((c) => c.cardSet === 'badbudz' || c.cardSet === 'grudawars' || String(c.id).startsWith('badbudz') || String(c.id).startsWith('grudawars')),
+    ],
+    [extraOwnedCards],
+  );
 
   useEffect(() => {
     if (activeTab !== 'library' || typeof window === 'undefined') return;
     const q = new URLSearchParams();
-    if (filterSet !== 'all') q.set('set', filterSet);
+    q.set('set', filterSet);
     if (filterRarity !== 'all') q.set('rarity', filterRarity);
     if (filterType !== 'all') q.set('type', filterType);
     if (filterClass !== 'all') q.set('class', filterClass);
@@ -381,7 +389,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
   };
 
   const filtered = allCards.filter(c => {
-    if (filterSet !== 'all' && (c.cardSet || 'clash') !== filterSet) return false;
+    if ((c.cardSet || 'badbudz') !== filterSet) return false;
     if (filterRarity !== 'all' && c.rarity !== filterRarity) return false;
     if (filterType   !== 'all' && c.type  !== filterType && c.subtype !== filterType) return false;
     if (filterClass  !== 'all' && c.class !== filterClass)  return false;
@@ -399,7 +407,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
     return ri !== 0 ? ri : a.name.localeCompare(b.name);
   });
 
-  const setPool = filterSet === 'all' ? allCards : allCards.filter(c => (c.cardSet || 'clash') === filterSet);
+  const setPool = allCards.filter(c => (c.cardSet || 'badbudz') === filterSet);
   const rarityCounts = RARITY_ORDER.reduce((acc, r) => {
     acc[r] = setPool.filter(c => c.rarity === r).length;
     return acc;
@@ -410,71 +418,70 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
     return acc;
   }, {} as Record<string, number>);
 
-  // Live BUDZ balance + how many Bad Seeds this wallet already holds
+  // Live 24h Bad Seed grows (Railway user_cards — same bag as Battle)
   const refreshSeedInfo = React.useCallback(() => {
     if (!walletAddress) return;
-    fetch(`/api/badseed/info?walletAddress=${encodeURIComponent(walletAddress)}`)
+    fetch(`/api/battle/bad-seed?wallet=${encodeURIComponent(walletAddress)}`)
       .then(r => r.json())
       .then(d => {
         if (d?.success) {
-          if (typeof d.budzBalance === 'number') setBudzBalance(d.budzBalance);
-          setSeedsOwned(d.owned ?? 0);
+          setGrows(d.grows || []);
+          setUnplanted(d.unplanted || 0);
+          setSeedsOwned(d.unplanted || 0);
         }
+      })
+      .catch(() => {});
+    fetch(`/api/badseed/info?walletAddress=${encodeURIComponent(walletAddress)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d?.success && typeof d.budzBalance === 'number') setBudzBalance(d.budzBalance);
       })
       .catch(() => {});
   }, [walletAddress]);
 
   useEffect(() => { refreshSeedInfo(); }, [refreshSeedInfo]);
 
-  const canAffordSeed = mintCurrency !== 'BUDZ' || budzBalance === null || budzBalance >= BAD_SEED_BUDZ_COST;
-
-  const handleMintSeed = async () => {
-    if (isMinting) return;
+  const plantBadSeedGrow = async () => {
+    if (growBusy || !walletAddress) {
+      setMintError(walletAddress ? null : 'Connect your wallet to plant a Bad Seed.');
+      return;
+    }
+    setGrowBusy(true);
     setMintError(null);
-
-    if (mintCurrency !== 'BUDZ') {
-      setMintError(`${mintCurrency} checkout settles on-chain — switch to BUDZ to buy the seed here.`);
-      return;
-    }
-    if (!walletAddress) {
-      setMintError('Connect your wallet to buy a Bad Seed.');
-      return;
-    }
-
-    setIsMinting(true);
-    setMintProgress(0);
-    setMintedCard(null);
-
-    // Incubation animation runs while the mint settles server-side.
-    const interval = setInterval(() => {
-      setMintProgress(p => (p >= 92 ? 92 : p + 12));
-    }, 120);
-
     try {
-      const res  = await fetch('/api/badseed/mint', {
+      const res = await fetch('/api/battle/bad-seed/plant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, paymentToken: 'BUDZ' }),
+        body: JSON.stringify({ wallet: walletAddress, walletAddress }),
       });
       const data = await res.json();
-
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || 'Mint failed. Try again.');
-      }
-
-      setMintProgress(100);
-      setMintedCard({
-        ...data.card,
-        txId: `tx_sol_${(data.card.uuid || '').slice(-16).toLowerCase()}...`,
-      });
-      if (typeof data.newBudzBalance === 'number') setBudzBalance(data.newBudzBalance);
-      setSeedsOwned(n => n + 1);
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Plant failed.');
+      refreshSeedInfo();
     } catch (err: any) {
-      setMintError(err?.message || 'Mint failed. Try again.');
-      setMintProgress(0);
+      setMintError(err?.message || 'Plant failed.');
     } finally {
-      clearInterval(interval);
-      setIsMinting(false);
+      setGrowBusy(false);
+    }
+  };
+
+  const harvestBadSeedGrow = async (plantId: number) => {
+    if (growBusy || !walletAddress) return;
+    setGrowBusy(true);
+    setMintError(null);
+    try {
+      const res = await fetch(`/api/battle/bad-seed/${plantId}/harvest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, walletAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Harvest failed.');
+      setHarvestedCard(data);
+      refreshSeedInfo();
+    } catch (err: any) {
+      setMintError(err?.message || 'Harvest failed.');
+    } finally {
+      setGrowBusy(false);
     }
   };
 
@@ -527,8 +534,8 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
               </div>
               <div style={{ fontSize: 8, color: 'rgba(57,255,20,0.5)', letterSpacing: 2, marginTop: 1 }}>
                 {activeTab === 'library'
-                  ? `${allCards.length} CARDS · BADBUDZ + GRUDAWARS + CLASH · SHAREABLE`
-                  : 'GENESIS cNFT LAUNCHPAD · 2D CODEX & 3D STUDIO'}
+                  ? `${allCards.length} CARDS · BADBUDZ + GRUDAWARS · DUELYST FACE`
+                  : '24H BAD SEED GROW · EPIC+ BADBUDZ'}
               </div>
             </div>
             {activeTab === 'library' && (
@@ -565,7 +572,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                 boxShadow: activeTab === 'library' ? '0 0 14px rgba(57,255,20,0.3)' : 'none',
               }}
             >
-              <Layers size={13} /> STANDARD LIBRARY
+              <Layers size={13} /> BADBUDZ / GRUDAWARS
             </button>
             <button
               onClick={() => setActiveTab('badbudz')}
@@ -579,7 +586,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                 boxShadow: activeTab === 'badbudz' ? '0 0 16px rgba(255,215,0,0.35)' : 'none',
               }}
             >
-              <Sparkles size={13} /> BADBUDZ &amp; BAD SEED MINT
+              <Sparkles size={13} /> 24H BAD SEED GROW
             </button>
           </div>
 
@@ -589,7 +596,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
                 {SET_TABS.map(t => (
                   <button key={t.id} type="button" onClick={() => setFilterSet(t.id)} style={filterPill(filterSet === t.id, t.id === 'badbudz' ? '#ffeaa0' : t.id === 'grudawars' ? '#22d3ee' : '#39ff14')}>
-                    {t.label} ({t.id === 'all' ? allCards.length : allCards.filter(c => (c.cardSet || 'clash') === t.id).length})
+                    {t.label} ({allCards.filter(c => (c.cardSet || 'badbudz') === t.id).length})
                   </button>
                 ))}
                 <button type="button" onClick={() => setOwnedOnly(v => !v)} style={filterPill(ownedOnly, '#4ade80')}>
@@ -614,7 +621,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
               {/* Rarity filter with pot leaves */}
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
                 <button onClick={() => setFilterRarity('all')} style={filterPill(filterRarity === 'all', '#39ff14')}>
-                  🃏 ALL ({allCards.filter(c => filterSet === 'all' || (c.cardSet || 'clash') === filterSet).length})
+                  🃏 ALL ({setPool.length})
                 </button>
                 {RARITY_ORDER.map(r => {
                   const rm = RARITY[r];
@@ -759,82 +766,86 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 900, color: '#39ff14', letterSpacing: 1 }}>
-                  BAD SEED cNFT INCUBATOR
+                  24H BAD SEED GROW
                 </div>
                 <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                  MINT TO UNLOCK EXCLUSIVE BADBUDZ STRAINS &amp; ON-CHAIN PASSIVES
+                  PLANT AN UNHATCHED BAD SEED. AFTER 24 HOURS HARVEST AN EPIC OR BETTER BADBUDZ INTO THE SAME BATTLE BAG.
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {(['BUDZ', 'THC', 'SOL'] as const).map(cur => (
-                  <button
-                    key={cur}
-                    onClick={() => { setMintCurrency(cur); setMintError(null); }}
-                    style={{
-                      padding: '5px 10px', borderRadius: 6, fontSize: 9, fontWeight: 900, cursor: 'pointer',
-                      border: mintCurrency === cur ? `1px solid ${BAD_SEED_PRICE[cur].color}` : '1px solid rgba(255,255,255,0.1)',
-                      background: mintCurrency === cur ? BAD_SEED_PRICE[cur].bg : 'rgba(0,0,0,0.4)',
-                      color: mintCurrency === cur ? BAD_SEED_PRICE[cur].color : '#888',
-                    }}
-                  >
-                    {BAD_SEED_PRICE[cur].label}
-                  </button>
-                ))}
               </div>
             </div>
 
-            {/* Wallet BUDZ balance + seeds held */}
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
               background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,215,0,0.2)',
               borderRadius: 8, padding: '8px 10px', marginBottom: 10, flexWrap: 'wrap',
             }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 900, color: '#ffeaa0' }}>
-                <Coins size={12} color="#ffeaa0" />
-                {budzBalance === null
-                  ? (walletAddress ? 'LOADING BUDZ…' : 'CONNECT WALLET TO BUY')
-                  : `${budzBalance.toLocaleString()} BUDZ`}
+              <span style={{ fontSize: 10, fontWeight: 900, color: '#ffeaa0' }}>
+                {walletAddress ? `${unplanted} UNPLANTED BAD SEED(S)` : 'CONNECT WALLET TO PLANT'}
               </span>
               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 900 }}>
-                PRICE 5,000 BUDZ · SEEDS HELD {seedsOwned}
+                READY = EPIC+ · RAILWAY user_cards
               </span>
             </div>
 
-            {/* Mint Action Button */}
             <button
-              onClick={handleMintSeed}
-              disabled={isMinting || !canAffordSeed}
+              type="button"
+              onClick={plantBadSeedGrow}
+              disabled={growBusy || unplanted < 1 || !walletAddress}
               style={{
                 width: '100%', padding: '14px', borderRadius: 12,
-                background: (isMinting || !canAffordSeed)
+                background: (growBusy || unplanted < 1 || !walletAddress)
                   ? 'rgba(255,255,255,0.1)'
                   : 'linear-gradient(135deg, #15803d 0%, #166534 50%, #047857 100%)',
                 border: '1.5px solid #39ff14',
                 color: '#fff', fontSize: 13, fontWeight: 900, letterSpacing: 1.5,
-                cursor: (isMinting || !canAffordSeed) ? 'not-allowed' : 'pointer',
-                opacity: canAffordSeed ? 1 : 0.65,
-                boxShadow: (isMinting || !canAffordSeed) ? 'none' : '0 0 20px rgba(57,255,20,0.4)',
+                cursor: (growBusy || unplanted < 1 || !walletAddress) ? 'not-allowed' : 'pointer',
+                opacity: unplanted > 0 && walletAddress ? 1 : 0.65,
+                boxShadow: unplanted > 0 ? '0 0 20px rgba(57,255,20,0.4)' : 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                marginBottom: 12, transition: 'all 0.15s',
+                marginBottom: 12,
               }}
             >
-              {isMinting ? (
-                <>
-                  <Sparkles size={16} className="animate-spin" />
-                  INCUBATING BAD SEED... {mintProgress}%
-                </>
-              ) : !canAffordSeed ? (
-                <>
-                  <Coins size={16} color="#ffeaa0" />
-                  NEED 5,000 BUDZ
-                </>
-              ) : (
-                <>
-                  <Zap size={16} color="#ffeaa0" />
-                  BUY BAD SEED ({BAD_SEED_PRICE[mintCurrency].label})
-                </>
-              )}
+              {growBusy ? 'PLANTING…' : unplanted < 1 ? 'HARVEST A GROWERZ PLANT FOR A BAD SEED FIRST' : 'PLANT BAD SEED · 24 HOURS'}
             </button>
+
+            {grows.map((g) => (
+              <div key={g.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8, padding: '8px 10px', marginBottom: 8,
+              }}>
+                <span style={{ fontSize: 10, color: '#ddd', fontWeight: 700 }}>
+                  Grow #{g.id} · {g.harvested || g.state === 4 ? 'DONE' : g.ready ? 'READY' : `${g.hoursLeft}h LEFT`}
+                </span>
+                {g.ready && (
+                  <button
+                    type="button"
+                    disabled={growBusy}
+                    onClick={() => harvestBadSeedGrow(Number(g.id))}
+                    style={{
+                      padding: '6px 10px', borderRadius: 6, border: '1px solid #39ff14',
+                      background: '#166534', color: '#fff', fontSize: 9, fontWeight: 900, cursor: 'pointer',
+                    }}
+                  >
+                    HARVEST EPIC+
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {harvestedCard && (
+              <div style={{
+                background: 'rgba(0,0,0,0.75)', border: '2px solid #a855f7',
+                borderRadius: 12, padding: '14px', marginTop: 8, marginBottom: 12,
+              }}>
+                <div style={{ fontSize: 9, fontWeight: 900, color: '#c084fc' }}>HARVESTED EPIC+</div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{harvestedCard.name}</div>
+                <div style={{ fontSize: 9, color: '#ffeaa0' }}>{String(harvestedCard.rarity || 'epic').toUpperCase()}</div>
+                {harvestedCard.image && (
+                  <img src={harvestedCard.image} alt="" style={{ maxHeight: 120, marginTop: 8, display: 'block' }} />
+                )}
+              </div>
+            )}
 
             {mintError && (
               <div style={{
@@ -952,11 +963,11 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
           maxWidth: 700, margin: '0 auto',
           padding: '14px 12px 100px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))',
           gap: 14,
         }}>
         {sorted.map(card => (
-          <LibraryCard
+          <DuelystPlayCard
             key={card.id}
             card={card}
             owned={ownedIds.has(card.id)}
