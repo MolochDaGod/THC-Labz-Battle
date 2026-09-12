@@ -277,6 +277,10 @@ function dbCardToClassification(raw: any): ClassificationCard {
     abilities:   Array.isArray(data.abilities) ? data.abilities : (typeof data.abilities === 'string' ? JSON.parse(data.abilities || '[]') : []),
     abilityIcons: Array.isArray(data.abilityIcons) ? data.abilityIcons : undefined,
     playStyles: Array.isArray(data.playStyles) ? data.playStyles : undefined,
+    anims: Array.isArray(data.anims) ? data.anims : undefined,
+    vfx: data.vfx,
+    fx: data.fx,
+    duelystId: data.duelystId,
     artKind: data.artKind,
     sheet: data.sheet,
     plist: data.plist,
@@ -466,6 +470,26 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
       refreshSeedInfo();
     } catch (err: any) {
       setMintError(err?.message || 'Plant failed.');
+    } finally {
+      setGrowBusy(false);
+    }
+  };
+
+  const waterBadSeedGrow = async (plantId: number) => {
+    if (growBusy || !walletAddress) return;
+    setGrowBusy(true);
+    setMintError(null);
+    try {
+      const res = await fetch(`/api/battle/bad-seed/${plantId}/water`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, walletAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Water failed.');
+      refreshSeedInfo();
+    } catch (err: any) {
+      setMintError(err?.message || 'Water failed.');
     } finally {
       setGrowBusy(false);
     }
@@ -776,7 +800,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                   24H BAD SEED GROW
                 </div>
                 <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                  PLANT AN UNHATCHED BAD SEED. AFTER 24 HOURS HARVEST AN EPIC OR BETTER BADBUDZ INTO THE SAME BATTLE BAG.
+                  PLANT A GROWERZ BAD SEED. WATER 2× IN 24H. HARVEST AN EPIC+ BADBUDZ cNFT (CODEX ANIMS + FX) ONTO THE SERVER WALLET.
                 </div>
               </div>
             </div>
@@ -822,21 +846,36 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                 borderRadius: 8, padding: '8px 10px', marginBottom: 8,
               }}>
                 <span style={{ fontSize: 10, color: '#ddd', fontWeight: 700 }}>
-                  Grow #{g.id} · {g.harvested || g.state === 4 ? 'DONE' : g.ready ? 'READY' : `${g.hoursLeft}h LEFT`}
+                  Grow #{g.id} · water {g.waterCount || 0}/{g.watersNeeded || 2} · {g.harvested || g.state === 4 ? 'DONE' : g.ready ? 'READY' : `${g.hoursLeft}h LEFT`}
                 </span>
-                {g.ready && (
-                  <button
-                    type="button"
-                    disabled={growBusy}
-                    onClick={() => harvestBadSeedGrow(Number(g.id))}
-                    style={{
-                      padding: '6px 10px', borderRadius: 6, border: '1px solid #39ff14',
-                      background: '#166534', color: '#fff', fontSize: 9, fontWeight: 900, cursor: 'pointer',
-                    }}
-                  >
-                    HARVEST EPIC+
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {g.canWater && (
+                    <button
+                      type="button"
+                      disabled={growBusy}
+                      onClick={() => waterBadSeedGrow(Number(g.id))}
+                      style={{
+                        padding: '6px 10px', borderRadius: 6, border: '1px solid #38bdf8',
+                        background: '#0e7490', color: '#fff', fontSize: 9, fontWeight: 900, cursor: 'pointer',
+                      }}
+                    >
+                      WATER
+                    </button>
+                  )}
+                  {g.ready && (
+                    <button
+                      type="button"
+                      disabled={growBusy}
+                      onClick={() => harvestBadSeedGrow(Number(g.id))}
+                      style={{
+                        padding: '6px 10px', borderRadius: 6, border: '1px solid #39ff14',
+                        background: '#166534', color: '#fff', fontSize: 9, fontWeight: 900, cursor: 'pointer',
+                      }}
+                    >
+                      HARVEST EPIC+
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
 

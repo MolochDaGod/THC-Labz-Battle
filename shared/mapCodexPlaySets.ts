@@ -107,6 +107,11 @@ export function mapBadBudzCard(raw: any): ClassificationCard {
     range: raw.range,
     speed: raw.speed,
     effect: raw.effect,
+    anims: Array.isArray(raw.anims) ? raw.anims.map(String) : [],
+    vfx: raw.vfx || undefined,
+    fx: {
+      kind: raw.vfx?.projectile ? 'projectile' : raw.vfx?.burst ? 'explosion' : (cls === 'ranged' ? 'projectile' : cls === 'magical' ? 'explosion' : 'slash'),
+    },
   };
 }
 

@@ -150,6 +150,11 @@ type GameScreen = 'login' | 'hub' | 'team-builder' | 'pre-battle' | 'battle' | '
 // landing + Bad Seed mint URL; /library opens the plain card library.
 function resolveLibraryPath(path: string): 'library' | 'badbudz' | null {
   const p = path.replace(/\/+$/, '').toLowerCase() || '/';
+  if (typeof window !== 'undefined') {
+    const q = new URLSearchParams(window.location.search);
+    const tab = (q.get('tab') || q.get('grow') || '').toLowerCase();
+    if (tab === 'badseed' || tab === 'bad-seed' || tab === 'grow' || tab === '1') return 'badbudz';
+  }
   if (p === '/battle/library' || p === '/badbudz' || p === '/bad-seed' || p === '/badseed') return 'badbudz';
   if (p === '/library') return 'library';
   return null;

@@ -59,6 +59,9 @@ export interface ClassificationCard {
   effect?: string;
   pveRole?: string;
   city?: string;
+  anims?: string[];
+  vfx?: { slash?: string; burst?: string; projectile?: string | null };
+  fx?: { kind: 'slash' | 'explosion' | 'projectile' | 'smoke' };
 }
 
 /** Rarity frames + Growerz background plates used by library filters and the 1% pack bonus. */
