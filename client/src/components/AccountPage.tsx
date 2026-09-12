@@ -377,7 +377,9 @@ export default function AccountPage({ user, onBack, navigateTo, connectedNFTs = 
             <ArrowLeft size={18} />
             <span style={{ fontSize: 13 }}>Back</span>
           </button>
-          <img src="/thc-labz-logo-nowords.png" alt="" style={{ width: 32, height: 32, objectFit: 'contain', filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.6))' }} />
+          <a href="https://site.grudge-studio.com" title="THC Labz" style={{ display: 'flex' }}>
+            <img src="/thc-labz-logo-nowords.png" alt="THC Labz" style={{ width: 32, height: 32, objectFit: 'contain', filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.6))' }} />
+          </a>
           <h1 className="cartoon-title" style={{ margin: 0, fontSize: 20, color: '#39ff14' }}>My Account</h1>
         </div>
 
@@ -998,6 +1000,24 @@ export default function AccountPage({ user, onBack, navigateTo, connectedNFTs = 
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  <div className="cartoon-card" style={{ padding: 16, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(57,255,20,0.2)' }}>
+                    <div className="cartoon-label" style={{ fontSize: 10, color: '#39ff14', marginBottom: 10 }}>GROWERZ / GRUDGE ACCOUNT</div>
+                    {[
+                      ['Username', user.displayName || user.username],
+                      ['Email', user.email],
+                      ['Phone', user.phoneNumber],
+                      ['Grudge ID', user.grudgeId],
+                      ['Discord', user.discordUsername || user.discordId],
+                      ['Server wallet', user.serverWallet],
+                      ['Connected wallet', user.walletAddress],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11 }}>
+                        <span style={{ color: '#888' }}>{label}</span>
+                        <span style={{ color: value ? '#ffeaa0' : '#555', wordBreak: 'break-all', textAlign: 'right' }}>{value || '—'}</span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Wallet address */}

@@ -371,11 +371,13 @@ export default function GameHub({
         {/* ── Header ───────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img
-              src={GAME_CONFIG.logoSrc}
-              alt={GAME_CONFIG.logoAlt}
-              style={{ width: 54, height: 54, filter: 'drop-shadow(0 0 16px rgba(57,255,20,0.95))' }}
-            />
+            <a href={GAME_CONFIG.logoHome} title="THC Labz" style={{ display: 'flex' }}>
+              <img
+                src={GAME_CONFIG.logoSrc}
+                alt={GAME_CONFIG.logoAlt}
+                style={{ width: 54, height: 54, filter: 'drop-shadow(0 0 16px rgba(57,255,20,0.95))' }}
+              />
+            </a>
             <div>
               <div style={{ fontSize: 28, fontWeight: 900, color: GAME_CONFIG.primaryColor, lineHeight: 1, letterSpacing: 2, textShadow: '0 0 20px rgba(57,255,20,0.8), 0 0 40px rgba(57,255,20,0.3)' }}>
                 {GAME_CONFIG.name}

@@ -249,6 +249,45 @@ function App() {
       if (cached) setGrowerzUnitCards(JSON.parse(cached));
     } catch (_e) {}
 
+    fetch(`/api/account/snapshot?wallet=${encodeURIComponent(wallet)}`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d?.success) return;
+        const id = d.identity || {};
+        setUser((prev: any) => {
+          const updated = {
+            ...prev,
+            username: id.username || prev.username,
+            displayName: id.displayName || prev.displayName || id.username,
+            email: id.email || prev.email,
+            phoneNumber: id.phone || prev.phoneNumber,
+            grudgeId: id.grudgeId || prev.grudgeId,
+            serverWallet: id.serverWallet || prev.serverWallet,
+            discordId: id.discordId || prev.discordId,
+            discordUsername: id.discordUsername || prev.discordUsername,
+            wallets: id.thirdPartyWallets || prev.wallets,
+            budzBalance: d.balances?.budz ?? prev.budzBalance,
+            gbuxBalance: d.balances?.gbux ?? prev.gbuxBalance,
+          };
+          localStorage.setItem('thc-clash-user', JSON.stringify(updated));
+          return updated;
+        });
+        const owned = d.growerz?.owned;
+        if (Array.isArray(owned) && owned.length) {
+          const nfts = owned.map((n: any) => ({
+            mint: n.mint,
+            name: n.name,
+            image: n.image,
+            imageUrl: n.image,
+            rank: n.rank,
+            tokenNumber: n.tokenNumber,
+          }));
+          setConnectedNFTs(nfts);
+          localStorage.setItem('thc-clash-connected-nfts', JSON.stringify(nfts));
+        }
+      })
+      .catch(() => {});
+
     fetch(`/api/my-nfts/${wallet}`)
       .then(r => r.json())
       .then(data => {
@@ -553,7 +592,7 @@ function App() {
         );
 
       case 'library':
-        return <LibraryPage onBack={() => navigateTo('hub')} walletAddress={user?.walletAddress} initialTab={libraryTab} />;
+        return <LibraryPage onBack={() => navigateTo('hub')} walletAddress={user?.walletAddress || user?.serverWallet} initialTab={libraryTab} />;
 
       case 'collection':
         return <GrowerzCollection />;
