@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronRight, X, Check, Zap, Swords, Heart, Shield, Star, Info } from 'lucide-react';
 import { rarityColor, type GrowerzUnitCard } from '../utils/GrowerzUnitSystem';
 import DuelystPlayCard from './DuelystPlayCard';
+import { LIBRARY_CARDS } from '../../../shared/classificationCardDatabase';
 
 interface TeamBuilderProps {
   walletAddress?: string;
@@ -293,7 +294,10 @@ export default function TeamBuilder({ walletAddress, growerzUnitCards = [], onBa
           console.warn('gameplay catalog', url, e);
         }
       }
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setAllCards((cur) => (cur.length ? cur : LIBRARY_CARDS));
+        setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
