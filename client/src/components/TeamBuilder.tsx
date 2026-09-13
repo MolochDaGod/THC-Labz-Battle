@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronRight, X, Check, Zap, Swords, Heart, Shield, Star, Info } from 'lucide-react';
 import { rarityColor, type GrowerzUnitCard } from '../utils/GrowerzUnitSystem';
+import DuelystPlayCard from './DuelystPlayCard';
 
 interface TeamBuilderProps {
   walletAddress?: string;
@@ -149,7 +150,6 @@ function TradingCard({
   onAdd: () => void; onInfo: (e: React.MouseEvent) => void;
 }) {
   const rm = getRarityMeta(card.rarity);
-  const cm = CLASS_META[card.class] || CLASS_META.all;
 
   return (
     <div style={{ position: 'relative', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.35 : 1 }}>
@@ -168,99 +168,13 @@ function TradingCard({
           position: 'relative',
         }}
       >
-        {/* Art area — portrait 3:4 */}
-        <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
-          <img
-            src={card.image}
-            alt={card.name}
-            loading="lazy"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-            onError={e => {
-              (e.target as HTMLImageElement).src =
-                'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 133"><rect fill="%23228B22" width="100" height="133"/><circle cx="50" cy="60" r="30" fill="%2339ff14" opacity="0.25"/></svg>';
-            }}
+        {/* Codex chrome — BadBudz / GrudaWars idle in the art window, not Clash /card-art clones */}
+        <div style={{ position: 'relative', aspectRatio: '195/284', overflow: 'hidden', background: '#0a0810' }}>
+          <DuelystPlayCard
+            card={card}
+            owned={inDeck}
+            onClick={!inDeck && !disabled ? onAdd : () => {}}
           />
-
-          {/* Gradient overlays */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 35%, transparent 55%, rgba(0,0,0,0.82) 100%)',
-          }} />
-
-          {/* ── TOP ROW ── */}
-          {/* Cost — top left */}
-          <div style={{
-            position: 'absolute', top: 5, left: 5,
-            background: 'rgba(88,28,135,0.92)', border: '1.5px solid #a855f7',
-            borderRadius: '50%', width: 22, height: 22,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 900, color: '#e9d5ff',
-            boxShadow: '0 0 8px rgba(168,85,247,0.7)',
-            fontFamily: "'LEMON MILK', sans-serif",
-          }}>
-            {card.cost}
-          </div>
-
-          {/* Type icon — top right */}
-          <div style={{
-            position: 'absolute', top: 5, right: 5,
-            background: 'rgba(0,0,0,0.6)', borderRadius: 5,
-            padding: '1px 4px', fontSize: 11,
-          }}>
-            {card.isGrowerzUnit
-              ? <img src="/budz-token.png" alt="" style={{ width: 14, height: 14 }} />
-              : (TYPE_ICON[card.type] || '▸')
-            }
-          </div>
-
-          {/* Rarity glow strip — just inside top border */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-            background: `linear-gradient(90deg, transparent 0%, ${rm.border} 50%, transparent 100%)`,
-          }} />
-
-          {/* ── BOTTOM ROW — stats overlay ── */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            padding: '4px 5px 5px',
-          }}>
-            {/* Name */}
-            <div style={{
-              fontSize: 9, fontWeight: 900, color: '#fff', lineHeight: 1.2,
-              textShadow: '0 1px 4px rgba(0,0,0,0.9)', marginBottom: 3,
-              fontFamily: "'LEMON MILK', sans-serif",
-              letterSpacing: 0.2,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>{card.name}</div>
-
-            {/* ATK / HP */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{
-                background: 'rgba(127,29,29,0.85)', borderRadius: 4, padding: '2px 5px',
-                display: 'flex', alignItems: 'center', gap: 2,
-                border: '1px solid rgba(248,113,113,0.4)',
-              }}>
-                <span style={{ fontSize: 9 }}>⚔️</span>
-                <span style={{ fontSize: 9, fontWeight: 900, color: '#fca5a5', fontFamily: "'LEMON MILK', sans-serif" }}>
-                  {card.attack}
-                </span>
-              </div>
-
-              {/* Class icon center */}
-              <div style={{ fontSize: 11 }}>{cm.icon}</div>
-
-              <div style={{
-                background: 'rgba(20,83,45,0.85)', borderRadius: 4, padding: '2px 5px',
-                display: 'flex', alignItems: 'center', gap: 2,
-                border: '1px solid rgba(74,222,128,0.4)',
-              }}>
-                <span style={{ fontSize: 9 }}>❤️</span>
-                <span style={{ fontSize: 9, fontWeight: 900, color: '#4ade80', fontFamily: "'LEMON MILK', sans-serif" }}>
-                  {card.health}
-                </span>
-              </div>
-            </div>
-          </div>
 
           {/* In-deck checkmark */}
           {inDeck && (
@@ -305,18 +219,13 @@ function DeckSlot({ card, onRemove, index }: { card: any | null; onRemove?: () =
       border: `1.5px solid ${card ? rm!.border : 'rgba(255,255,255,0.1)'}`,
       boxShadow: card ? `0 0 8px ${rm!.glow}` : 'none',
       background: card ? '#0a0f0a' : 'rgba(255,255,255,0.03)',
-      aspectRatio: '3/4', position: 'relative', cursor: card ? 'pointer' : 'default',
+      aspectRatio: '195/284', position: 'relative', cursor: card ? 'pointer' : 'default',
     }}
     onClick={card ? onRemove : undefined}
     >
       {card ? (
         <>
-          <img
-            src={card.image}
-            alt={card.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
-            onError={e => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 133"><rect fill="%23228B22" width="100" height="133"/></svg>'; }}
-          />
+          <DuelystPlayCard card={card} owned onClick={() => {}} />
           <div style={{
             position: 'absolute', inset: 0,
             background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)',
@@ -369,11 +278,24 @@ export default function TeamBuilder({ walletAddress, growerzUnitCards = [], onBa
   const [tooltip, setTooltip] = useState<any | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/cards/active/gameplay')
-      .then(r => r.json())
-      .then(data => { if (data.success && data.cards) setAllCards(data.cards); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    (async () => {
+      const urls = ['/api/cards/gameplay', '/api/clash/cards/gameplay', '/api/cards/library?set=all'];
+      for (const url of urls) {
+        try {
+          const r = await fetch(url);
+          const data = await r.json();
+          if (data.success && Array.isArray(data.cards) && data.cards.length) {
+            if (!cancelled) setAllCards(data.cards);
+            break;
+          }
+        } catch (e) {
+          console.warn('gameplay catalog', url, e);
+        }
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const addToDeck = (card: any) => {

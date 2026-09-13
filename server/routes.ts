@@ -2019,6 +2019,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     'grudawars-pack': { name: 'GrudaWars Pack', gbuxCost: 80, solCost: 0.006, cardSet: 'grudawars', weights: { common: 0, uncommon: 20, rare: 40, epic: 25, legendary: 12, mythic: 3 } },
   } as const;
 
+  app.get('/api/cards/gameplay', (_req, res) => {
+    const cards = LIBRARY_CARDS;
+    res.json({ success: true, set: 'play', count: cards.length, cards });
+  });
+
   app.get('/api/cards/library', (_req, res) => {
     const set = String(_req.query.set || 'all').toLowerCase();
     const cards = set === 'all' ? LIBRARY_CARDS : LIBRARY_CARDS.filter((c) => c.cardSet === set);

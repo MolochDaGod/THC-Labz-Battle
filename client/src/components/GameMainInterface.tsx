@@ -73,7 +73,7 @@ export default function GameMainInterface({ walletAddress, onBack, gameZones }: 
 
   const fetchClassificationCards = async () => {
     try {
-      const response = await fetch('/api/admin/cards/active/gameplay');
+      const response = await fetch('/api/cards/gameplay');
       const data = await response.json();
       
       if (data.success && data.cards) {

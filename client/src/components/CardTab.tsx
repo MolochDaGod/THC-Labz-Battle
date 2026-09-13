@@ -78,7 +78,7 @@ export default function CardTab({ walletAddress, gbuxBalance = 0, onPurchase }: 
     setIsLoading(true);
     try {
       // Fetch classification cards from the restored system
-      const response = await fetch('/api/admin/cards/active/gameplay');
+      const response = await fetch('/api/cards/gameplay');
       const data = await response.json();
       
       if (data.success && data.cards && data.cards.length > 0) {

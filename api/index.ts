@@ -253,6 +253,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Cards
     if (path.startsWith('cards/owned/') && req.method === 'GET') return ownedCards(req, res);
     if (path === 'cards/library' && req.method === 'GET') return libraryCatalog(req, res);
+    if (path === 'cards/gameplay' && req.method === 'GET') return libraryCatalog(req, res);
     if (path === 'admin/cards' && req.method === 'GET') return adminCardsList(req, res);
 
     // Card shop

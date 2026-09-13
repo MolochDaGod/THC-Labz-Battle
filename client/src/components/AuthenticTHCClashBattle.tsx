@@ -467,7 +467,7 @@ export default function AuthenticTHCClashBattle({
   const generateAIDeck = async () => {
     try {
       // Fetch real admin cards from server
-      const response = await fetch('/api/admin/cards');
+      const response = await fetch('/api/cards/gameplay');
       const result = await response.json();
       
       let baseCards: BattleCard[] = [];
