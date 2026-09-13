@@ -435,7 +435,7 @@ function drawCardFace(
   ctx.stroke();
 
   ctx.fillStyle = '#fff';
-  ctx.font = `bold ${Math.round(ORB_R * 1.25)}px Arial`;
+  ctx.font = `700 ${Math.round(ORB_R * 1.25)}px "LEMON MILK", Rajdhani, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(card.cost), OX, OY + 1);
@@ -554,7 +554,7 @@ function drawCardFace(
   const nameSize = Math.round(H * 0.046);
   const maxNameW = ART_W - 8;
   let displayName = card.name;
-  ctx.font = `bold ${nameSize}px Arial`;
+  ctx.font = `700 ${nameSize}px "LEMON MILK", Rajdhani, sans-serif`;
   while (ctx.measureText(displayName).width > maxNameW && displayName.length > 4) {
     displayName = displayName.slice(0, -1);
   }
@@ -594,7 +594,7 @@ function drawCardFace(
 
     const abSize = Math.round(Math.min(AB_H * 0.42, H * 0.032));
     ctx.fillStyle = ha('#fff', 0.62);
-    ctx.font = `${abSize}px Arial`;
+    ctx.font = `500 ${abSize}px "LEMON MILK", Rajdhani, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -670,7 +670,11 @@ function TCGCard({
       ref={canvasRef}
       width={w * DPR}
       height={h * DPR}
-      style={{ width: w, height: h, display: 'block', imageRendering: 'crisp-edges' }}
+      className="thc-card-guard"
+      draggable={false}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+      style={{ width: w, height: h, display: 'block', imageRendering: 'crisp-edges', userSelect: 'none' }}
     />
   );
 }
@@ -709,7 +713,11 @@ function MiniTCGCard({ card, w, h }: { card: ShopCard; w: number; h: number }) {
       ref={canvasRef}
       width={w * DPR}
       height={h * DPR}
-      style={{ width: w, height: h, display: 'block', imageRendering: 'crisp-edges' }}
+      className="thc-card-guard"
+      draggable={false}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+      style={{ width: w, height: h, display: 'block', imageRendering: 'crisp-edges', userSelect: 'none' }}
     />
   );
 }
