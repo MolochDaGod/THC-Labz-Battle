@@ -6,30 +6,52 @@
  */
 import { useEffect, useState } from 'react';
 import type { ClassificationCard } from '../../../shared/classificationCardDatabase';
-import { PLAY_STYLE_SLOTS } from '../../../shared/mapCodexPlaySets';
+import { defaultBackgroundForRarity } from '../../../shared/classificationCardDatabase';
+import { PLAY_STYLE_SLOTS, abilityIconFor } from '../../../shared/mapCodexPlaySets';
+import { CODEX_BADBUDZ_CARDS, CODEX_GRUDAWARS_CARDS } from '../../../shared/codexPlaySets.generated';
 import IDLE_FRAMES from '../../../shared/duelystIdleFrames.json';
 
 const CHROME = 'https://duelyst.grudge-studio.com/tcg-chrome';
 
+/** LAYOUT.json — cost is top-right inside the card viewport. */
 const GOLD = {
   frame: `${CHROME}/frames/thc-epic-gold.png`,
-  art: { x: 15, y: 42, w: 166, h: 156 },
-  name: { x: 33, y: 8, w: 128, h: 29 },
-  text: { x: 24, y: 200, w: 147, h: 32 },
-  cost: { cx: 98, cy: 259, r: 12 },
-  attack: { cx: 28, cy: 253, r: 20 },
-  health: { cx: 168, cy: 253, r: 20 },
+  art: { x: 31, y: 48, w: 132, h: 112 },
+  name: { x: 10, y: 6, w: 148, h: 24 },
+  text: { x: 18, y: 196, w: 159, h: 56 },
+  cost: { cx: 176, cy: 18, r: 15 },
+  attack: { cx: 26, cy: 268, r: 16 },
+  health: { cx: 170, cy: 268, r: 16 },
 };
 
 const WEED = {
   frame: `${CHROME}/frames/thc-legendary-weed.png`,
-  art: { x: 17, y: 50, w: 161, h: 147 },
-  name: { x: 26, y: 11, w: 144, h: 29 },
-  text: { x: 24, y: 199, w: 147, h: 32 },
-  cost: { cx: 100, cy: 259, r: 12 },
-  attack: { cx: 31, cy: 254, r: 21 },
-  health: { cx: 169, cy: 254, r: 21 },
+  art: { x: 31, y: 48, w: 132, h: 112 },
+  name: { x: 10, y: 6, w: 148, h: 24 },
+  text: { x: 18, y: 196, w: 159, h: 56 },
+  cost: { cx: 176, cy: 18, r: 15 },
+  attack: { cx: 26, cy: 268, r: 16 },
+  health: { cx: 170, cy: 268, r: 16 },
 };
+
+const BB_NO = new Map(CODEX_BADBUDZ_CARDS.map((c, i) => [c.id, i + 1]));
+const GW_NO = new Map(CODEX_GRUDAWARS_CARDS.map((c, i) => [c.id, i + 1]));
+
+function badBudzNumber(card: ClassificationCard): number {
+  return GW_NO.get(card.id) || BB_NO.get(card.id) || 0;
+}
+
+function resolveAbilities(card: ClassificationCard): { names: string[]; icons: string[] } {
+  const want = card.cost <= 2 ? 1 : card.cost <= 4 ? 2 : 3;
+  const fromCard = (card.abilities || []).filter(Boolean);
+  const fromStyles = (card.playStyles || [])
+    .filter((p) => p.on)
+    .map((p) => PLAY_STYLE_SLOTS.find((s) => s.key === p.key)?.label || p.key);
+  const names = [...fromCard, ...fromStyles].filter((n, i, a) => n && a.indexOf(n) === i).slice(0, want);
+  if (!names.length) names.push(card.class);
+  const icons = names.map((n, i) => card.abilityIcons?.[i] || abilityIconFor(n, i, card.class));
+  return { names, icons };
+}
 
 const W = 195;
 const H = 284;
@@ -84,8 +106,9 @@ export default function DuelystPlayCard({
   }, [glitch, card.cost]);
 
   const style = playKey(card);
-  const ability = (card.abilities && card.abilities[0]) || card.type;
-  const setLabel = (card.cardSet || 'badbudz').toUpperCase();
+  const { names: abilityNames, icons: abilityIcons } = resolveAbilities(card);
+  const collector = badBudzNumber(card);
+  const plate = card.chromeBg || defaultBackgroundForRarity(card.rarity).src;
   const onKeys = new Set(
     (card.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(card.keywords || []),
   );
@@ -128,17 +151,16 @@ export default function DuelystPlayCard({
         overflow: 'hidden',
         background: '#07050c',
       }}>
-        {card.chromeBg && (
-          <img
-            src={card.chromeBg}
-            alt=""
-            draggable={false}
-            style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
-              objectFit: 'cover', pointerEvents: 'none',
-            }}
-          />
-        )}
+        <img
+          src={plate}
+          alt=""
+          draggable={false}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover', pointerEvents: 'none',
+            filter: 'brightness(1.22) saturate(1.12) contrast(1.06)',
+          }}
+        />
         <CardUnitArt card={card} />
       </div>
 
@@ -179,7 +201,7 @@ export default function DuelystPlayCard({
         textAlign: 'center', overflow: 'hidden',
         pointerEvents: 'none',
       }}>
-        {setLabel} · {ability}
+        Bad Budz #{collector || '—'}
       </div>
 
       <div style={{
@@ -208,20 +230,21 @@ export default function DuelystPlayCard({
         })}
       </div>
 
-      {(card.abilityIcons || []).slice(0, 3).length > 0 && (
+      {abilityIcons.length > 0 && (
         <div style={{
           position: 'absolute',
-          right: '6%', top: '42%',
+          left: pct(skin.art.x + skin.art.w - 20, W),
+          top: pct(skin.art.y + 4, H),
           display: 'flex', flexDirection: 'column', gap: 2,
           pointerEvents: 'none',
         }}>
-          {(card.abilityIcons || []).slice(0, 3).map((src, i) => (
+          {abilityIcons.map((src, i) => (
             <img
               key={src + i}
               src={src}
-              alt={card.abilities[i] || 'ability'}
-              title={card.abilities[i]}
-              style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
+              alt={abilityNames[i] || 'ability'}
+              title={abilityNames[i]}
+              style={{ width: 16, height: 16, imageRendering: 'pixelated', filter: 'brightness(1.15)' }}
             />
           ))}
         </div>
@@ -277,35 +300,48 @@ function PackedIdleSprite({ sheet, fr }: { sheet: string; fr: IdleFrame }) {
         backgroundSize: `${sizeX}% ${sizeY}%`,
         backgroundPosition: `${posX}% ${posY}%`,
         imageRendering: 'pixelated',
+        filter: 'brightness(1.18) contrast(1.06) saturate(1.1)',
         animation: 'duelystBreathe 2.4s ease-in-out infinite',
       }}
     />
   );
 }
 
-/** CraftPix idle strip — first square cell only (Codex stripFrames). */
+/** CraftPix / Codex horizontal idle strip — play cells, do not show the whole sheet. */
 function GwIdleSprite({ src }: { src: string }) {
-  const [wide, setWide] = useState(true);
+  const [frames, setFrames] = useState(1);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (frames <= 1) return;
+    const id = window.setInterval(() => setTick((t) => t + 1), 140);
+    return () => window.clearInterval(id);
+  }, [frames]);
+  const frame = frames <= 1 ? 0 : tick % frames;
+  const pos = frames <= 1 ? '50% 100%' : `${(frame / Math.max(frames - 1, 1)) * 100}% 0%`;
   return (
-    <div style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        backgroundImage: `url(${src})`,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: frames > 1 ? `${frames * 100}% 100%` : 'contain',
+        backgroundPosition: pos,
+        imageRendering: 'pixelated',
+        filter: 'brightness(1.2) contrast(1.08) saturate(1.14)',
+      }}
+    >
       <img
         src={src}
         alt=""
         draggable={false}
         onLoad={(e) => {
           const im = e.currentTarget;
-          setWide(im.naturalWidth >= im.naturalHeight);
+          const h = im.naturalHeight;
+          const w = im.naturalWidth;
+          if (h > 8 && w > h * 1.35) setFrames(Math.max(1, Math.floor(w / h)));
         }}
-        style={{
-          imageRendering: 'pixelated',
-          animation: 'duelystBreathe 2.4s ease-in-out infinite',
-          maxWidth: 'none',
-          objectFit: 'none',
-          objectPosition: 'left top',
-          ...(wide
-            ? { height: '100%', width: 'auto' }
-            : { width: '100%', height: 'auto' }),
-        }}
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
       />
     </div>
   );

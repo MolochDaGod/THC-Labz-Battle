@@ -204,8 +204,10 @@ export function mapGrudaWarsHero(h: any): ClassificationCard {
     keywords: names.map((n) => n.toLowerCase()),
     idleStrip: idle,
     artKind: 'gw-strip',
+    chromeBg: `${TCG_CHROME}/thc/bg-${rarity}.png`,
     statScale: 'duelyst',
     abilityIcons: names.map((n, i) => abilityIconFor(n, i, cls)),
+    anims: Object.keys(h.clips || {}),
   };
 }
 

@@ -9,7 +9,7 @@ import {
   type CardSetId,
 } from '../../../shared/classificationCardDatabase';
 import GAME_CONFIG from '../config/gameConfig';
-import DuelystPlayCard, { CardUnitArt } from './DuelystPlayCard';
+import DuelystPlayCard from './DuelystPlayCard';
 
 // ── Skill Tree ─────────────────────────────────────────
 interface SkillOption { id: string; name: string; desc: string; icon: string; }
@@ -1433,27 +1433,15 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
           fontFamily: "'LEMON MILK', sans-serif",
         }}
       >
-        <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#07050c' }}>
-          {card.chromeBg && (
-            <img src={card.chromeBg} alt="" aria-hidden
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
-            />
-          )}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: `radial-gradient(ellipse at 50% 0%, ${rm.border}22 0%, transparent 60%)`,
-          }} />
-          <div style={{ position: 'absolute', left: '10%', right: '10%', top: '8%', bottom: '12%' }}>
-            <CardUnitArt card={card} />
+        <div style={{ position: 'relative', padding: '16px 16px 8px', background: '#07050c', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 188 }}>
+            <DuelystPlayCard card={card} owned={owned} onClick={() => {}} />
           </div>
-          {/* Bottom fade into panel content */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(6,14,6,1) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)' }} />
-
-          {/* Close */}
           <button onClick={onClose} style={{
             position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.7)',
             border: `1px solid ${rm.border}55`, borderRadius: '50%', width: 28, height: 28,
             cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 4,
           }}><X size={13} /></button>
 
           {/* Rarity leaves top-right */}
@@ -1472,17 +1460,6 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
             )}
           </div>
 
-          {/* Name overlay */}
-          <div style={{ position: 'absolute', bottom: 10, left: 14, right: 14 }}>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 14px ${rm.glow}`, lineHeight: 1.2 }}>
-              {card.name}
-            </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
-              <span style={{ fontSize: 9, color: rm.text }}>{cm?.icon} {card.class.toUpperCase()}</span>
-              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9 }}>·</span>
-              <span style={{ fontSize: 9, color: tm.color }}>{tm.icon} {card.type.toUpperCase()}</span>
-            </div>
-          </div>
         </div>
 
         <div style={{ padding: '12px 14px 18px' }}>
