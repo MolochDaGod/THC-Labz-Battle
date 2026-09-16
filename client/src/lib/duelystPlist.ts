@@ -80,6 +80,54 @@ export type CodexCard = {
   anims?: string[];
 };
 
+/** BadBudz catalog row — Magmar reskin face. Not cards.json Magmar originals. */
+export type BadBudzRow = {
+  id: string;
+  duelystId: string;
+  name: string;
+  cost?: number;
+  attack?: number;
+  health?: number;
+  abilityNames?: string[];
+  playStyles?: Array<{ key: string; on: boolean }>;
+  keywords?: string[];
+  passive?: string;
+  flavor?: string;
+};
+
+let badBudzPromise: Promise<Map<string, BadBudzRow>> | null = null;
+
+export function loadBadBudzCatalog() {
+  if (!badBudzPromise) {
+    badBudzPromise = fetch('https://duelyst.grudge-studio.com/catalog/badbudz.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const map = new Map<string, BadBudzRow>();
+        for (const c of j?.cards || []) {
+          const row: BadBudzRow = {
+            id: String(c.id || ''),
+            duelystId: String(c.duelystId || c.id || ''),
+            name: String(c.name || ''),
+            cost: c.cost,
+            attack: c.attack,
+            health: c.health,
+            abilityNames: Array.isArray(c.abilityNames) ? c.abilityNames.map(String) : [],
+            playStyles: Array.isArray(c.playStyles) ? c.playStyles : [],
+            keywords: Array.isArray(c.keywords) ? c.keywords.map(String) : [],
+            passive: c.passive ? String(c.passive) : '',
+            flavor: c.flavor ? String(c.flavor) : '',
+          };
+          if (row.id) map.set(row.id, row);
+          if (row.duelystId) map.set(row.duelystId, row);
+          map.set(`badbudz:${row.id || row.duelystId}`, row);
+        }
+        return map;
+      })
+      .catch(() => new Map());
+  }
+  return badBudzPromise;
+}
+
 let registryPromise: Promise<Map<string, CodexCard>> | null = null;
 
 export function loadCodexRegistry() {

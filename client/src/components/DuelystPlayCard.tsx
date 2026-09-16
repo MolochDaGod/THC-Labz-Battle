@@ -4,28 +4,38 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ClassificationCard } from '../../../shared/classificationCardDatabase';
-import { PLAY_STYLE_SLOTS, abilityIconFor } from '../../../shared/mapCodexPlaySets';
+import { PLAY_STYLE_SLOTS } from '../../../shared/mapCodexPlaySets';
 import { CODEX_BADBUDZ_CARDS, CODEX_GRUDAWARS_CARDS } from '../../../shared/codexPlaySets.generated';
 import IDLE_FRAMES from '../../../shared/duelystIdleFrames.json';
-import { loadCodexRegistry, loadPlistAnims, loadSheet, type PlistFrame } from '../lib/duelystPlist';
+import { loadBadBudzCatalog, loadCodexRegistry, loadPlistAnims, loadSheet, type PlistFrame } from '../lib/duelystPlist';
 
 const CHROME = 'https://duelyst.grudge-studio.com/tcg-chrome';
 const FONT = 'Cambria, Constantia, Palatino Linotype, Palatino, Georgia, serif';
 
-const L = {
-  w: 195,
-  h: 284,
-  name: { x: 10, y: 6, w: 148, h: 24, size: 13 },
-  ribbon: { x: 16, y: 164, w: 163, h: 32 },
-  text: { x: 18, y: 196, w: 159, h: 56 },
-  cost: { cx: 176, cy: 18, r: 15, size: 14 },
-  attack: { cx: 26, cy: 268, r: 16, size: 14 },
-  health: { cx: 170, cy: 268, r: 16, size: 14 },
-};
+const CARD_W = 195;
+const CARD_H = 284;
 
-/** lab/tools/thc-frame-windows.json — art hole of the THC gold/weed frames. */
-const ART_GOLD = { x: 15, y: 42, w: 166, h: 156 };
-const ART_WEED = { x: 17, y: 50, w: 161, h: 147 };
+/** LAYOUT.json thc.frames — gold vs weed. Cost is the BOTTOM center circle. */
+const THC = {
+  gold: {
+    art: { x: 15, y: 42, w: 166, h: 156 },
+    name: { x: 33, y: 8, w: 128, h: 29, size: 13 },
+    text: { x: 24, y: 200, w: 147, h: 32 },
+    scrim: { x: 26, y: 201, w: 143, h: 30 },
+    cost: { cx: 98, cy: 259, r: 12, size: 16 },
+    attack: { cx: 28, cy: 253, r: 20, size: 18 },
+    health: { cx: 168, cy: 253, r: 20, size: 18 },
+  },
+  weed: {
+    art: { x: 17, y: 50, w: 161, h: 147 },
+    name: { x: 26, y: 11, w: 144, h: 29, size: 13 },
+    text: { x: 24, y: 199, w: 147, h: 32 },
+    scrim: { x: 26, y: 200, w: 143, h: 30 },
+    cost: { cx: 100, cy: 259, r: 12, size: 16 },
+    attack: { cx: 31, cy: 254, r: 21, size: 18 },
+    health: { cx: 169, cy: 254, r: 21, size: 18 },
+  },
+};
 
 const FRAME: Record<string, string> = {
   common: `${CHROME}/frames/thc-epic-gold.png`,
@@ -64,20 +74,28 @@ function badBudzNumber(card: ClassificationCard): number {
   return GW_NO.get(card.id) || BB_NO.get(card.id) || 0;
 }
 
-function resolveAbilities(card: ClassificationCard): { names: string[]; icons: string[] } {
-  const want = card.cost <= 2 ? 1 : card.cost <= 4 ? 2 : 3;
-  const fromCard = (card.abilities || []).filter(Boolean);
-  const fromStyles = (card.playStyles || [])
-    .filter((p) => p.on)
-    .map((p) => PLAY_STYLE_SLOTS.find((s) => s.key === p.key)?.label || p.key);
-  const names = [...fromCard, ...fromStyles].filter((n, i, a) => n && a.indexOf(n) === i).slice(0, want);
-  if (!names.length) names.push(card.class);
-  const icons = names.map((n, i) => card.abilityIcons?.[i] || abilityIconFor(n, i, card.class));
-  return { names, icons };
-}
-
 function pct(n: number, total: number) {
   return `${(n / total) * 100}%`;
+}
+
+function box(b: { x: number; y: number; w: number; h: number }) {
+  return {
+    position: 'absolute' as const,
+    left: pct(b.x, CARD_W),
+    top: pct(b.y, CARD_H),
+    width: pct(b.w, CARD_W),
+    height: pct(b.h, CARD_H),
+  };
+}
+
+function slot(cx: number, cy: number, r: number) {
+  return {
+    position: 'absolute' as const,
+    left: pct(cx - r, CARD_W),
+    top: pct(cy - r, CARD_H),
+    width: pct(r * 2, CARD_W),
+    height: pct(r * 2, CARD_H),
+  };
 }
 
 function rarityKey(card: ClassificationCard): string {
@@ -94,26 +112,6 @@ function playKey(card: ClassificationCard): string {
   return 'melee';
 }
 
-function slot(cx: number, cy: number, r: number) {
-  return {
-    position: 'absolute' as const,
-    left: pct(cx - r, L.w),
-    top: pct(cy - r, L.h),
-    width: pct(r * 2, L.w),
-    height: pct(r * 2, L.h),
-  };
-}
-
-function box(b: { x: number; y: number; w: number; h: number }) {
-  return {
-    position: 'absolute' as const,
-    left: pct(b.x, L.w),
-    top: pct(b.y, L.h),
-    width: pct(b.w, L.w),
-    height: pct(b.h, L.h),
-  };
-}
-
 export default function DuelystPlayCard({
   card,
   owned,
@@ -124,52 +122,83 @@ export default function DuelystPlayCard({
   onClick: () => void;
 }) {
   const rk = rarityKey(card);
+  const weed = rk === 'legendary' || rk === 'mythic' || rk === 'glitch';
+  const skin = weed ? THC.weed : THC.gold;
   const glitch = Boolean(card.glitchCost || rk === 'glitch');
+  const [face, setFace] = useState({
+    cost: card.cost,
+    attack: card.attack,
+    health: card.health,
+    abilities: (card.abilities || []).filter(Boolean),
+    playStyles: card.playStyles || [],
+  });
   const [costDigit, setCostDigit] = useState(card.cost);
   useEffect(() => {
-    if (!glitch) { setCostDigit(card.cost); return; }
+    if (!glitch) { setCostDigit(face.cost); return; }
     const id = window.setInterval(() => {
-      setCostDigit(Math.random() < 0.45 ? card.cost : Math.max(0, card.cost + (Math.random() < 0.5 ? 1 : -1)));
+      setCostDigit(Math.random() < 0.45 ? face.cost : Math.max(0, face.cost + (Math.random() < 0.5 ? 1 : -1)));
     }, 160);
     return () => window.clearInterval(id);
-  }, [glitch, card.cost]);
+  }, [glitch, face.cost]);
 
   const style = playKey(card);
-  const { names: abilityNames, icons: abilityIcons } = resolveAbilities(card);
   const collector = badBudzNumber(card);
   const [uuid, setUuid] = useState('');
   useEffect(() => {
-    const slug = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
-    loadCodexRegistry().then((m) => {
-      const row = m.get(`duelyst:${slug}`) || m.get(slug);
-      if (row?.uuid) setUuid(row.uuid);
+    const slug = card.duelystId || String(card.id || '').replace(/^badbudz:/, '').replace(/^grudawars:/, '');
+    const isBad = (card.cardSet || 'badbudz') === 'badbudz' || String(card.id).startsWith('badbudz:');
+    Promise.all([loadCodexRegistry(), isBad ? loadBadBudzCatalog() : Promise.resolve(null)]).then(([reg, bb]) => {
+      const uuidRow = reg.get(`duelyst:${slug}`) || reg.get(`grudawars:${slug}`) || reg.get(slug) || reg.get(card.id);
+      if (uuidRow?.uuid) setUuid(uuidRow.uuid);
+      const bbRow = bb?.get(slug) || bb?.get(card.id) || bb?.get(`badbudz:${slug}`);
+      if (bbRow) {
+        setFace({
+          cost: Number(bbRow.cost ?? card.cost),
+          attack: Number(bbRow.attack ?? card.attack),
+          health: Number(bbRow.health ?? card.health),
+          abilities: bbRow.abilityNames?.length ? bbRow.abilityNames : (card.abilities || []),
+          playStyles: bbRow.playStyles?.length ? bbRow.playStyles : (card.playStyles || []),
+        });
+      }
     });
-  }, [card.id, card.duelystId]);
+  }, [card.id, card.duelystId, card.cardSet, card.cost, card.attack, card.health, card.abilities, card.playStyles]);
   const plate = card.chromeBg || RARITY_BG[rk] || RARITY_BG.common;
   const buds = card.chromeBuds || RARITY_BUDS[rk];
   const frame = FRAME[rk] || FRAME.common;
-  const artBox = rk === 'legendary' || rk === 'mythic' || rk === 'glitch' ? ART_WEED : ART_GOLD;
-  const nameSize = card.name.length > 22 ? 10 : card.name.length > 16 ? 11 : L.name.size;
-  const onKeys = useMemo(() => {
-    const s = new Set(
-      (card.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(card.keywords || []),
+  const artBox = skin.art;
+  const nameSize = card.name.length > 26 ? 8 : card.name.length > 22 ? 9 : card.name.length > 16 ? 11 : skin.name.size;
+  const ownedStyles = useMemo(() => {
+    const keys = new Set(
+      (face.playStyles.length ? face.playStyles : card.playStyles || [])
+        .filter((p) => p.on)
+        .map((p) => p.key)
+        .concat((card.keywords || []).map((k) => String(k).toLowerCase())),
     );
-    if (!s.size) s.add(style);
-    return s;
-  }, [card.playStyles, card.keywords, style]);
+    const fromSlots = PLAY_STYLE_SLOTS.filter((s) => keys.has(s.key));
+    if (fromSlots.length) return fromSlots.slice(0, 4);
+    const listed = face.playStyles.length ? face.playStyles : (card.playStyles || []);
+    if (listed.length) return [];
+    const fallback = PLAY_STYLE_SLOTS.find((s) => s.key === style);
+    return fallback ? [fallback] : [];
+  }, [face.playStyles, card.playStyles, card.keywords, style]);
 
-  const body = abilityNames.join(' · ');
+  const STYLE_OR_KW = new Set(['melee', 'ranged', 'splash', 'flying', 'tank', 'charge', 'swarm', 'seed', 'spell']);
+  const body = face.abilities.filter((a) => a && !STYLE_OR_KW.has(a.toLowerCase())).join(' · ');
   const flavor = (card.abilityDesc || card.description || '').split('.')[0];
+  const styleIcon = 18;
+  const styleOriginX = artBox.x + 2 + styleIcon / 2;
+  const styleOriginY = artBox.y + 12 + styleIcon / 2;
+  const styleStep = styleIcon + 3;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`${card.name} · ${card.cost}/${card.attack}/${card.health}${uuid ? ` · ${uuid}` : ''}`}
+      title={`${card.name} · ${face.cost}/${face.attack}/${face.health}${uuid ? ` · ${uuid}` : ''}`}
       style={{
         position: 'relative',
         width: '100%',
-        aspectRatio: `${L.w} / ${L.h}`,
+        aspectRatio: `${CARD_W} / ${CARD_H}`,
         padding: 0,
         border: 'none',
         background: '#0a0806',
@@ -213,35 +242,17 @@ export default function DuelystPlayCard({
         />
       )}
       <div style={{ ...box(artBox), overflow: 'hidden', zIndex: 1 }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          transform: 'translateY(-8%) scale(1.22)',
+          transformOrigin: 'center bottom',
+        }}>
           <CardUnitArt card={card} />
         </div>
-        {abilityIcons.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            right: '3%',
-            top: '4%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            pointerEvents: 'none',
-          }}>
-            {abilityIcons.map((src, i) => (
-              <img
-                key={src + i}
-                src={src}
-                alt={abilityNames[i] || 'ability'}
-                title={abilityNames[i]}
-                style={{
-                  width: 16,
-                  height: 16,
-                  imageRendering: 'pixelated',
-                  filter: 'drop-shadow(0 1px 1px #000)',
-                }}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       <img
@@ -255,49 +266,44 @@ export default function DuelystPlayCard({
       />
 
       <div style={{
-        ...box(L.name),
+        ...box(skin.name),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: FONT,
         fontSize: nameSize,
         fontWeight: 700,
-        color: '#1a1630',
+        color: '#fff8dc',
         letterSpacing: 0.2,
-        textShadow: '0 0 1px #f4e7b0, 1px 0 0 #d4b56a, -1px 0 0 #d4b56a, 0 1px 0 #d4b56a, 0 -1px 0 #d4b56a',
+        textShadow: '0 0 1px #120c04, 1px 0 0 #120c04, -1px 0 0 #120c04, 0 1px 0 #120c04, 0 -1px 0 #120c04, 0 1px 2px #000',
         overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
         pointerEvents: 'none', zIndex: 3, padding: '0 4px',
       }}>
         {card.name}
       </div>
 
-      <div style={{
-        ...box(L.ribbon),
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        pointerEvents: 'none', zIndex: 3, padding: '0 2%',
-      }}>
-        {PLAY_STYLE_SLOTS.map((ps) => {
-          const on = onKeys.has(ps.key);
-          return (
-            <img
-              key={ps.key}
-              src={ps.icon}
-              alt={ps.label}
-              title={ps.label}
-              style={{
-                width: '13.5%',
-                height: 'auto',
-                imageRendering: 'pixelated',
-                opacity: on ? 1 : 0.22,
-                filter: on ? 'drop-shadow(0 0 3px #f5d76e)' : 'grayscale(1)',
-              }}
-            />
-          );
-        })}
-      </div>
+      {ownedStyles.map((ps, i) => (
+        <StyleCircle
+          key={ps.key}
+          label={ps.label}
+          badge={ps.badge}
+          icon={ps.icon}
+          cx={styleOriginX}
+          cy={styleOriginY + i * styleStep}
+          r={styleIcon / 2}
+        />
+      ))}
 
       <div style={{
-        ...box(L.text),
+        ...box(skin.scrim),
+        background: 'rgba(6, 10, 6, 0.36)',
+        borderRadius: 10,
+        pointerEvents: 'none',
+        zIndex: 3,
+      }} />
+
+      <div style={{
+        ...box(skin.text),
         fontFamily: FONT,
-        color: '#f4e7b0',
+        color: '#fff8dc',
         textAlign: 'center',
         overflow: 'hidden',
         pointerEvents: 'none',
@@ -308,19 +314,50 @@ export default function DuelystPlayCard({
         padding: '2px 3px 0',
         textShadow: '0 1px 1px #000, 0 0 2px #3a2a10',
       }}>
-        <div style={{ fontSize: 9, lineHeight: 1.15, fontWeight: 700 }}>{body}</div>
+        {body ? <div style={{ fontSize: 9, lineHeight: 1.15, fontWeight: 700 }}>{body}</div> : null}
         {flavor && (
-          <div style={{ fontSize: 8, lineHeight: 1.2, opacity: 0.85, marginTop: 2 }}>{flavor}.</div>
+          <div style={{ fontSize: 8, lineHeight: 1.2, opacity: 0.85, marginTop: body ? 2 : 0 }}>{flavor}.</div>
         )}
-        <div style={{ fontSize: 6, letterSpacing: 0.3, opacity: 0.75, marginTop: 'auto', wordBreak: 'break-all' }}>
-          {uuid || `${card.cardSet === 'grudawars' ? 'GrudaWars' : 'BadBudz'} #${collector || '—'}`}
+        <div style={{ fontSize: 6, letterSpacing: 0.3, opacity: 0.75, marginTop: 'auto' }}>
+          {card.cardSet === 'grudawars' ? `GrudaWars #${collector || '—'}` : `BadBudz #${collector || '—'}`}
         </div>
       </div>
 
-      <Gem cx={L.cost.cx} cy={L.cost.cy} r={L.cost.r} size={L.cost.size} kind="mana" value={glitch ? costDigit : card.cost} hot={glitch} />
-      {card.attack > 0 && <Gem cx={L.attack.cx} cy={L.attack.cy} r={L.attack.r} size={L.attack.size} kind="attack" value={card.attack} />}
-      {card.health > 0 && <Gem cx={L.health.cx} cy={L.health.cy} r={L.health.r} size={L.health.size} kind="health" value={card.health} />}
+      <Gem cx={skin.cost.cx} cy={skin.cost.cy} r={skin.cost.r} size={skin.cost.size} kind="mana" value={glitch ? costDigit : face.cost} hot={glitch} />
+      {face.attack > 0 && <Gem cx={skin.attack.cx} cy={skin.attack.cy} r={skin.attack.r} size={skin.attack.size} kind="attack" value={face.attack} />}
+      {face.health > 0 && <Gem cx={skin.health.cx} cy={skin.health.cy} r={skin.health.r} size={skin.health.size} kind="health" value={face.health} />}
     </button>
+  );
+}
+
+function StyleCircle({
+  label, badge, icon, cx, cy, r,
+}: {
+  label: string; badge: string; icon: string; cx: number; cy: number; r: number;
+}) {
+  return (
+    <div title={label} style={{ ...slot(cx, cy, r + 1.2), pointerEvents: 'none', zIndex: 3 }}>
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        borderRadius: '50%',
+        background: 'rgba(46, 28, 8, 0.94)',
+        border: '1.6px solid #f0c645',
+        boxShadow: '0 0 6px rgba(255, 206, 84, 0.75)',
+      }} />
+      <img
+        src={badge}
+        alt=""
+        draggable={false}
+        style={{ position: 'absolute', inset: '-8%', width: '116%', height: '116%', imageRendering: 'pixelated' }}
+      />
+      <img
+        src={icon}
+        alt={label}
+        draggable={false}
+        style={{ position: 'absolute', inset: '14%', width: '72%', height: '72%', imageRendering: 'pixelated' }}
+      />
+    </div>
   );
 }
 
@@ -477,7 +514,14 @@ function Portrait({ src }: { src: string }) {
 }
 
 export function CardUnitArt({ card }: { card: ClassificationCard }) {
-  const duelystId = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
+  const isGw = card.cardSet === 'grudawars' || String(card.id).startsWith('grudawars:');
+  if (isGw) {
+    const gw = CODEX_GRUDAWARS_CARDS.find((c) => c.id === card.id) || card;
+    const src = gw.idleStrip || gw.image || card.idleStrip || card.image;
+    if (src && !String(src).startsWith('CARD-')) return <GwIdleSprite src={src} />;
+  }
+  const duelystId = card.duelystId || String(card.id || '').replace(/^badbudz:/, '').replace(/^grudawars:/, '');
+  if (String(duelystId).startsWith('CARD-')) return card.image && !card.image.startsWith('CARD-') ? <Portrait src={card.image} /> : null;
   const fr = card.idleFrame || FRAMES[duelystId];
   const sheet = card.sheet || (fr ? `https://assets.grudge-studio.com/sprites/duelyst/units/${duelystId}.png` : '');
   const kind = card.artKind || (card.idleStrip ? 'gw-strip' : fr ? 'duelyst-plist' : 'portrait');
@@ -485,13 +529,13 @@ export function CardUnitArt({ card }: { card: ClassificationCard }) {
   const plist = card.plist || (duelystId
     ? `https://assets.grudge-studio.com/sprites/duelyst/plists/${duelystId}.plist`
     : '');
-  if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
+  if (kind === 'gw-strip' && (card.idleStrip || card.image) && !String(card.idleStrip || card.image).startsWith('CARD-')) {
     return <GwIdleSprite src={card.idleStrip || card.image} />;
   }
   if (kind === 'duelyst-plist' || (sheet && plist)) {
     return <DuelystBreathe sheet={sheet || card.image} plist={plist} fallback={fr} />;
   }
-  if (card.image) {
+  if (card.image && !String(card.image).startsWith('CARD-')) {
     return <Portrait src={card.image} />;
   }
   return null;

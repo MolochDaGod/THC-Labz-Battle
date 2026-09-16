@@ -8,6 +8,7 @@ import {
   type ClassificationCard,
   type CardSetId,
 } from '../../../shared/classificationCardDatabase';
+import { PLAY_STYLE_SLOTS } from '../../../shared/mapCodexPlaySets';
 import GAME_CONFIG from '../config/gameConfig';
 import DuelystPlayCard from './DuelystPlayCard';
 
@@ -297,6 +298,30 @@ function dbCardToClassification(raw: any): ClassificationCard {
   };
 }
 
+function hydratePlayCard(raw: any): ClassificationCard | null {
+  const data = raw.cardData || raw.card_data || {};
+  const id = String(raw.cardId || raw.card_id || raw.id || data.id || '');
+  const slug = String(data.duelystId || data.slug || id.replace(/^badbudz:/, '').replace(/^grudawars:/, ''));
+  const hit = PLAY_CARDS.find((p) =>
+    p.id === id
+    || p.id === data.id
+    || p.id === `grudawars:${slug}`
+    || p.id === `badbudz:${slug}`
+    || (p.duelystId && p.duelystId === slug)
+    || (data.name && p.name.toLowerCase() === String(data.name).toLowerCase() && !String(data.name).startsWith('CARD-')),
+  );
+  if (hit) {
+    return {
+      ...hit,
+      backgroundBonus: Boolean(data.backgroundBonus),
+      glitchCost: Boolean(data.glitchCost),
+      backgroundId: data.backgroundId || hit.backgroundId,
+    };
+  }
+  if (id.startsWith('CARD-') || String(raw.cardName || data.name || '').startsWith('CARD-')) return null;
+  return dbCardToClassification(raw);
+}
+
 // ── Bad Seed cNFT ─────────────────────────────────────
 const BAD_SEED_UUID    = 'CARD-20260901000000-0002BF-3864B262';
 const BAD_SEED_TAGLINE = 'Bad Seed - Hold on to this, you know you will see some BadBudz.';
@@ -309,7 +334,9 @@ const BAD_SEED_BUDZ_COST = 5000;
 
 // ── Main Library Component ────────────────────────────
 function readLibraryParams() {
-  if (typeof window === 'undefined') return { set: 'badbudz' as const, rarity: 'all', type: 'all', className: 'all', bg: 'all', owned: false };
+  if (typeof window === 'undefined') {
+    return { set: 'badbudz' as const, rarity: 'all', type: 'all', className: 'all', style: 'all', ability: 'all', bg: 'all', owned: false, q: '' };
+  }
   const q = new URLSearchParams(window.location.search);
   const set = (q.get('set') || 'badbudz').toLowerCase();
   return {
@@ -317,9 +344,32 @@ function readLibraryParams() {
     rarity: q.get('rarity') || 'all',
     type: q.get('type') || 'all',
     className: q.get('class') || 'all',
+    style: q.get('style') || 'all',
+    ability: q.get('ability') || 'all',
     bg: q.get('bg') || 'all',
     owned: q.get('owned') === '1',
+    q: q.get('q') || '',
   };
+}
+
+function cardHasStyle(card: ClassificationCard, key: string): boolean {
+  if ((card.playStyles || []).some((p) => p.on && p.key === key)) return true;
+  return (card.keywords || []).map((k) => String(k).toLowerCase()).includes(key);
+}
+
+function cardSearchBlob(card: ClassificationCard): string {
+  return [
+    card.name,
+    card.id,
+    card.duelystId,
+    card.class,
+    card.type,
+    card.rarity,
+    ...(card.abilities || []),
+    ...(card.keywords || []),
+    card.abilityDesc,
+    card.description,
+  ].filter(Boolean).join(' ').toLowerCase();
 }
 
 export default function LibraryPage({ onBack, walletAddress, initialTab = 'library' }: LibraryPageProps) {
@@ -330,8 +380,10 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
   const [filterType, setFilterType]     = useState(initial.type);
   const [filterClass, setFilterClass]   = useState(initial.className);
   const [filterBg, setFilterBg]         = useState(initial.bg);
+  const [filterStyle, setFilterStyle]   = useState(initial.style);
+  const [filterAbility, setFilterAbility] = useState(initial.ability);
   const [ownedOnly, setOwnedOnly]       = useState(initial.owned);
-  const [search, setSearch]             = useState('');
+  const [search, setSearch]             = useState(initial.q);
   const [selected, setSelected]         = useState<ClassificationCard | null>(null);
   const [ownedIds, setOwnedIds]         = useState<Set<string>>(new Set());
   const [extraOwnedCards, setExtraOwnedCards] = useState<ClassificationCard[]>([]);
@@ -361,11 +413,8 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
 
         const classificationIds = new Set(PLAY_CARDS.map(c => c.id));
         const extras = arr
-          .filter((c: any) => {
-            const id = c.cardId || c.card_id || c.id;
-            return id && !classificationIds.has(id);
-          })
-          .map(dbCardToClassification);
+          .map(hydratePlayCard)
+          .filter((c): c is ClassificationCard => Boolean(c && !classificationIds.has(c.id)));
         const uniqueExtras = extras.filter((c, i, self) => self.findIndex(x => x.id === c.id) === i);
         setExtraOwnedCards(uniqueExtras);
       })
@@ -387,11 +436,14 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
     if (filterRarity !== 'all') q.set('rarity', filterRarity);
     if (filterType !== 'all') q.set('type', filterType);
     if (filterClass !== 'all') q.set('class', filterClass);
+    if (filterStyle !== 'all') q.set('style', filterStyle);
+    if (filterAbility !== 'all') q.set('ability', filterAbility);
     if (filterBg !== 'all') q.set('bg', filterBg);
     if (ownedOnly) q.set('owned', '1');
+    if (search.trim()) q.set('q', search.trim());
     const next = `${window.location.pathname}${q.toString() ? `?${q}` : ''}`;
     window.history.replaceState({}, '', next);
-  }, [activeTab, filterSet, filterRarity, filterType, filterClass, filterBg, ownedOnly]);
+  }, [activeTab, filterSet, filterRarity, filterType, filterClass, filterStyle, filterAbility, filterBg, ownedOnly, search]);
 
   const copyShareLink = () => {
     const url = typeof window !== 'undefined' ? window.location.href : 'https://thc-labz-battle.vercel.app/library';
@@ -406,9 +458,11 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
     if (filterRarity !== 'all' && c.rarity !== filterRarity) return false;
     if (filterType   !== 'all' && c.type  !== filterType && c.subtype !== filterType) return false;
     if (filterClass  !== 'all' && c.class !== filterClass)  return false;
+    if (filterStyle !== 'all' && !cardHasStyle(c, filterStyle)) return false;
+    if (filterAbility !== 'all' && !(c.abilities || []).some((a) => a.toLowerCase() === filterAbility.toLowerCase())) return false;
     if (filterBg !== 'all' && (c.backgroundId || defaultBackgroundForRarity(c.rarity).id) !== filterBg) return false;
     if (ownedOnly && !ownedIds.has(c.id)) return false;
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search.trim() && !cardSearchBlob(c).includes(search.trim().toLowerCase())) return false;
     return true;
   });
 
@@ -427,7 +481,23 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
   }, {} as Record<string, number>);
 
   const typeCounts = ['minion', 'tower', 'building', 'spell'].reduce((acc, t) => {
-    acc[t] = allCards.filter(c => c.type === t || c.subtype === t).length;
+    acc[t] = setPool.filter(c => c.type === t || c.subtype === t).length;
+    return acc;
+  }, {} as Record<string, number>);
+  const classCounts = ['melee', 'ranged', 'magical', 'tank'].reduce((acc, k) => {
+    acc[k] = setPool.filter(c => c.class === k).length;
+    return acc;
+  }, {} as Record<string, number>);
+  const styleCounts = PLAY_STYLE_SLOTS.reduce((acc, s) => {
+    acc[s.key] = setPool.filter(c => cardHasStyle(c, s.key)).length;
+    return acc;
+  }, {} as Record<string, number>);
+  const SKIP_ABILITY = new Set(['melee', 'ranged', 'splash', 'flying', 'tank', 'charge', 'swarm', 'seed', 'spell']);
+  const abilityOptions = Array.from(new Set(setPool.flatMap(c => c.abilities || []).filter(Boolean)))
+    .filter((name) => !SKIP_ABILITY.has(name.toLowerCase()))
+    .sort();
+  const abilityCounts = abilityOptions.reduce((acc, name) => {
+    acc[name] = setPool.filter(c => (c.abilities || []).some(a => a === name)).length;
     return acc;
   }, {} as Record<string, number>);
 
@@ -634,22 +704,9 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
 
           {activeTab === 'library' && (
             <>
-              {/* Set tabs */}
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
-                {SET_TABS.map(t => (
-                  <button key={t.id} type="button" onClick={() => setFilterSet(t.id)} style={filterPill(filterSet === t.id, t.id === 'badbudz' ? '#ffeaa0' : t.id === 'grudawars' ? '#22d3ee' : '#39ff14')}>
-                    {t.label} ({allCards.filter(c => (c.cardSet || 'badbudz') === t.id).length})
-                  </button>
-                ))}
-                <button type="button" onClick={() => setOwnedOnly(v => !v)} style={filterPill(ownedOnly, '#4ade80')}>
-                  {ownedOnly ? '✓ OWNED' : 'OWNED'}
-                </button>
-              </div>
-
-              {/* Search */}
               <input
-                type="text"
-                placeholder="🔍  Search cards by name..."
+                type="search"
+                placeholder="Search name, UUID slug, ability…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
@@ -660,57 +717,97 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                 }}
               />
 
-              {/* Rarity filter with pot leaves */}
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
-                <button onClick={() => setFilterRarity('all')} style={filterPill(filterRarity === 'all', '#39ff14')}>
-                  🃏 ALL ({setPool.length})
-                </button>
-                {RARITY_ORDER.map(r => {
-                  const rm = RARITY[r];
-                  return (
-                    <button key={r} onClick={() => setFilterRarity(r)} style={filterPill(filterRarity === r, rm.border)}>
-                      <span style={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle', marginRight: 3 }}>
-                        {Array.from({ length: Math.min(rm.leaves, 5) }).map((_, i) => (
-                          <img key={i} src="/card-art/weed-leaf.png" style={{ width: 10, height: 10, objectFit: 'contain', filter: `drop-shadow(0 0 2px ${rm.border})` }} />
-                        ))}
-                      </span>
-                      {r.toUpperCase()} ({rarityCounts[r] || 0})
-                    </button>
-                  );
-                })}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                <FilterSelect
+                  label="SET"
+                  value={filterSet}
+                  onChange={v => { setFilterSet(v as CardSetId); setFilterAbility('all'); }}
+                  options={SET_TABS.map(t => ({
+                    value: t.id,
+                    label: `${t.label} (${allCards.filter(c => (c.cardSet || 'badbudz') === t.id).length})`,
+                  }))}
+                />
+                <FilterSelect
+                  label="RARITY"
+                  value={filterRarity}
+                  onChange={setFilterRarity}
+                  options={[
+                    { value: 'all', label: `All (${setPool.length})` },
+                    ...RARITY_ORDER.filter(r => (rarityCounts[r] || 0) > 0 || r === filterRarity).map(r => ({
+                      value: r,
+                      label: `${r.toUpperCase()} (${rarityCounts[r]})`,
+                    })),
+                  ]}
+                />
+                <FilterSelect
+                  label="TYPE"
+                  value={filterType}
+                  onChange={setFilterType}
+                  options={[
+                    { value: 'all', label: 'All types' },
+                    ...['minion', 'tower', 'building', 'spell'].filter(t => (typeCounts[t] || 0) > 0 || t === filterType).map(t => ({
+                      value: t,
+                      label: `${(TYPE_META[t]?.icon || '')} ${t.toUpperCase()} (${typeCounts[t]})`,
+                    })),
+                  ]}
+                />
+                <FilterSelect
+                  label="CLASS"
+                  value={filterClass}
+                  onChange={setFilterClass}
+                  options={[
+                    { value: 'all', label: 'All classes' },
+                    ...['melee', 'ranged', 'magical', 'tank'].filter(c => (classCounts[c] || 0) > 0 || c === filterClass).map(c => ({
+                      value: c,
+                      label: `${(CLASS_META[c]?.icon || '')} ${c.toUpperCase()} (${classCounts[c]})`,
+                    })),
+                  ]}
+                />
+                <FilterSelect
+                  label="PLAY STYLE"
+                  value={filterStyle}
+                  onChange={setFilterStyle}
+                  options={[
+                    { value: 'all', label: 'All styles' },
+                    ...PLAY_STYLE_SLOTS.filter(s => (styleCounts[s.key] || 0) > 0 || s.key === filterStyle).map(s => ({
+                      value: s.key,
+                      label: `${s.label} (${styleCounts[s.key]})`,
+                    })),
+                  ]}
+                />
+                <FilterSelect
+                  label="ABILITY"
+                  value={filterAbility}
+                  onChange={setFilterAbility}
+                  options={[
+                    { value: 'all', label: 'All abilities' },
+                    ...abilityOptions.map(name => ({
+                      value: name,
+                      label: `${name} (${abilityCounts[name] || 0})`,
+                    })),
+                  ]}
+                />
+                <FilterSelect
+                  label="BACKGROUND"
+                  value={filterBg}
+                  onChange={setFilterBg}
+                  options={[
+                    { value: 'all', label: 'All plates' },
+                    ...CARD_BACKGROUNDS.map(bg => ({ value: bg.id, label: bg.label })),
+                  ]}
+                />
+                <FilterSelect
+                  label="OWNED"
+                  value={ownedOnly ? 'owned' : 'all'}
+                  onChange={v => setOwnedOnly(v === 'owned')}
+                  options={[
+                    { value: 'all', label: 'All cards' },
+                    { value: 'owned', label: 'Owned only' },
+                  ]}
+                />
               </div>
-
-              {/* Background rarity filter */}
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-                <button type="button" onClick={() => setFilterBg('all')} style={filterPill(filterBg === 'all', '#c084fc', true)}>
-                  BG ALL
-                </button>
-                {CARD_BACKGROUNDS.map(bg => (
-                  <button key={bg.id} type="button" onClick={() => setFilterBg(bg.id)} style={filterPill(filterBg === bg.id, RARITY[bg.tier]?.border || '#c084fc', true)}>
-                    {bg.label.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Type + Class filters */}
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {['all', 'minion', 'tower', 'building', 'spell'].map(t => {
-                  const meta = TYPE_META[t];
-                  return (
-                    <button key={t} onClick={() => setFilterType(t)} style={filterPill(filterType === t, '#fb923c', true)}>
-                      {t === 'all' ? '🗂 ALL' : `${meta?.icon || ''} ${t.toUpperCase()}`}
-                    </button>
-                  );
-                })}
-                <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
-                {['all', 'melee', 'ranged', 'magical', 'tank'].map(c => {
-                  const meta = CLASS_META[c];
-                  return (
-                    <button key={c} onClick={() => setFilterClass(c)} style={filterPill(filterClass === c, '#a78bfa', true)}>
-                      {c === 'all' ? '⚡ ALL' : `${meta?.icon || ''} ${c.toUpperCase()}`}
-                    </button>
-                  );
-                })}
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginBottom: 2, letterSpacing: 0.4 }}>
+                {sorted.length} of {setPool.length} · Codex cost / ATK / HP / styles on the card
               </div>
             </>
           )}
@@ -1544,6 +1641,37 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
           {/* ── Skill Tree ────────────────────────── */}
           <SkillTree card={card} rm={rm} />
 
+          {(() => {
+            const styles = PLAY_STYLE_SLOTS.filter((s) => cardHasStyle(card, s.key));
+            if (!styles.length) return null;
+            return (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 6 }}>
+                  — PLAY STYLES —
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {styles.map((s) => (
+                    <span key={s.key} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: 'rgba(46,28,8,0.85)', border: '1px solid #f0c645',
+                      borderRadius: 16, padding: '3px 8px 3px 4px',
+                      fontSize: 9, color: '#ffe27a', fontWeight: 700,
+                    }}>
+                      <span style={{
+                        width: 18, height: 18, borderRadius: '50%', overflow: 'hidden',
+                        background: 'rgba(46,28,8,0.94)', position: 'relative', flexShrink: 0,
+                      }}>
+                        <img src={s.badge} alt="" style={{ position: 'absolute', inset: -1, width: 20, height: 20, imageRendering: 'pixelated' }} />
+                        <img src={s.icon} alt="" style={{ position: 'absolute', inset: 2, width: 14, height: 14, imageRendering: 'pixelated' }} />
+                      </span>
+                      {s.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ── Abilities at this tier ─────────────── */}
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 6 }}>
@@ -1634,19 +1762,39 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
   );
 }
 
-// ── Shared filter pill style helper ──────────────────
-function filterPill(active: boolean, color: string, small = false): React.CSSProperties {
-  return {
-    padding: small ? '3px 7px' : '5px 9px',
-    borderRadius: 20, fontSize: small ? 8 : 9, fontWeight: 700, cursor: 'pointer',
-    fontFamily: "'LEMON MILK', sans-serif",
-    border: active ? `1.5px solid ${color}` : '1.5px solid rgba(255,255,255,0.1)',
-    background: active ? `${color}18` : 'rgba(0,0,0,0.4)',
-    color: active ? color : 'rgba(255,255,255,0.4)',
-    boxShadow: active ? `0 0 10px ${color}44` : 'none',
-    transition: 'all 0.12s',
-    whiteSpace: 'nowrap' as const,
-    letterSpacing: 0.5,
-    flexShrink: 0,
-  };
+function FilterSelect({
+  label, value, onChange, options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 118, flex: '1 1 118px' }}>
+      <span style={{ fontSize: 7, letterSpacing: 1, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{label}</span>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          width: '100%',
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(57,255,20,0.22)',
+          borderRadius: 8,
+          color: '#e7f5d4',
+          fontSize: 10,
+          fontWeight: 700,
+          fontFamily: "'LEMON MILK', sans-serif",
+          padding: '7px 8px',
+          outline: 'none',
+        }}
+      >
+        {options.map(o => (
+          <option key={o.value} value={o.value} style={{ background: '#0b120b', color: '#e7f5d4' }}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
