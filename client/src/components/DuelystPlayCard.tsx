@@ -1,37 +1,56 @@
 /**
- * Game-ready card face — same CraftPix / Duelyst TCG chrome as
- * duelyst.grudge-studio.com (LAYOUT.json thc gold / weed frames).
- * Art breathes in the window. Cost/ATK/HP sit on the crystal slots.
- * Ability ribbon = Codex playStyles (slots/*.png). Named abilities use tcg-chrome/objects icons.
+ * Game-ready card face — Codex LAYOUT.json (195×284).
+ * Per-rarity THC chrome + panning buds, packed idle sprite (not the full atlas).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ClassificationCard } from '../../../shared/classificationCardDatabase';
-import { defaultBackgroundForRarity } from '../../../shared/classificationCardDatabase';
 import { PLAY_STYLE_SLOTS, abilityIconFor } from '../../../shared/mapCodexPlaySets';
 import { CODEX_BADBUDZ_CARDS, CODEX_GRUDAWARS_CARDS } from '../../../shared/codexPlaySets.generated';
 import IDLE_FRAMES from '../../../shared/duelystIdleFrames.json';
 
 const CHROME = 'https://duelyst.grudge-studio.com/tcg-chrome';
+const FONT = 'Cambria, Constantia, Palatino Linotype, Palatino, Georgia, serif';
 
-/** LAYOUT.json — cost is top-right inside the card viewport. */
-const GOLD = {
-  frame: `${CHROME}/frames/thc-epic-gold.png`,
+const L = {
+  w: 195,
+  h: 284,
+  name: { x: 10, y: 6, w: 148, h: 24, size: 13 },
   art: { x: 31, y: 48, w: 132, h: 112 },
-  name: { x: 10, y: 6, w: 148, h: 24 },
+  ribbon: { x: 16, y: 164, w: 163, h: 32 },
   text: { x: 18, y: 196, w: 159, h: 56 },
-  cost: { cx: 176, cy: 18, r: 15 },
-  attack: { cx: 26, cy: 268, r: 16 },
-  health: { cx: 170, cy: 268, r: 16 },
+  cost: { cx: 176, cy: 18, r: 15, size: 14 },
+  attack: { cx: 26, cy: 268, r: 16, size: 14 },
+  health: { cx: 170, cy: 268, r: 16, size: 14 },
 };
 
-const WEED = {
-  frame: `${CHROME}/frames/thc-legendary-weed.png`,
-  art: { x: 31, y: 48, w: 132, h: 112 },
-  name: { x: 10, y: 6, w: 148, h: 24 },
-  text: { x: 18, y: 196, w: 159, h: 56 },
-  cost: { cx: 176, cy: 18, r: 15 },
-  attack: { cx: 26, cy: 268, r: 16 },
-  health: { cx: 170, cy: 268, r: 16 },
+const FRAME: Record<string, string> = {
+  common: `${CHROME}/frames/thc-epic-gold.png`,
+  uncommon: `${CHROME}/frames/thc-epic-gold.png`,
+  rare: `${CHROME}/frames/thc-epic-gold.png`,
+  epic: `${CHROME}/frames/thc-epic-gold.png`,
+  legendary: `${CHROME}/frames/thc-legendary-weed.png`,
+  mythic: `${CHROME}/frames/thc-legendary-weed.png`,
+  glitch: `${CHROME}/frames/thc-legendary-weed.png`,
+};
+
+const RARITY_BG: Record<string, string> = {
+  common: `${CHROME}/thc/bg-common.png`,
+  uncommon: `${CHROME}/thc/bg-uncommon.png`,
+  rare: `${CHROME}/thc/bg-rare.png`,
+  epic: `${CHROME}/thc/bg-epic.png`,
+  legendary: `${CHROME}/thc/bg-legendary.png`,
+  mythic: `${CHROME}/thc/bg-legendary.png`,
+  glitch: `${CHROME}/thc/bg-legendary.png`,
+};
+
+const RARITY_BUDS: Record<string, string> = {
+  common: `${CHROME}/thc/buds-common.png`,
+  uncommon: `${CHROME}/thc/buds-uncommon.png`,
+  rare: `${CHROME}/thc/buds-rare.png`,
+  epic: `${CHROME}/thc/buds-epic.png`,
+  legendary: `${CHROME}/thc/buds-legendary.png`,
+  mythic: `${CHROME}/thc/buds-legendary.png`,
+  glitch: `${CHROME}/thc/buds-legendary.png`,
 };
 
 const BB_NO = new Map(CODEX_BADBUDZ_CARDS.map((c, i) => [c.id, i + 1]));
@@ -53,16 +72,12 @@ function resolveAbilities(card: ClassificationCard): { names: string[]; icons: s
   return { names, icons };
 }
 
-const W = 195;
-const H = 284;
-
 function pct(n: number, total: number) {
   return `${(n / total) * 100}%`;
 }
 
-function skinFor(rarity: string) {
-  const r = String(rarity || '').toLowerCase();
-  return r === 'legendary' || r === 'mythic' || r === 'glitch' ? WEED : GOLD;
+function rarityKey(card: ClassificationCard): string {
+  return String(card.rarity || 'common').toLowerCase();
 }
 
 function playKey(card: ClassificationCard): string {
@@ -78,10 +93,20 @@ function playKey(card: ClassificationCard): string {
 function slot(cx: number, cy: number, r: number) {
   return {
     position: 'absolute' as const,
-    left: pct(cx - r, W),
-    top: pct(cy - r, H),
-    width: pct(r * 2, W),
-    height: pct(r * 2, H),
+    left: pct(cx - r, L.w),
+    top: pct(cy - r, L.h),
+    width: pct(r * 2, L.w),
+    height: pct(r * 2, L.h),
+  };
+}
+
+function box(b: { x: number; y: number; w: number; h: number }) {
+  return {
+    position: 'absolute' as const,
+    left: pct(b.x, L.w),
+    top: pct(b.y, L.h),
+    width: pct(b.w, L.w),
+    height: pct(b.h, L.h),
   };
 }
 
@@ -94,8 +119,8 @@ export default function DuelystPlayCard({
   owned: boolean;
   onClick: () => void;
 }) {
-  const skin = skinFor(card.rarity);
-  const glitch = Boolean(card.glitchCost || card.rarity === 'glitch');
+  const rk = rarityKey(card);
+  const glitch = Boolean(card.glitchCost || rk === 'glitch');
   const [costDigit, setCostDigit] = useState(card.cost);
   useEffect(() => {
     if (!glitch) { setCostDigit(card.cost); return; }
@@ -108,11 +133,20 @@ export default function DuelystPlayCard({
   const style = playKey(card);
   const { names: abilityNames, icons: abilityIcons } = resolveAbilities(card);
   const collector = badBudzNumber(card);
-  const plate = card.chromeBg || defaultBackgroundForRarity(card.rarity).src;
-  const onKeys = new Set(
-    (card.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(card.keywords || []),
-  );
-  if (!onKeys.size) onKeys.add(style);
+  const plate = card.chromeBg || RARITY_BG[rk] || RARITY_BG.common;
+  const buds = card.chromeBuds || RARITY_BUDS[rk];
+  const frame = FRAME[rk] || FRAME.common;
+  const nameSize = card.name.length > 22 ? 10 : card.name.length > 16 ? 11 : L.name.size;
+  const onKeys = useMemo(() => {
+    const s = new Set(
+      (card.playStyles || []).filter((p) => p.on).map((p) => p.key).concat(card.keywords || []),
+    );
+    if (!s.size) s.add(style);
+    return s;
+  }, [card.playStyles, card.keywords, style]);
+
+  const body = abilityNames.join(' · ');
+  const flavor = (card.abilityDesc || card.description || '').split('.')[0];
 
   return (
     <button
@@ -122,157 +156,181 @@ export default function DuelystPlayCard({
       style={{
         position: 'relative',
         width: '100%',
-        aspectRatio: `${W} / ${H}`,
+        aspectRatio: `${L.w} / ${L.h}`,
         padding: 0,
         border: 'none',
-        background: 'transparent',
+        background: '#0a0806',
         cursor: 'pointer',
-        filter: owned ? 'none' : 'saturate(0.55) brightness(0.72)',
+        filter: owned ? 'none' : 'saturate(0.62) brightness(0.78)',
         minHeight: 44,
+        overflow: 'hidden',
       }}
     >
       <style>{`
         @keyframes duelystBreathe {
           0%,100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-3%) scale(1.045); }
+          50% { transform: translateY(-4%) scale(1.03); }
         }
-        @keyframes duelystShimmer {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 200% 50%; }
+        @keyframes budsPan {
+          0% { background-position: 0% 40%; }
+          100% { background-position: 100% 40%; }
         }
       `}</style>
 
-      <div style={{
-        position: 'absolute',
-        left: pct(skin.art.x, W),
-        top: pct(skin.art.y, H),
-        width: pct(skin.art.w, W),
-        height: pct(skin.art.h, H),
-        overflow: 'hidden',
-        background: '#07050c',
-      }}>
-        <img
-          src={plate}
-          alt=""
-          draggable={false}
+      <div style={{ ...box(L.art), overflow: 'hidden', background: '#050308' }}>
+        <div
           style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'cover', pointerEvents: 'none',
-            filter: 'brightness(1.22) saturate(1.12) contrast(1.06)',
+            position: 'absolute', inset: '-8%',
+            backgroundImage: `url(${plate})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'saturate(1.15) contrast(1.05)',
           }}
         />
-        <CardUnitArt card={card} />
+        {buds && (
+          <div
+            style={{
+              position: 'absolute', inset: 0,
+              backgroundImage: `url(${buds})`,
+              backgroundRepeat: 'repeat-x',
+              backgroundSize: 'auto 100%',
+              opacity: 0.55,
+              mixBlendMode: 'screen',
+              animation: 'budsPan 18s linear infinite',
+              imageRendering: 'pixelated',
+            }}
+          />
+        )}
+        <div style={{ position: 'absolute', inset: '4% 6% 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <CardUnitArt card={card} />
+        </div>
+        {abilityIcons.length > 0 && (
+          <div style={{
+            position: 'absolute',
+            right: '3%',
+            top: '4%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            pointerEvents: 'none',
+          }}>
+            {abilityIcons.map((src, i) => (
+              <img
+                key={src + i}
+                src={src}
+                alt={abilityNames[i] || 'ability'}
+                title={abilityNames[i]}
+                style={{
+                  width: pct(14, L.art.w),
+                  height: 'auto',
+                  minWidth: 12,
+                  imageRendering: 'pixelated',
+                  filter: 'drop-shadow(0 1px 1px #000)',
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <img
-        src={skin.frame}
+        src={frame}
         alt=""
         draggable={false}
         style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
-          pointerEvents: 'none', imageRendering: 'pixelated',
+          pointerEvents: 'none', imageRendering: 'pixelated', zIndex: 2,
         }}
       />
 
       <div style={{
-        position: 'absolute',
-        left: pct(skin.name.x, W),
-        top: pct(skin.name.y, H),
-        width: pct(skin.name.w, W),
-        height: pct(skin.name.h, H),
+        ...box(L.name),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'Cambria, Palatino Linotype, Palatino, Georgia, serif',
-        fontSize: 11, fontWeight: 700, color: '#1a1630',
-        textShadow: '0 0 3px #f4e7b0',
+        fontFamily: FONT,
+        fontSize: nameSize,
+        fontWeight: 700,
+        color: '#1a1630',
+        letterSpacing: 0.2,
+        textShadow: '0 0 1px #f4e7b0, 1px 0 0 #d4b56a, -1px 0 0 #d4b56a, 0 1px 0 #d4b56a, 0 -1px 0 #d4b56a',
         overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-        pointerEvents: 'none',
+        pointerEvents: 'none', zIndex: 3, padding: '0 4px',
       }}>
         {card.name}
       </div>
 
       <div style={{
-        position: 'absolute',
-        left: pct(skin.text.x, W),
-        top: pct(skin.text.y, H),
-        width: pct(skin.text.w, W),
-        height: pct(skin.text.h, H),
-        fontFamily: 'Cambria, Palatino Linotype, Palatino, Georgia, serif',
-        fontSize: 8, lineHeight: 1.2, color: '#f4e7b0',
-        textAlign: 'center', overflow: 'hidden',
-        pointerEvents: 'none',
-      }}>
-        Bad Budz #{collector || '—'}
-      </div>
-
-      <div style={{
-        position: 'absolute',
-        left: '8%', top: '56%',
-        width: '84%', height: '8%',
+        ...box(L.ribbon),
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        pointerEvents: 'none',
+        pointerEvents: 'none', zIndex: 3, padding: '0 2%',
       }}>
-        {PLAY_STYLE_SLOTS.map((slot) => {
-          const on = onKeys.has(slot.key);
+        {PLAY_STYLE_SLOTS.map((ps) => {
+          const on = onKeys.has(ps.key);
           return (
             <img
-              key={slot.key}
-              src={slot.icon}
-              alt={slot.label}
-              title={slot.label}
+              key={ps.key}
+              src={ps.icon}
+              alt={ps.label}
+              title={ps.label}
               style={{
-                width: '14%', height: 'auto',
+                width: '13.5%',
+                height: 'auto',
                 imageRendering: 'pixelated',
-                opacity: on ? 1 : 0.28,
-                filter: on ? 'drop-shadow(0 0 4px #f5d76e)' : 'grayscale(0.8)',
+                opacity: on ? 1 : 0.22,
+                filter: on ? 'drop-shadow(0 0 3px #f5d76e)' : 'grayscale(1)',
               }}
             />
           );
         })}
       </div>
 
-      {abilityIcons.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          left: pct(skin.art.x + skin.art.w - 20, W),
-          top: pct(skin.art.y + 4, H),
-          display: 'flex', flexDirection: 'column', gap: 2,
-          pointerEvents: 'none',
-        }}>
-          {abilityIcons.map((src, i) => (
-            <img
-              key={src + i}
-              src={src}
-              alt={abilityNames[i] || 'ability'}
-              title={abilityNames[i]}
-              style={{ width: 16, height: 16, imageRendering: 'pixelated', filter: 'brightness(1.15)' }}
-            />
-          ))}
+      <div style={{
+        ...box(L.text),
+        fontFamily: FONT,
+        color: '#f4e7b0',
+        textAlign: 'center',
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        padding: '2px 3px 0',
+        textShadow: '0 1px 1px #000, 0 0 2px #3a2a10',
+      }}>
+        <div style={{ fontSize: 9, lineHeight: 1.15, fontWeight: 700 }}>{body}</div>
+        {flavor && (
+          <div style={{ fontSize: 8, lineHeight: 1.2, opacity: 0.85, marginTop: 2 }}>{flavor}.</div>
+        )}
+        <div style={{ fontSize: 7, letterSpacing: 0.6, opacity: 0.7, marginTop: 'auto', textTransform: 'uppercase' }}>
+          {card.cardSet === 'grudawars' ? 'GrudaWars' : 'BadBudz'} #{collector || '—'}
         </div>
-      )}
+      </div>
 
-      <Gem cx={skin.cost.cx} cy={skin.cost.cy} r={skin.cost.r} kind="mana" value={glitch ? costDigit : card.cost} hot={glitch} />
-      {card.attack > 0 && <Gem cx={skin.attack.cx} cy={skin.attack.cy} r={skin.attack.r} kind="attack" value={card.attack} />}
-      {card.health > 0 && <Gem cx={skin.health.cx} cy={skin.health.cy} r={skin.health.r} kind="health" value={card.health} />}
+      <Gem cx={L.cost.cx} cy={L.cost.cy} r={L.cost.r} size={L.cost.size} kind="mana" value={glitch ? costDigit : card.cost} hot={glitch} />
+      {card.attack > 0 && <Gem cx={L.attack.cx} cy={L.attack.cy} r={L.attack.r} size={L.attack.size} kind="attack" value={card.attack} />}
+      {card.health > 0 && <Gem cx={L.health.cx} cy={L.health.cy} r={L.health.r} size={L.health.size} kind="health" value={card.health} />}
     </button>
   );
 }
 
 function Gem({
-  cx, cy, r, kind, value, hot,
+  cx, cy, r, size, kind, value, hot,
 }: {
-  cx: number; cy: number; r: number; kind: 'mana' | 'attack' | 'health'; value: number; hot?: boolean;
+  cx: number; cy: number; r: number; size: number; kind: 'mana' | 'attack' | 'health'; value: number; hot?: boolean;
 }) {
   const src = `${CHROME}/slots/crystal-${kind}.png`;
   return (
-    <div style={{ ...slot(cx, cy, r), pointerEvents: 'none' }}>
+    <div style={{ ...slot(cx, cy, r), pointerEvents: 'none', zIndex: 4 }}>
       <img src={src} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', imageRendering: 'pixelated' }} />
       <span style={{
         position: 'absolute', inset: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'Cambria, Palatino Linotype, Georgia, serif',
-        fontWeight: 900, fontSize: r > 16 ? 13 : 11,
+        fontFamily: FONT,
+        fontWeight: 900,
+        fontSize: size,
+        lineHeight: 1,
         color: hot ? '#f9a8d4' : '#fff',
-        textShadow: '0 1px 2px #000, 0 0 6px #000',
+        textShadow: '0 1px 2px #000, 0 0 4px #000',
       }}>
         {value}
       </span>
@@ -284,7 +342,6 @@ type IdleFrame = { x: number; y: number; w: number; h: number; sheetW: number; s
 
 const FRAMES = IDLE_FRAMES as Record<string, IdleFrame>;
 
-/** Duelyst Magmar / BadBudz idle cell — CSS sprite, never the full atlas. */
 function PackedIdleSprite({ sheet, fr }: { sheet: string; fr: IdleFrame }) {
   const sizeX = (fr.sheetW / fr.w) * 100;
   const sizeY = (fr.sheetH / fr.h) * 100;
@@ -293,21 +350,21 @@ function PackedIdleSprite({ sheet, fr }: { sheet: string; fr: IdleFrame }) {
   return (
     <div
       style={{
-        width: '100%',
-        height: '100%',
+        width: '92%',
+        aspectRatio: '1',
+        maxHeight: '100%',
         backgroundImage: `url(${sheet})`,
         backgroundRepeat: 'no-repeat',
         backgroundSize: `${sizeX}% ${sizeY}%`,
         backgroundPosition: `${posX}% ${posY}%`,
         imageRendering: 'pixelated',
-        filter: 'brightness(1.18) contrast(1.06) saturate(1.1)',
-        animation: 'duelystBreathe 2.4s ease-in-out infinite',
+        filter: 'contrast(1.08) saturate(1.08)',
+        animation: 'duelystBreathe 2.6s ease-in-out infinite',
       }}
     />
   );
 }
 
-/** CraftPix / Codex horizontal idle strip — play cells, do not show the whole sheet. */
 function GwIdleSprite({ src }: { src: string }) {
   const [frames, setFrames] = useState(1);
   const [tick, setTick] = useState(0);
@@ -317,7 +374,7 @@ function GwIdleSprite({ src }: { src: string }) {
     return () => window.clearInterval(id);
   }, [frames]);
   const frame = frames <= 1 ? 0 : tick % frames;
-  const pos = frames <= 1 ? '50% 100%' : `${(frame / Math.max(frames - 1, 1)) * 100}% 0%`;
+  const pos = frames <= 1 ? 'center bottom' : `${(frame / Math.max(frames - 1, 1)) * 100}% 0%`;
   return (
     <div
       style={{
@@ -328,7 +385,8 @@ function GwIdleSprite({ src }: { src: string }) {
         backgroundSize: frames > 1 ? `${frames * 100}% 100%` : 'contain',
         backgroundPosition: pos,
         imageRendering: 'pixelated',
-        filter: 'brightness(1.2) contrast(1.08) saturate(1.14)',
+        filter: 'contrast(1.08) saturate(1.1)',
+        animation: frames <= 1 ? 'duelystBreathe 2.6s ease-in-out infinite' : undefined,
       }}
     >
       <img
@@ -347,6 +405,25 @@ function GwIdleSprite({ src }: { src: string }) {
   );
 }
 
+function Portrait({ src }: { src: string }) {
+  return (
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        objectPosition: 'center bottom',
+        imageRendering: 'pixelated',
+        filter: 'contrast(1.08) saturate(1.08)',
+        animation: 'duelystBreathe 2.6s ease-in-out infinite',
+      }}
+    />
+  );
+}
+
 export function CardUnitArt({ card }: { card: ClassificationCard }) {
   const duelystId = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
   const fr = card.idleFrame || FRAMES[duelystId];
@@ -358,6 +435,9 @@ export function CardUnitArt({ card }: { card: ClassificationCard }) {
   }
   if (fr && sheet) {
     return <PackedIdleSprite sheet={sheet} fr={fr} />;
+  }
+  if (card.image) {
+    return <Portrait src={card.image} />;
   }
   return null;
 }

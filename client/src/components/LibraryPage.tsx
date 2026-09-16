@@ -1012,7 +1012,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
           maxWidth: 700, margin: '0 auto',
           padding: '14px 12px 100px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(186px, 1fr))',
           gap: 14,
         }}>
         {sorted.map(card => (
