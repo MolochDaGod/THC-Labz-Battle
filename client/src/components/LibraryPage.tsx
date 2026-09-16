@@ -503,26 +503,6 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
     }
   };
 
-  const waterBadSeedGrow = async (plantId: number) => {
-    if (growBusy || !walletAddress) return;
-    setGrowBusy(true);
-    setMintError(null);
-    try {
-      const res = await fetch(`/api/battle/bad-seed/${plantId}/water`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: walletAddress, walletAddress }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.success) throw new Error(data?.error || 'Water failed.');
-      refreshSeedInfo();
-    } catch (err: any) {
-      setMintError(err?.message || 'Water failed.');
-    } finally {
-      setGrowBusy(false);
-    }
-  };
-
   const harvestBadSeedGrow = async (plantId: number) => {
     if (growBusy || !walletAddress) return;
     setGrowBusy(true);
