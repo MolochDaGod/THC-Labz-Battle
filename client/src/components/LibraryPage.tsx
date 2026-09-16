@@ -630,7 +630,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
 
           {/* Title row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <a href="https://site.grudge-studio.com" title="THC Labz" style={{ display: 'flex', flexShrink: 0 }}>
+            <a href="https://site.thc-labz.xyz" title="THC Labz" style={{ display: 'flex', flexShrink: 0 }}>
               <img src="/thc-labz-logo-nowords.png" alt="THC Labz" style={{ width: 36, height: 36, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(57,255,20,0.7))' }} />
             </a>
             <button onClick={onBack} style={{

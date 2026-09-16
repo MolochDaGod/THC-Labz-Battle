@@ -377,7 +377,7 @@ export default function AccountPage({ user, onBack, navigateTo, connectedNFTs = 
             <ArrowLeft size={18} />
             <span style={{ fontSize: 13 }}>Back</span>
           </button>
-          <a href="https://site.grudge-studio.com" title="THC Labz" style={{ display: 'flex' }}>
+          <a href="https://site.thc-labz.xyz" title="THC Labz" style={{ display: 'flex' }}>
             <img src="/thc-labz-logo-nowords.png" alt="THC Labz" style={{ width: 32, height: 32, objectFit: 'contain', filter: 'drop-shadow(0 0 6px rgba(57,255,20,0.6))' }} />
           </a>
           <h1 className="cartoon-title" style={{ margin: 0, fontSize: 20, color: '#39ff14' }}>My Account</h1>
