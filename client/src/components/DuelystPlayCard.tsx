@@ -2,11 +2,12 @@
  * Game-ready card face — Codex LAYOUT.json (195×284).
  * Per-rarity THC chrome + panning buds, packed idle sprite (not the full atlas).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ClassificationCard } from '../../../shared/classificationCardDatabase';
 import { PLAY_STYLE_SLOTS, abilityIconFor } from '../../../shared/mapCodexPlaySets';
 import { CODEX_BADBUDZ_CARDS, CODEX_GRUDAWARS_CARDS } from '../../../shared/codexPlaySets.generated';
 import IDLE_FRAMES from '../../../shared/duelystIdleFrames.json';
+import { loadCodexRegistry, loadPlistAnims, loadSheet, type PlistFrame } from '../lib/duelystPlist';
 
 const CHROME = 'https://duelyst.grudge-studio.com/tcg-chrome';
 const FONT = 'Cambria, Constantia, Palatino Linotype, Palatino, Georgia, serif';
@@ -136,6 +137,14 @@ export default function DuelystPlayCard({
   const style = playKey(card);
   const { names: abilityNames, icons: abilityIcons } = resolveAbilities(card);
   const collector = badBudzNumber(card);
+  const [uuid, setUuid] = useState('');
+  useEffect(() => {
+    const slug = card.duelystId || String(card.id || '').replace(/^badbudz:/, '');
+    loadCodexRegistry().then((m) => {
+      const row = m.get(`duelyst:${slug}`) || m.get(slug);
+      if (row?.uuid) setUuid(row.uuid);
+    });
+  }, [card.id, card.duelystId]);
   const plate = card.chromeBg || RARITY_BG[rk] || RARITY_BG.common;
   const buds = card.chromeBuds || RARITY_BUDS[rk];
   const frame = FRAME[rk] || FRAME.common;
@@ -156,7 +165,7 @@ export default function DuelystPlayCard({
     <button
       type="button"
       onClick={onClick}
-      title={`${card.name} · ${card.cost}/${card.attack}/${card.health}`}
+      title={`${card.name} · ${card.cost}/${card.attack}/${card.health}${uuid ? ` · ${uuid}` : ''}`}
       style={{
         position: 'relative',
         width: '100%',
@@ -303,8 +312,8 @@ export default function DuelystPlayCard({
         {flavor && (
           <div style={{ fontSize: 8, lineHeight: 1.2, opacity: 0.85, marginTop: 2 }}>{flavor}.</div>
         )}
-        <div style={{ fontSize: 7, letterSpacing: 0.6, opacity: 0.7, marginTop: 'auto', textTransform: 'uppercase' }}>
-          {card.cardSet === 'grudawars' ? 'GrudaWars' : 'BadBudz'} #{collector || '—'}
+        <div style={{ fontSize: 6, letterSpacing: 0.3, opacity: 0.75, marginTop: 'auto', wordBreak: 'break-all' }}>
+          {uuid || `${card.cardSet === 'grudawars' ? 'GrudaWars' : 'BadBudz'} #${collector || '—'}`}
         </div>
       </div>
 
@@ -344,69 +353,63 @@ type IdleFrame = { x: number; y: number; w: number; h: number; sheetW: number; s
 
 const FRAMES = IDLE_FRAMES as Record<string, IdleFrame>;
 
-let clipsPromise: Promise<any> | null = null;
-function loadDuelystClips() {
-  if (!clipsPromise) {
-    clipsPromise = fetch('https://duelyst.grudge-studio.com/catalog/duelyst-clips.json')
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null);
-  }
-  return clipsPromise;
-}
-
-function breatheCells(first: IdleFrame, frames: number, sheetW: number, sheetH: number): IdleFrame[] {
-  const out: IdleFrame[] = [];
-  let x = first.x;
-  let y = first.y;
-  for (let i = 0; i < Math.max(1, frames); i++) {
-    out.push({ x, y, w: first.w, h: first.h, sheetW, sheetH });
-    x += first.w;
-    if (x + first.w > sheetW + 1) {
-      x = 0;
-      y += first.h;
-      if (y + first.h > sheetH + 1) break;
-    }
-  }
-  return out;
-}
-
-function PackedIdleSprite({ sheet, fr, duelystId }: { sheet: string; fr: IdleFrame; duelystId?: string }) {
-  const [cells, setCells] = useState<IdleFrame[]>([fr]);
-  const [tick, setTick] = useState(0);
+function DuelystBreathe({ sheet, plist, fallback }: { sheet: string; plist: string; fallback?: IdleFrame }) {
+  const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    let live = true;
-    if (!duelystId) return;
-    loadDuelystClips().then((j) => {
-      if (!live || !j) return;
-      const clip = (j.units || j)[duelystId]?.clips?.breathing || (j.units || j)[duelystId]?.clips?.idle;
-      if (!clip || !clip.frames) return;
-      const first = clip.first || fr;
-      const sheetW = fr.sheetW;
-      const sheetH = fr.sheetH;
-      setCells(breatheCells({ ...first, sheetW, sheetH }, Number(clip.frames) || 1, sheetW, sheetH));
+    let dead = false;
+    let raf = 0;
+    (async () => {
+      const [img, anims] = await Promise.all([loadSheet(sheet), loadPlistAnims(plist)]);
+      if (dead) return;
+      const frames: PlistFrame[] = anims.breathing?.length ? anims.breathing : (anims.idle || []);
+      const canvas = ref.current;
+      if (!canvas || !frames.length) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = false;
+      let i = 0;
+      let last = 0;
+      const tick = (t: number) => {
+        if (dead) return;
+        if (t - last >= 83) {
+          last = t;
+          const fr = frames[i % frames.length];
+          if (canvas.width !== fr.w) canvas.width = fr.w;
+          if (canvas.height !== fr.h) canvas.height = fr.h;
+          ctx.clearRect(0, 0, fr.w, fr.h);
+          ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
+          i += 1;
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    })().catch(async () => {
+      if (!fallback || !ref.current) return;
+      try {
+        const img = await loadSheet(sheet);
+        const canvas = ref.current;
+        if (!canvas) return;
+        canvas.width = fallback.w;
+        canvas.height = fallback.h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, fallback.x, fallback.y, fallback.w, fallback.h, 0, 0, fallback.w, fallback.h);
+      } catch { /* leave blank */ }
     });
-    return () => { live = false; };
-  }, [duelystId, fr, sheet]);
-  useEffect(() => {
-    if (cells.length <= 1) return;
-    const id = window.setInterval(() => setTick((t) => t + 1), 90);
-    return () => window.clearInterval(id);
-  }, [cells.length]);
-  const cell = cells[tick % cells.length] || fr;
-  const sizeX = (cell.sheetW / cell.w) * 100;
-  const sizeY = (cell.sheetH / cell.h) * 100;
-  const posX = cell.sheetW === cell.w ? 0 : (cell.x / (cell.sheetW - cell.w)) * 100;
-  const posY = cell.sheetH === cell.h ? 0 : (cell.y / (cell.sheetH - cell.h)) * 100;
+    return () => {
+      dead = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [sheet, plist, fallback]);
   return (
-    <div
+    <canvas
+      ref={ref}
+      title="plist breathe"
       style={{
         width: '92%',
-        aspectRatio: '1',
+        height: 'auto',
         maxHeight: '100%',
-        backgroundImage: `url(${sheet})`,
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: `${sizeX}% ${sizeY}%`,
-        backgroundPosition: `${posX}% ${posY}%`,
         imageRendering: 'pixelated',
         filter: 'contrast(1.08) saturate(1.08)',
       }}
@@ -479,11 +482,14 @@ export function CardUnitArt({ card }: { card: ClassificationCard }) {
   const sheet = card.sheet || (fr ? `https://assets.grudge-studio.com/sprites/duelyst/units/${duelystId}.png` : '');
   const kind = card.artKind || (card.idleStrip ? 'gw-strip' : fr ? 'duelyst-plist' : 'portrait');
 
+  const plist = card.plist || (duelystId
+    ? `https://assets.grudge-studio.com/sprites/duelyst/plists/${duelystId}.plist`
+    : '');
   if (kind === 'gw-strip' && (card.idleStrip || card.image)) {
     return <GwIdleSprite src={card.idleStrip || card.image} />;
   }
-  if (fr && sheet) {
-    return <PackedIdleSprite sheet={sheet} fr={fr} duelystId={duelystId} />;
+  if (kind === 'duelyst-plist' || (sheet && plist)) {
+    return <DuelystBreathe sheet={sheet || card.image} plist={plist} fallback={fr} />;
   }
   if (card.image) {
     return <Portrait src={card.image} />;
