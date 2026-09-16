@@ -15,13 +15,16 @@ const L = {
   w: 195,
   h: 284,
   name: { x: 10, y: 6, w: 148, h: 24, size: 13 },
-  art: { x: 31, y: 48, w: 132, h: 112 },
   ribbon: { x: 16, y: 164, w: 163, h: 32 },
   text: { x: 18, y: 196, w: 159, h: 56 },
   cost: { cx: 176, cy: 18, r: 15, size: 14 },
   attack: { cx: 26, cy: 268, r: 16, size: 14 },
   health: { cx: 170, cy: 268, r: 16, size: 14 },
 };
+
+/** lab/tools/thc-frame-windows.json — art hole of the THC gold/weed frames. */
+const ART_GOLD = { x: 15, y: 42, w: 166, h: 156 };
+const ART_WEED = { x: 17, y: 50, w: 161, h: 147 };
 
 const FRAME: Record<string, string> = {
   common: `${CHROME}/frames/thc-epic-gold.png`,
@@ -136,6 +139,7 @@ export default function DuelystPlayCard({
   const plate = card.chromeBg || RARITY_BG[rk] || RARITY_BG.common;
   const buds = card.chromeBuds || RARITY_BUDS[rk];
   const frame = FRAME[rk] || FRAME.common;
+  const artBox = rk === 'legendary' || rk === 'mythic' || rk === 'glitch' ? ART_WEED : ART_GOLD;
   const nameSize = card.name.length > 22 ? 10 : card.name.length > 16 ? 11 : L.name.size;
   const onKeys = useMemo(() => {
     const s = new Set(
@@ -177,31 +181,30 @@ export default function DuelystPlayCard({
         }
       `}</style>
 
-      <div style={{ ...box(L.art), overflow: 'hidden', background: '#050308' }}>
+      <div
+        style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${plate})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      {buds && (
         <div
           style={{
-            position: 'absolute', inset: '-8%',
-            backgroundImage: `url(${plate})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'saturate(1.15) contrast(1.05)',
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${buds})`,
+            backgroundRepeat: 'repeat-x',
+            backgroundSize: 'auto 100%',
+            opacity: 0.28,
+            mixBlendMode: 'screen',
+            animation: 'budsPan 22s linear infinite',
+            imageRendering: 'pixelated',
           }}
         />
-        {buds && (
-          <div
-            style={{
-              position: 'absolute', inset: 0,
-              backgroundImage: `url(${buds})`,
-              backgroundRepeat: 'repeat-x',
-              backgroundSize: 'auto 100%',
-              opacity: 0.55,
-              mixBlendMode: 'screen',
-              animation: 'budsPan 18s linear infinite',
-              imageRendering: 'pixelated',
-            }}
-          />
-        )}
-        <div style={{ position: 'absolute', inset: '4% 6% 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      )}
+      <div style={{ ...box(artBox), overflow: 'hidden', zIndex: 1 }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <CardUnitArt card={card} />
         </div>
         {abilityIcons.length > 0 && (
@@ -221,9 +224,8 @@ export default function DuelystPlayCard({
                 alt={abilityNames[i] || 'ability'}
                 title={abilityNames[i]}
                 style={{
-                  width: pct(14, L.art.w),
-                  height: 'auto',
-                  minWidth: 12,
+                  width: 16,
+                  height: 16,
                   imageRendering: 'pixelated',
                   filter: 'drop-shadow(0 1px 1px #000)',
                 }}
@@ -342,11 +344,59 @@ type IdleFrame = { x: number; y: number; w: number; h: number; sheetW: number; s
 
 const FRAMES = IDLE_FRAMES as Record<string, IdleFrame>;
 
-function PackedIdleSprite({ sheet, fr }: { sheet: string; fr: IdleFrame }) {
-  const sizeX = (fr.sheetW / fr.w) * 100;
-  const sizeY = (fr.sheetH / fr.h) * 100;
-  const posX = fr.sheetW === fr.w ? 0 : (fr.x / (fr.sheetW - fr.w)) * 100;
-  const posY = fr.sheetH === fr.h ? 0 : (fr.y / (fr.sheetH - fr.h)) * 100;
+let clipsPromise: Promise<any> | null = null;
+function loadDuelystClips() {
+  if (!clipsPromise) {
+    clipsPromise = fetch('https://duelyst.grudge-studio.com/catalog/duelyst-clips.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+  }
+  return clipsPromise;
+}
+
+function breatheCells(first: IdleFrame, frames: number, sheetW: number, sheetH: number): IdleFrame[] {
+  const out: IdleFrame[] = [];
+  let x = first.x;
+  let y = first.y;
+  for (let i = 0; i < Math.max(1, frames); i++) {
+    out.push({ x, y, w: first.w, h: first.h, sheetW, sheetH });
+    x += first.w;
+    if (x + first.w > sheetW + 1) {
+      x = 0;
+      y += first.h;
+      if (y + first.h > sheetH + 1) break;
+    }
+  }
+  return out;
+}
+
+function PackedIdleSprite({ sheet, fr, duelystId }: { sheet: string; fr: IdleFrame; duelystId?: string }) {
+  const [cells, setCells] = useState<IdleFrame[]>([fr]);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    let live = true;
+    if (!duelystId) return;
+    loadDuelystClips().then((j) => {
+      if (!live || !j) return;
+      const clip = (j.units || j)[duelystId]?.clips?.breathing || (j.units || j)[duelystId]?.clips?.idle;
+      if (!clip || !clip.frames) return;
+      const first = clip.first || fr;
+      const sheetW = fr.sheetW;
+      const sheetH = fr.sheetH;
+      setCells(breatheCells({ ...first, sheetW, sheetH }, Number(clip.frames) || 1, sheetW, sheetH));
+    });
+    return () => { live = false; };
+  }, [duelystId, fr, sheet]);
+  useEffect(() => {
+    if (cells.length <= 1) return;
+    const id = window.setInterval(() => setTick((t) => t + 1), 90);
+    return () => window.clearInterval(id);
+  }, [cells.length]);
+  const cell = cells[tick % cells.length] || fr;
+  const sizeX = (cell.sheetW / cell.w) * 100;
+  const sizeY = (cell.sheetH / cell.h) * 100;
+  const posX = cell.sheetW === cell.w ? 0 : (cell.x / (cell.sheetW - cell.w)) * 100;
+  const posY = cell.sheetH === cell.h ? 0 : (cell.y / (cell.sheetH - cell.h)) * 100;
   return (
     <div
       style={{
@@ -359,7 +409,6 @@ function PackedIdleSprite({ sheet, fr }: { sheet: string; fr: IdleFrame }) {
         backgroundPosition: `${posX}% ${posY}%`,
         imageRendering: 'pixelated',
         filter: 'contrast(1.08) saturate(1.08)',
-        animation: 'duelystBreathe 2.6s ease-in-out infinite',
       }}
     />
   );
@@ -434,7 +483,7 @@ export function CardUnitArt({ card }: { card: ClassificationCard }) {
     return <GwIdleSprite src={card.idleStrip || card.image} />;
   }
   if (fr && sheet) {
-    return <PackedIdleSprite sheet={sheet} fr={fr} />;
+    return <PackedIdleSprite sheet={sheet} fr={fr} duelystId={duelystId} />;
   }
   if (card.image) {
     return <Portrait src={card.image} />;

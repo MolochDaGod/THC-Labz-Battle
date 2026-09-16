@@ -344,6 +344,8 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
   const [seedsOwned, setSeedsOwned]       = useState(0);
   const [copiedUuid, setCopiedUuid]       = useState(false);
   const [grows, setGrows]                 = useState<any[]>([]);
+  const [bagSeeds, setBagSeeds]           = useState<any[]>([]);
+  const [selectedSeedId, setSelectedSeedId] = useState<number | null>(null);
   const [unplanted, setUnplanted]         = useState(0);
   const [growBusy, setGrowBusy]           = useState(false);
   const [harvestedCard, setHarvestedCard] = useState<any | null>(null);
@@ -437,8 +439,14 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
       .then(d => {
         if (d?.success) {
           setGrows(d.grows || []);
-          setUnplanted(d.unplanted || 0);
+          const bag = d.seeds || [];
+          setBagSeeds(bag);
+          setUnplanted(d.unplanted ?? bag.filter((s: any) => !s.hatched && !s.battle_plant_id).length);
           setSeedsOwned(d.unplanted || 0);
+          if (!selectedSeedId) {
+            const first = bag.find((s: any) => !s.hatched && !s.battle_plant_id);
+            if (first) setSelectedSeedId(Number(first.id));
+          }
         }
       })
       .catch(() => {});
@@ -463,13 +471,33 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
       const res = await fetch('/api/battle/bad-seed/plant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: walletAddress, walletAddress }),
+        body: JSON.stringify({ wallet: walletAddress, walletAddress, seedId: selectedSeedId }),
       });
       const data = await res.json();
       if (!res.ok || !data?.success) throw new Error(data?.error || 'Plant failed.');
       refreshSeedInfo();
     } catch (err: any) {
       setMintError(err?.message || 'Plant failed.');
+    } finally {
+      setGrowBusy(false);
+    }
+  };
+
+  const waterBadSeedGrow = async (plantId: number) => {
+    if (growBusy || !walletAddress) return;
+    setGrowBusy(true);
+    setMintError(null);
+    try {
+      const res = await fetch(`/api/battle/bad-seed/${plantId}/water`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: walletAddress, walletAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Water failed.');
+      refreshSeedInfo();
+    } catch (err: any) {
+      setMintError(err?.message || 'Water failed.');
     } finally {
       setGrowBusy(false);
     }
@@ -620,7 +648,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                 boxShadow: activeTab === 'badbudz' ? '0 0 16px rgba(255,215,0,0.35)' : 'none',
               }}
             >
-              <Sparkles size={13} /> 24H BAD SEED GROW
+              <Sparkles size={13} /> BAD SEEDS
             </button>
           </div>
 
@@ -800,46 +828,59 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 900, color: '#39ff14', letterSpacing: 1 }}>
-                  24H BAD SEED GROW
+                  BAD SEED INVENTORY
                 </div>
                 <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                  PLANT A GROWERZ BAD SEED. WATER 2× IN 24H. HARVEST AN EPIC+ BADBUDZ cNFT (CODEX ANIMS + FX) ONTO THE SERVER WALLET.
+                  SLOT A SEED · PLANT · WATER 2× IN 24H · HARVEST EPIC+ TO SERVER WALLET
                 </div>
               </div>
             </div>
 
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-              background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,215,0,0.2)',
-              borderRadius: 8, padding: '8px 10px', marginBottom: 10, flexWrap: 'wrap',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 900, color: '#ffeaa0' }}>
-                {walletAddress ? `${unplanted} UNPLANTED BAD SEED(S)` : 'CONNECT WALLET TO PLANT'}
-              </span>
-              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 900 }}>
-                READY = EPIC+ · RAILWAY user_cards
-              </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+              {Array.from({ length: 8 }).map((_, i) => {
+                const seed = bagSeeds.filter((s) => !s.hatched && !s.battle_plant_id)[i];
+                const on = seed && selectedSeedId === Number(seed.id);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={!seed}
+                    onClick={() => seed && setSelectedSeedId(Number(seed.id))}
+                    style={{
+                      aspectRatio: '1',
+                      borderRadius: 10,
+                      border: on ? '2px solid #ffeaa0' : '1px solid rgba(255,255,255,0.12)',
+                      background: seed ? 'rgba(20,40,10,0.9)' : 'rgba(0,0,0,0.35)',
+                      cursor: seed ? 'pointer' : 'default',
+                      padding: 6,
+                    }}
+                  >
+                    {seed ? (
+                      <img src="/hub-grow/seeds/epic.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <span style={{ fontSize: 8, color: '#555' }}>EMPTY</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <button
               type="button"
               onClick={plantBadSeedGrow}
-              disabled={growBusy || unplanted < 1 || !walletAddress}
+              disabled={growBusy || !selectedSeedId || !walletAddress}
               style={{
                 width: '100%', padding: '14px', borderRadius: 12,
-                background: (growBusy || unplanted < 1 || !walletAddress)
+                background: (growBusy || !selectedSeedId || !walletAddress)
                   ? 'rgba(255,255,255,0.1)'
                   : 'linear-gradient(135deg, #15803d 0%, #166534 50%, #047857 100%)',
                 border: '1.5px solid #39ff14',
                 color: '#fff', fontSize: 13, fontWeight: 900, letterSpacing: 1.5,
-                cursor: (growBusy || unplanted < 1 || !walletAddress) ? 'not-allowed' : 'pointer',
-                opacity: unplanted > 0 && walletAddress ? 1 : 0.65,
-                boxShadow: unplanted > 0 ? '0 0 20px rgba(57,255,20,0.4)' : 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                cursor: (growBusy || !selectedSeedId || !walletAddress) ? 'not-allowed' : 'pointer',
                 marginBottom: 12,
               }}
             >
-              {growBusy ? 'PLANTING…' : unplanted < 1 ? 'HARVEST A GROWERZ PLANT FOR A BAD SEED FIRST' : 'PLANT BAD SEED · 24 HOURS'}
+              {growBusy ? 'PLANTING…' : selectedSeedId ? `PLANT SEED #${selectedSeedId}` : 'SELECT A SEED SLOT'}
             </button>
 
             {grows.map((g) => (
@@ -848,7 +889,12 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                 background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: 8, padding: '8px 10px', marginBottom: 8,
               }}>
-                <span style={{ fontSize: 10, color: '#ddd', fontWeight: 700 }}>
+                <img
+                  src={`/hub-grow/plants/stage${Math.min(5, Math.max(1, Number(g.waterCount || 0) + 1))}.png`}
+                  alt=""
+                  style={{ width: 48, height: 48, objectFit: 'contain', marginRight: 8 }}
+                />
+                <span style={{ fontSize: 10, color: '#ddd', fontWeight: 700, flex: 1 }}>
                   Grow #{g.id} · water {g.waterCount || 0}/{g.watersNeeded || 2} · {g.harvested || g.state === 4 ? 'DONE' : g.ready ? 'READY' : `${g.hoursLeft}h LEFT`}
                 </span>
                 <div style={{ display: 'flex', gap: 6 }}>
