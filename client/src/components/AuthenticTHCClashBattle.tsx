@@ -6,7 +6,7 @@ import { getBalancedStats, calculateDamage, getCardTier } from '../utils/Balance
 import { MAP_THEMES, getTheme, drawThemeFallback } from '../utils/MapThemes';
 import { replayRecorder } from '../utils/BattleReplayRecorder';
 import { nftToGrowerzUnitCard } from '../utils/GrowerzUnitSystem';
-import { generateGrowerzSprite, getCachedSprite } from '../services/GrowerzBattleSprite';
+import { getCachedSprite } from '../services/GrowerzBattleSprite';
 import { BattleEffectsEngine } from '../utils/BattleEffectsEngine';
 import { getBossForTheme, bossToUnit, checkBossEnrage, type BossCard } from '../utils/AiBossSystem';
 
