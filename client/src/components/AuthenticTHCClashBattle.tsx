@@ -591,58 +591,55 @@ export default function AuthenticTHCClashBattle({
     return () => { cancelAnimationFrame(raf); engine.clear(); };
   }, []);
 
-  // Auto-generate full-body battle sprites for GROWERZ NFT cards when puter is ready
+  // DISABLED: Auto-generate sprites DISABLED to conserve Puter quota
   useEffect(() => {
-    if (!puterReady) return;
-    const puter = (window as any).puter;
-    if (!puter?.ai?.txt2img) return;
-
-    const allGrowerz: BattleCard[] = [];
-    [...playerDeck, ...(captainCard ? [captainCard] : [])].forEach(card => {
-      if ((card as any).isGrowerzUnit) allGrowerz.push(card);
-    });
-
-    if (allGrowerz.length === 0) return;
-
-    setSpriteGenStatus('generating');
-
-    const generate = async () => {
-      for (const card of allGrowerz) {
-        const key = (card as any).nftMint || card.id;
-        const already = getCachedSprite(key);
-        if (already) {
-          growerzSpriteCache.current.set(key, already);
-          continue;
-        }
-        try {
-          const traits = (card as any).traits || {};
-          const url = await generateGrowerzSprite(key, {
-            name: card.name,
-            skin: traits.skin,
-            clothes: traits.clothes,
-            head: traits.head,
-            mouth: traits.mouth,
-            eyes: traits.eyes,
-            background: traits.background,
-            rank: (card as any).nftRank,
-          }, 128, 220);
-          growerzSpriteCache.current.set(key, url);
-          // Force image cache to reload with sprite
-          imageCache.delete('sprite:' + card.id);
-          console.debug(`[GrowerzSprite] ✅ Sprite ready for ${card.name}`);
-        } catch (e) {
-          console.warn(`[GrowerzSprite] Generation failed for ${card.name}:`, e);
-        }
-      }
-      setSpriteGenStatus('done');
-    };
-
-    generate();
+    console.warn('[AuthenticTHCClashBattle] GROWERZ sprite auto-generation DISABLED');
+    setSpriteGenStatus('done');
+    // Original auto-generation disabled:
+    // if (!puterReady) return;
+    // const puter = (window as any).puter;
+    // if (!puter?.ai?.txt2img) return;
+    // const allGrowerz: BattleCard[] = [];
+    // [...playerDeck, ...(captainCard ? [captainCard] : [])].forEach(card => {
+    //   if ((card as any).isGrowerzUnit) allGrowerz.push(card);
+    // });
+    // if (allGrowerz.length === 0) return;
+    // setSpriteGenStatus('generating');
+    // const generate = async () => {
+    //   for (const card of allGrowerz) {
+    //     const key = (card as any).nftMint || card.id;
+    //     const already = getCachedSprite(key);
+    //     if (already) {
+    //       growerzSpriteCache.current.set(key, already);
+    //       continue;
+    //     }
+    //     try {
+    //       const traits = (card as any).traits || {};
+    //       const url = await generateGrowerzSprite(key, {
+    //         name: card.name,
+    //         skin: traits.skin,
+    //         clothes: traits.clothes,
+    //         head: traits.head,
+    //         mouth: traits.mouth,
+    //         eyes: traits.eyes,
+    //         background: traits.background,
+    //         rank: (card as any).nftRank,
+    //       }, 128, 220);
+    //       growerzSpriteCache.current.set(key, url);
+    //       imageCache.delete('sprite:' + card.id);
+    //       console.debug(`[GrowerzSprite] ✅ Sprite ready for ${card.name}`);
+    //     } catch (e) {
+    //       console.warn(`[GrowerzSprite] Generation failed for ${card.name}:`, e);
+    //     }
+    //   }
+    //   setSpriteGenStatus('done');
+    // };
+    // generate();
   }, [puterReady]);
 
-  // Generate theme background via puter.js txt2img
+  // DISABLED: Theme background generation via puter.js txt2img DISABLED to conserve quota
   const generateThemeBackground = useCallback(async (themeId: string) => {
-    const theme = getTheme(themeId);
+    console.warn('[AuthenticTHCClashBattle] Theme background generation DISABLED for', themeId);
     themeImageRef.current = null;
 
     // Check session cache first
@@ -655,28 +652,27 @@ export default function AuthenticTHCClashBattle({
       return;
     }
 
-    const puter = (window as any).puter;
-    if (!puter?.ai?.txt2img) return;
-
-    setIsGeneratingTheme(true);
-    try {
-      const img: HTMLImageElement = await puter.ai.txt2img(theme.puterPrompt, false);
-      if (selectedThemeIdRef.current === themeId) {
-        themeImageRef.current = img;
-        // Cache as data URL
-        try {
-          const offscreen = document.createElement('canvas');
-          offscreen.width = img.naturalWidth || 512;
-          offscreen.height = img.naturalHeight || 512;
-          const ctx2 = offscreen.getContext('2d');
-          ctx2?.drawImage(img, 0, 0);
-          sessionStorage.setItem(cacheKey, offscreen.toDataURL('image/jpeg', 0.85));
-        } catch (_e) {}
-      }
-    } catch (e) {
-      console.warn('puter txt2img generation skipped:', e);
-    }
-    setIsGeneratingTheme(false);
+    // DISABLED: Puter txt2img disabled
+    // const puter = (window as any).puter;
+    // if (!puter?.ai?.txt2img) return;
+    // setIsGeneratingTheme(true);
+    // try {
+    //   const img: HTMLImageElement = await puter.ai.txt2img(theme.puterPrompt, false);
+    //   if (selectedThemeIdRef.current === themeId) {
+    //     themeImageRef.current = img;
+    //     try {
+    //       const offscreen = document.createElement('canvas');
+    //       offscreen.width = img.naturalWidth || 512;
+    //       offscreen.height = img.naturalHeight || 512;
+    //       const ctx2 = offscreen.getContext('2d');
+    //       ctx2?.drawImage(img, 0, 0);
+    //       sessionStorage.setItem(cacheKey, offscreen.toDataURL('image/jpeg', 0.85));
+    //     } catch (_e) {}
+    //   }
+    // } catch (e) {
+    //   console.warn('puter txt2img generation skipped:', e);
+    // }
+    // setIsGeneratingTheme(false);
   }, []);
 
   // When puter becomes ready, auto-generate background for non-cannabis themes

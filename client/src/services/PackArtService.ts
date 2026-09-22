@@ -67,18 +67,24 @@ export async function generatePackArt(key: PackArtKey): Promise<string | null> {
   if (pending.has(key)) return pending.get(key)!;
 
   const promise = (async () => {
-    try {
-      const puter = (window as any).puter;
-      if (!puter?.ai?.txt2img) return null;
-      const img: HTMLImageElement = await puter.ai.txt2img(PACK_PROMPTS[key]);
-      const url = await imgToDataUrl(img);
-      saveToCache(key, url);
-      pending.delete(key);
-      return url;
-    } catch {
-      pending.delete(key);
-      return null;
-    }
+    // DISABLED: Puter txt2img image generation to conserve quota
+    console.warn('[PackArtService] Puter txt2img DISABLED - no pack art generated for', key);
+    pending.delete(key);
+    return null;
+
+    // Original Puter generation code disabled:
+    // try {
+    //   const puter = (window as any).puter;
+    //   if (!puter?.ai?.txt2img) return null;
+    //   const img: HTMLImageElement = await puter.ai.txt2img(PACK_PROMPTS[key]);
+    //   const url = await imgToDataUrl(img);
+    //   saveToCache(key, url);
+    //   pending.delete(key);
+    //   return url;
+    // } catch {
+    //   pending.delete(key);
+    //   return null;
+    // }
   })();
 
   pending.set(key, promise);
@@ -91,25 +97,31 @@ export async function generatePackOpeningVideo(): Promise<string | null> {
   if (pending.has('video')) return pending.get('video')!;
 
   const promise = (async () => {
-    try {
-      const puter = (window as any).puter;
-      if (!puter?.ai?.txt2vid) return null;
-      const result = await puter.ai.txt2vid(PACK_PROMPTS.opening_video);
-      let url: string | null = null;
-      if (result instanceof HTMLVideoElement) {
-        url = result.src;
-      } else if (typeof result === 'string') {
-        url = result;
-      } else if (result?.src) {
-        url = result.src;
-      }
-      if (url) { saveVideoToCache('opening', url); }
-      pending.delete('video');
-      return url;
-    } catch {
-      pending.delete('video');
-      return null;
-    }
+    // DISABLED: Puter txt2vid video generation to conserve quota
+    console.warn('[PackArtService] Puter txt2vid DISABLED - no pack opening video generated');
+    pending.delete('video');
+    return null;
+
+    // Original Puter generation code disabled:
+    // try {
+    //   const puter = (window as any).puter;
+    //   if (!puter?.ai?.txt2vid) return null;
+    //   const result = await puter.ai.txt2vid(PACK_PROMPTS.opening_video);
+    //   let url: string | null = null;
+    //   if (result instanceof HTMLVideoElement) {
+    //     url = result.src;
+    //   } else if (typeof result === 'string') {
+    //     url = result;
+    //   } else if (result?.src) {
+    //     url = result.src;
+    //   }
+    //   if (url) { saveVideoToCache('opening', url); }
+    //   pending.delete('video');
+    //   return url;
+    // } catch {
+    //   pending.delete('video');
+    //   return null;
+    // }
   })();
 
   pending.set('video', promise);
@@ -117,9 +129,11 @@ export async function generatePackOpeningVideo(): Promise<string | null> {
 }
 
 export function preloadPackArts() {
-  (['common', 'rare', 'legendary'] as PackArtKey[]).forEach(key => {
-    if (!getCachedPackArt(key)) {
-      setTimeout(() => generatePackArt(key).catch(() => {}), Math.random() * 2000 + 500);
-    }
-  });
+  // DISABLED: Puter txt2img auto-loop disabled to conserve quota
+  console.warn('[PackArtService] preloadPackArts disabled - Puter generation off');
+  // (['common', 'rare', 'legendary'] as PackArtKey[]).forEach(key => {
+  //   if (!getCachedPackArt(key)) {
+  //     setTimeout(() => generatePackArt(key).catch(() => {}), Math.random() * 2000 + 500);
+  //   }
+  // });
 }

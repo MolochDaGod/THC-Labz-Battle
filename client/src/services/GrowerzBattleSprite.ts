@@ -115,26 +115,26 @@ function dequeue() {
 }
 
 async function runPuterGeneration(prompt: string, spriteW: number, spriteH: number): Promise<string> {
-  const puter = (window as any).puter;
-  if (!puter?.ai?.txt2img) throw new Error('Puter not available');
+  // DISABLED: Puter txt2img image generation to conserve quota
+  console.warn('[GrowerzBattleSprite] Puter txt2img DISABLED - no sprite generated');
+  throw new Error('Puter image generation disabled');
 
-  const img: HTMLImageElement = await puter.ai.txt2img(prompt, false);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = spriteW;
-  canvas.height = spriteH;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('no canvas ctx');
-
-  // Fit-contain draw: scale to fill portrait maintaining aspect ratio
-  const iw = img.naturalWidth || spriteW;
-  const ih = img.naturalHeight || spriteH;
-  const scale = Math.max(spriteW / iw, spriteH / ih);
-  const dw = iw * scale;
-  const dh = ih * scale;
-  ctx.drawImage(img, (spriteW - dw) / 2, (spriteH - dh) / 2, dw, dh);
-
-  return canvas.toDataURL('image/png');
+  // Original Puter generation code disabled:
+  // const puter = (window as any).puter;
+  // if (!puter?.ai?.txt2img) throw new Error('Puter not available');
+  // const img: HTMLImageElement = await puter.ai.txt2img(prompt, false);
+  // const canvas = document.createElement('canvas');
+  // canvas.width = spriteW;
+  // canvas.height = spriteH;
+  // const ctx = canvas.getContext('2d');
+  // if (!ctx) throw new Error('no canvas ctx');
+  // const iw = img.naturalWidth || spriteW;
+  // const ih = img.naturalHeight || spriteH;
+  // const scale = Math.max(spriteW / iw, spriteH / ih);
+  // const dw = iw * scale;
+  // const dh = ih * scale;
+  // ctx.drawImage(img, (spriteW - dw) / 2, (spriteH - dh) / 2, dw, dh);
+  // return canvas.toDataURL('image/png');
 }
 
 /**
@@ -193,16 +193,21 @@ export function batchGenerateSprites(
   spriteW = 128,
   spriteH = 220
 ): Map<string, Promise<string>> {
+  // DISABLED: Puter txt2img auto-loop disabled to conserve quota
+  console.warn('[GrowerzBattleSprite] batchGenerateSprites disabled - Puter generation off');
   const results = new Map<string, Promise<string>>();
-  units.forEach((unit, i) => {
-    if (loadCache(unit.id)) {
-      results.set(unit.id, Promise.resolve(loadCache(unit.id)!));
-      return;
+  units.forEach((unit) => {
+    const cached = loadCache(unit.id);
+    if (cached) {
+      results.set(unit.id, Promise.resolve(cached));
     }
-    setTimeout(() => {
-      const p = generateGrowerzSprite(unit.id, unit, spriteW, spriteH).catch(() => '');
-      results.set(unit.id, p);
-    }, i * 3500);
+    // Disabled auto-generation loop:
+    // else {
+    //   setTimeout(() => {
+    //     const p = generateGrowerzSprite(unit.id, unit, spriteW, spriteH).catch(() => '');
+    //     results.set(unit.id, p);
+    //   }, i * 3500);
+    // }
   });
   return results;
 }
