@@ -116,10 +116,8 @@ export async function generatePackOpeningVideo(): Promise<string | null> {
   return promise;
 }
 
+// DISABLED: Auto-preload removed to prevent Puter AI credit burn
 export function preloadPackArts() {
-  (['common', 'rare', 'legendary'] as PackArtKey[]).forEach(key => {
-    if (!getCachedPackArt(key)) {
-      setTimeout(() => generatePackArt(key).catch(() => {}), Math.random() * 2000 + 500);
-    }
-  });
+  // No-op: never auto-generate pack art on preload
+  // Use static pack images or fallback only
 }

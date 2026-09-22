@@ -568,8 +568,11 @@ export default function AuthenticTHCClashBattle({
     img.src = GAME_BOARD_BG;
   }, []);
 
-  // Load puter.js for free AI image generation
+  // DISABLED: Puter.js auto-load removed to prevent credit burn
+  // Only load Puter if explicitly enabled via env flag (default: disabled)
   useEffect(() => {
+    const enablePuterGen = import.meta.env.VITE_PUTER_SPRITE_GEN === '1';
+    if (!enablePuterGen) return;
     if ((window as any).puter) { setPuterReady(true); return; }
     const script = document.createElement('script');
     script.src = 'https://js.puter.com/v2/';
@@ -591,54 +594,31 @@ export default function AuthenticTHCClashBattle({
     return () => { cancelAnimationFrame(raf); engine.clear(); };
   }, []);
 
-  // Auto-generate full-body battle sprites for GROWERZ NFT cards when puter is ready
+  // DISABLED: Auto-generation removed to prevent Puter AI credit burn
+  // Growerz sprites now use CDN/fallback only — no auto txt2img on mount
   useEffect(() => {
-    if (!puterReady) return;
-    const puter = (window as any).puter;
-    if (!puter?.ai?.txt2img) return;
-
+    // Load cached sprites only, never auto-generate
     const allGrowerz: BattleCard[] = [];
     [...playerDeck, ...(captainCard ? [captainCard] : [])].forEach(card => {
       if ((card as any).isGrowerzUnit) allGrowerz.push(card);
     });
 
-    if (allGrowerz.length === 0) return;
-
-    setSpriteGenStatus('generating');
-
-    const generate = async () => {
-      for (const card of allGrowerz) {
-        const key = (card as any).nftMint || card.id;
-        const already = getCachedSprite(key);
-        if (already) {
-          growerzSpriteCache.current.set(key, already);
-          continue;
-        }
-        try {
-          const traits = (card as any).traits || {};
-          const url = await generateGrowerzSprite(key, {
-            name: card.name,
-            skin: traits.skin,
-            clothes: traits.clothes,
-            head: traits.head,
-            mouth: traits.mouth,
-            eyes: traits.eyes,
-            background: traits.background,
-            rank: (card as any).nftRank,
-          }, 128, 220);
-          growerzSpriteCache.current.set(key, url);
-          // Force image cache to reload with sprite
-          imageCache.delete('sprite:' + card.id);
-          console.debug(`[GrowerzSprite] ✅ Sprite ready for ${card.name}`);
-        } catch (e) {
-          console.warn(`[GrowerzSprite] Generation failed for ${card.name}:`, e);
-        }
-      }
+    if (allGrowerz.length === 0) {
       setSpriteGenStatus('done');
-    };
+      return;
+    }
 
-    generate();
-  }, [puterReady]);
+    // Check cache only — no generation
+    allGrowerz.forEach(card => {
+      const key = (card as any).nftMint || card.id;
+      const cached = getCachedSprite(key);
+      if (cached) {
+        growerzSpriteCache.current.set(key, cached);
+      }
+      // Missing sprites: fallback to card.image or placeholder, never generate
+    });
+    setSpriteGenStatus('done');
+  }, [playerDeck, captainCard]);
 
   // Generate theme background via puter.js txt2img
   const generateThemeBackground = useCallback(async (themeId: string) => {
@@ -679,13 +659,12 @@ export default function AuthenticTHCClashBattle({
     setIsGeneratingTheme(false);
   }, []);
 
-  // When puter becomes ready, auto-generate background for non-cannabis themes
+  // DISABLED: Auto-generate theme background removed to prevent credit burn
+  // Theme backgrounds now use fallback/canvas-drawn only
   useEffect(() => {
     selectedThemeIdRef.current = selectedThemeId;
-    if (selectedThemeId !== 'cannabis') {
-      generateThemeBackground(selectedThemeId);
-    }
-  }, [selectedThemeId, puterReady, generateThemeBackground]);
+    // Auto-generation disabled — user must click generate button if needed
+  }, [selectedThemeId]);
 
   // Load admin gameboard on component mount
   useEffect(() => {

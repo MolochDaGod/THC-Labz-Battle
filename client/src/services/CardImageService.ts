@@ -103,10 +103,8 @@ export function getCachedCardImage(cardId: string): string | null {
   return loadFromCache(cardId);
 }
 
+// DISABLED: Auto-preload removed to prevent Puter AI credit burn
 export function preloadCardImages(cards: Array<{ id: string; name: string; rarity: string; class: string }>) {
-  cards.forEach((card, i) => {
-    if (!loadFromCache(card.id)) {
-      setTimeout(() => generateCardImage(card).catch(() => {}), i * 2000 + Math.random() * 1000);
-    }
-  });
+  // No-op: never auto-generate card images on preload
+  // Cards use CDN/static assets or fallback only
 }
