@@ -591,51 +591,38 @@ export default function AuthenticTHCClashBattle({
     return () => { cancelAnimationFrame(raf); engine.clear(); };
   }, []);
 
-  // DISABLED: Auto-generate sprites DISABLED to conserve Puter quota
+  // Hydrate cached GROWERZ sprites (generation DISABLED, cache-only)
   useEffect(() => {
-    console.warn('[AuthenticTHCClashBattle] GROWERZ sprite auto-generation DISABLED');
+    const allGrowerz: BattleCard[] = [];
+    [...playerDeck, ...(captainCard ? [captainCard] : [])].forEach(card => {
+      if ((card as any).isGrowerzUnit) allGrowerz.push(card);
+    });
+
+    if (allGrowerz.length === 0) {
+      setSpriteGenStatus('done');
+      return;
+    }
+
+    let foundAny = false;
+    for (const card of allGrowerz) {
+      const key = (card as any).nftMint || card.id;
+      const cached = getCachedSprite(key);
+      if (cached) {
+        growerzSpriteCache.current.set(key, cached);
+        imageCache.delete('sprite:' + card.id);
+        foundAny = true;
+        console.debug(`[GrowerzSprite] ✅ Loaded cached sprite for ${card.name}`);
+      }
+    }
+
+    if (foundAny) {
+      console.log('[AuthenticTHCClashBattle] Hydrated cached GROWERZ sprites (generation disabled)');
+    }
     setSpriteGenStatus('done');
-    // Original auto-generation disabled:
-    // if (!puterReady) return;
-    // const puter = (window as any).puter;
-    // if (!puter?.ai?.txt2img) return;
-    // const allGrowerz: BattleCard[] = [];
-    // [...playerDeck, ...(captainCard ? [captainCard] : [])].forEach(card => {
-    //   if ((card as any).isGrowerzUnit) allGrowerz.push(card);
-    // });
-    // if (allGrowerz.length === 0) return;
-    // setSpriteGenStatus('generating');
-    // const generate = async () => {
-    //   for (const card of allGrowerz) {
-    //     const key = (card as any).nftMint || card.id;
-    //     const already = getCachedSprite(key);
-    //     if (already) {
-    //       growerzSpriteCache.current.set(key, already);
-    //       continue;
-    //     }
-    //     try {
-    //       const traits = (card as any).traits || {};
-    //       const url = await generateGrowerzSprite(key, {
-    //         name: card.name,
-    //         skin: traits.skin,
-    //         clothes: traits.clothes,
-    //         head: traits.head,
-    //         mouth: traits.mouth,
-    //         eyes: traits.eyes,
-    //         background: traits.background,
-    //         rank: (card as any).nftRank,
-    //       }, 128, 220);
-    //       growerzSpriteCache.current.set(key, url);
-    //       imageCache.delete('sprite:' + card.id);
-    //       console.debug(`[GrowerzSprite] ✅ Sprite ready for ${card.name}`);
-    //     } catch (e) {
-    //       console.warn(`[GrowerzSprite] Generation failed for ${card.name}:`, e);
-    //     }
-    //   }
-    //   setSpriteGenStatus('done');
-    // };
-    // generate();
-  }, [puterReady]);
+
+    // DISABLED: Puter txt2img generation to conserve quota
+    // No calls to generateGrowerzSprite() or puter.ai.txt2img
+  }, [playerDeck, captainCard]);
 
   // DISABLED: Theme background generation via puter.js txt2img DISABLED to conserve quota
   const generateThemeBackground = useCallback(async (themeId: string) => {
