@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Swords, Shield, Zap, Heart, Crown, ChevronRight, Star } from 'lucide-react';
 import GameIcon from './GameIcon';
 import type { IconKey } from '../services/ImageService';
+import DuelystPlayCard from './DuelystPlayCard';
 
 interface PreBattleProps {
   deck: any[];
@@ -92,17 +93,16 @@ export default function PreBattle({ deck, teamName, onBack, onStartBattle }: Pre
           </h3>
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
             {deck.map((card: any, i: number) => (
-              <div key={i} className="aspect-square rounded-xl overflow-hidden border border-gray-600/50">
-                <img
-                  src={card.image}
-                  alt={card.name}
-                  className="w-full h-full object-cover"
-                  onError={(e: any) => { e.currentTarget.src = '/game-assets/cards/default-card.jpg'; }}
+              <div key={i} className="rounded-xl overflow-hidden border border-gray-600/50" style={{ aspectRatio: '195/284' }}>
+                <DuelystPlayCard
+                  card={card}
+                  owned={true}
+                  onClick={() => {}}
                 />
               </div>
             ))}
             {[...Array(Math.max(0, 8 - deck.length))].map((_, i) => (
-              <div key={`empty-${i}`} className="aspect-square rounded-xl border border-dashed border-gray-700 bg-gray-800/20" />
+              <div key={`empty-${i}`} className="rounded-xl border border-dashed border-gray-700 bg-gray-800/20" style={{ aspectRatio: '195/284' }} />
             ))}
           </div>
           <div className="flex items-center justify-center gap-6 text-xs text-gray-400">
