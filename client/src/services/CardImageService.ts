@@ -71,24 +71,28 @@ export async function generateCardImage(card: {
 
   const promise = (async () => {
     try {
-      const puter = (window as any).puter;
-      if (!puter?.ai?.txt2img) throw new Error('puter not available');
+      // DISABLED: Puter txt2img image generation to conserve quota
+      // const puter = (window as any).puter;
+      // if (!puter?.ai?.txt2img) throw new Error('puter not available');
 
-      const prompt = buildPrompt(card);
-      const img: HTMLImageElement = await puter.ai.txt2img(prompt);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('no canvas ctx');
-      ctx.drawImage(img, 0, 0, 512, 512);
-      const url = canvas.toDataURL('image/png');
-
-      console.debug(`[CardImageService] Generated art for ${card.name}`);
-      saveToCache(card.id, url);
+      console.warn(`[CardImageService] Puter txt2img DISABLED - no image generated for ${card.name}`);
       pending.delete(card.id);
-      return url;
+      throw new Error('Puter image generation disabled');
+
+      // Original Puter generation code disabled:
+      // const prompt = buildPrompt(card);
+      // const img: HTMLImageElement = await puter.ai.txt2img(prompt);
+      // const canvas = document.createElement('canvas');
+      // canvas.width = 512;
+      // canvas.height = 512;
+      // const ctx = canvas.getContext('2d');
+      // if (!ctx) throw new Error('no canvas ctx');
+      // ctx.drawImage(img, 0, 0, 512, 512);
+      // const url = canvas.toDataURL('image/png');
+      // console.debug(`[CardImageService] Generated art for ${card.name}`);
+      // saveToCache(card.id, url);
+      // pending.delete(card.id);
+      // return url;
     } catch (err) {
       pending.delete(card.id);
       throw err;
@@ -104,9 +108,11 @@ export function getCachedCardImage(cardId: string): string | null {
 }
 
 export function preloadCardImages(cards: Array<{ id: string; name: string; rarity: string; class: string }>) {
-  cards.forEach((card, i) => {
-    if (!loadFromCache(card.id)) {
-      setTimeout(() => generateCardImage(card).catch(() => {}), i * 2000 + Math.random() * 1000);
-    }
-  });
+  // DISABLED: Puter txt2img auto-loop disabled to conserve quota
+  console.warn('[CardImageService] preloadCardImages disabled - Puter generation off');
+  // cards.forEach((card, i) => {
+  //   if (!loadFromCache(card.id)) {
+  //     setTimeout(() => generateCardImage(card).catch(() => {}), i * 2000 + Math.random() * 1000);
+  //   }
+  // });
 }
