@@ -181,9 +181,9 @@ export default function AuthenticTHCClashBattle({
     timeLeft: 180,
     playerCrowns: 0,
     enemyCrowns: 0,
-    playerElixir: 0, // Start with 0 elixir - authentic game start
-    enemyElixir: 0,
-    aiElixir: 0, // AI starts with same elixir as player
+    playerElixir: 5,
+    enemyElixir: 5,
+    aiElixir: 5,
     selectedCard: null,
     phase: 'battle',
     winner: null
@@ -218,6 +218,8 @@ export default function AuthenticTHCClashBattle({
   const [spriteGenStatus, setSpriteGenStatus] = useState<'idle' | 'generating' | 'done'>('idle');
   const fxEngineRef = useRef(new BattleEffectsEngine());
   const fxCanvasRef = useRef<HTMLCanvasElement>(null);
+  const battleStartedRef = useRef(false);
+  const lastLogicAtRef = useRef(0);
   const [currentHand, setCurrentHand] = useState<BattleCard[]>([]);
   const [deckIndex, setDeckIndex] = useState(0);
   const [aiDeck, setAiDeck] = useState<BattleCard[]>([]);
@@ -702,9 +704,16 @@ export default function AuthenticTHCClashBattle({
     
     // Start recording replay
     replayRecorder.start();
+    lastLogicAtRef.current = performance.now();
+    battleStartedRef.current = true;
     
     setLastCardDraw(Date.now());
   };
+
+  useEffect(() => {
+    if (!gameboardLoaded || !adminGameboard || battleStartedRef.current) return;
+    startBattle();
+  }, [gameboardLoaded, adminGameboard]);
 
   // Game loop with authentic rendering
   useEffect(() => {
@@ -2089,8 +2098,12 @@ export default function AuthenticTHCClashBattle({
     
     setGameState(prev => {
       if (prev.winner) return prev;
-      
-      const newTimeLeft = Math.max(0, prev.timeLeft - 1/60);
+
+      const nowMs = performance.now();
+      if (!lastLogicAtRef.current) lastLogicAtRef.current = nowMs;
+      const dt = Math.min(0.05, Math.max(0, (nowMs - lastLogicAtRef.current) / 1000));
+      lastLogicAtRef.current = nowMs;
+      const newTimeLeft = Math.max(0, prev.timeLeft - dt);
       
       let playerCrowns = prev.playerCrowns;
       let enemyCrowns = prev.enemyCrowns;
@@ -2126,33 +2139,19 @@ export default function AuthenticTHCClashBattle({
           trophyChange,
         });
 
-        setTimeout(() => {
-          onBattleEnd(winner, {
-            playerCrowns,
-            enemyCrowns,
-            timeLeft: newTimeLeft,
-            nftBonus: nftData?.bonuses?.attackBonus || 0
-          });
-        }, 1000);
-        
         return { ...prev, timeLeft: newTimeLeft, playerCrowns, enemyCrowns, winner, phase: 'results' };
       }
       
-      // Dynamic elixir regen: slow at start, speeds up in final minute (double elixir)
-      const elixirRate = newTimeLeft > 60
-        ? 0.017  // ~1.0/s first two minutes
-        : newTimeLeft > 0
-          ? 0.034  // ~2.0/s double elixir last minute
-          : 0.056; // ~3.3/s overtime sudden death
+      const elixirPerSec = newTimeLeft > 60 ? 1 : newTimeLeft > 0 ? 2 : 3.3;
 
       return {
         ...prev,
         timeLeft: newTimeLeft,
         playerCrowns,
         enemyCrowns,
-        playerElixir: Math.min(10, prev.playerElixir + elixirRate),
-        aiElixir: Math.min(10, prev.aiElixir + elixirRate),
-        enemyElixir: Math.min(10, prev.aiElixir + elixirRate)
+        playerElixir: Math.min(10, prev.playerElixir + elixirPerSec * dt),
+        aiElixir: Math.min(10, prev.aiElixir + elixirPerSec * dt),
+        enemyElixir: Math.min(10, prev.aiElixir + elixirPerSec * dt)
       };
     });
   };
@@ -2502,28 +2501,40 @@ export default function AuthenticTHCClashBattle({
 
   if (gameState.phase === 'results') {
     return (
-      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-gradient-to-br from-green-900 to-black p-8 rounded-xl text-center max-w-md"
+          className="bg-gradient-to-br from-green-900 to-black p-6 rounded-xl text-center w-full max-w-md"
         >
           <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
           <h2 className="text-3xl font-bold text-white mb-4">
-            {gameState.winner === 'player' ? '🎉 Victory!' : '💪 Good Battle!'}
+            {gameState.winner === 'player' ? 'Victory!' : 'Defeat'}
           </h2>
           <div className="text-lg text-gray-300 mb-6">
             <div>Your Crowns: {gameState.playerCrowns}</div>
             <div>AI Crowns: {gameState.enemyCrowns}</div>
-            {nftData?.bonuses?.attackBonus && (
-              <div className="text-green-400">NFT Bonus: +{nftData.bonuses.attackBonus} ATK</div>
-            )}
           </div>
           <button
-            onClick={() => onBattleEnd(gameState.winner!, {})}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            type="button"
+            onClick={() => onBattleEnd(gameState.winner || 'ai', {
+              playerCrowns: gameState.playerCrowns,
+              enemyCrowns: gameState.enemyCrowns,
+              rematch: true,
+            })}
+            className="w-full py-4 rounded-xl bg-green-600 text-white font-black text-lg mb-3 min-h-[52px]"
           >
-            Continue
+            Play Again
+          </button>
+          <button
+            type="button"
+            onClick={() => onBattleEnd(gameState.winner || 'ai', {
+              playerCrowns: gameState.playerCrowns,
+              enemyCrowns: gameState.enemyCrowns,
+            })}
+            className="w-full py-3 rounded-xl bg-white/10 text-white font-bold min-h-[48px]"
+          >
+            Results
           </button>
         </motion.div>
       </div>
@@ -2833,6 +2844,18 @@ export default function AuthenticTHCClashBattle({
               </div>
             </div>
             
+            {selectedCard && gameState.playerElixir >= selectedCard.cost && (
+              <button
+                type="button"
+                onClick={() => {
+                  deployCard(selectedCard, CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.72);
+                  setSelectedCard(null);
+                }}
+                className="w-full mb-2 py-3 rounded-xl bg-yellow-500 text-black font-black text-sm min-h-[48px]"
+              >
+                PLAY {selectedCard.name.toUpperCase()}
+              </button>
+            )}
             {/* FIXED 4-CARD HAND POSITIONS - Stable Placeholders */}
             <div className="flex justify-center gap-4">
               {[0, 1, 2, 3].map((slotIndex) => {
@@ -2857,8 +2880,10 @@ export default function AuthenticTHCClashBattle({
                         draggable
                         onDragStart={() => handleCardDragStart(card)}
                         onDragEnd={handleCardDragEnd}
-                        onClick={() => handleCardSelect(card)}
-                        onTouchEnd={(e) => { e.preventDefault(); handleCardSelect(card); }}
+                        onPointerUp={(e) => {
+                          e.preventDefault();
+                          handleCardSelect(card);
+                        }}
                         className={`
                           w-full h-full cursor-pointer
                           border-2 transition-all duration-300 rounded-lg overflow-hidden

@@ -421,6 +421,11 @@ function App() {
   };
 
   const handleBattleEnd = (winner: 'player' | 'ai', results: any) => {
+    if (results?.rematch) {
+      setBattleResult(null);
+      navigateTo('battle');
+      return;
+    }
     setBattleResult({ winner, results });
     navigateTo('results');
   };

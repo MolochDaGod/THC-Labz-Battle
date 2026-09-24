@@ -112,7 +112,7 @@ export default function BattleResults({ winner, results, teamName, difficulty, w
         ? 'bg-gradient-to-br from-yellow-900 via-green-900 to-yellow-900'
         : 'bg-gradient-to-br from-gray-900 via-red-950 to-gray-900'
     }`}>
-      <div className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen min-h-[100dvh] flex flex-col items-center p-6 pb-40">
         <div className={`w-full max-w-sm transition-all duration-700 ${showContent ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-4'}`}>
           <div className="text-center mb-8">
             <div className={`mb-4 flex justify-center ${isVictory ? 'animate-bounce' : ''}`}>
@@ -251,6 +251,22 @@ export default function BattleResults({ winner, results, teamName, difficulty, w
             </button>
           </div>
         </div>
+      </div>
+      <div
+        className="fixed left-0 right-0 z-40"
+        style={{
+          bottom: 0,
+          padding: '12px 16px calc(16px + env(safe-area-inset-bottom))',
+          background: 'linear-gradient(to top, rgba(5,0,0,0.96) 70%, rgba(5,0,0,0))',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onPlayAgain}
+          className="block w-full max-w-sm mx-auto py-4 rounded-2xl font-black text-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white min-h-[52px]"
+        >
+          Play Again
+        </button>
       </div>
     </div>
   );
