@@ -673,7 +673,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
           </div>
 
           {/* Top Section Nav Tabs */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => setActiveTab('library')}
               style={{
@@ -704,135 +704,138 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
             </button>
           </div>
 
-          {activeTab === 'library' && (
-            <>
-              <div style={{ display: 'flex', gap: 8, marginBottom: filtersOpen ? 8 : 0, alignItems: 'stretch' }}>
-              <input
-                type="search"
-                placeholder="Search name, UUID slug, ability…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 0, boxSizing: 'border-box',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(57,255,20,0.2)',
-                  borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 11,
-                  fontFamily: "'LEMON MILK', sans-serif", outline: 'none',
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(o => !o)}
-                style={{
-                  flexShrink: 0, borderRadius: 10, padding: '8px 10px', cursor: 'pointer',
-                  border: filtersOpen ? '1.5px solid #39ff14' : '1px solid rgba(255,255,255,0.16)',
-                  background: filtersOpen ? 'rgba(57,255,20,0.16)' : 'rgba(255,255,255,0.06)',
-                  color: filtersOpen ? '#39ff14' : '#ccc',
-                  fontSize: 9, fontWeight: 900, letterSpacing: 0.5,
-                  display: 'flex', alignItems: 'center', gap: 5,
-                }}
-              >
-                <SlidersHorizontal size={13} /> {filtersOpen ? 'HIDE' : 'FILTERS'}
-              </button>
-              </div>
-
-              {filtersOpen && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
-                <FilterSelect
-                  label="SET"
-                  value={filterSet}
-                  onChange={v => { setFilterSet(v as CardSetId); setFilterAbility('all'); }}
-                  options={SET_TABS.map(t => ({
-                    value: t.id,
-                    label: `${t.label} (${allCards.filter(c => (c.cardSet || 'badbudz') === t.id).length})`,
-                  }))}
-                />
-                <FilterSelect
-                  label="RARITY"
-                  value={filterRarity}
-                  onChange={setFilterRarity}
-                  options={[
-                    { value: 'all', label: `All (${setPool.length})` },
-                    ...RARITY_ORDER.filter(r => (rarityCounts[r] || 0) > 0 || r === filterRarity).map(r => ({
-                      value: r,
-                      label: `${r.toUpperCase()} (${rarityCounts[r]})`,
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="TYPE"
-                  value={filterType}
-                  onChange={setFilterType}
-                  options={[
-                    { value: 'all', label: 'All types' },
-                    ...['minion', 'tower', 'building', 'spell'].filter(t => (typeCounts[t] || 0) > 0 || t === filterType).map(t => ({
-                      value: t,
-                      label: `${(TYPE_META[t]?.icon || '')} ${t.toUpperCase()} (${typeCounts[t]})`,
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="CLASS"
-                  value={filterClass}
-                  onChange={setFilterClass}
-                  options={[
-                    { value: 'all', label: 'All classes' },
-                    ...['melee', 'ranged', 'magical', 'tank'].filter(c => (classCounts[c] || 0) > 0 || c === filterClass).map(c => ({
-                      value: c,
-                      label: `${(CLASS_META[c]?.icon || '')} ${c.toUpperCase()} (${classCounts[c]})`,
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="PLAY STYLE"
-                  value={filterStyle}
-                  onChange={setFilterStyle}
-                  options={[
-                    { value: 'all', label: 'All styles' },
-                    ...PLAY_STYLE_SLOTS.filter(s => (styleCounts[s.key] || 0) > 0 || s.key === filterStyle).map(s => ({
-                      value: s.key,
-                      label: `${s.label} (${styleCounts[s.key]})`,
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="ABILITY"
-                  value={filterAbility}
-                  onChange={setFilterAbility}
-                  options={[
-                    { value: 'all', label: 'All abilities' },
-                    ...abilityOptions.map(name => ({
-                      value: name,
-                      label: `${name} (${abilityCounts[name] || 0})`,
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="BACKGROUND"
-                  value={filterBg}
-                  onChange={setFilterBg}
-                  options={[
-                    { value: 'all', label: 'All plates' },
-                    ...CARD_BACKGROUNDS.map(bg => ({ value: bg.id, label: bg.label })),
-                  ]}
-                />
-                <FilterSelect
-                  label="OWNED"
-                  value={ownedOnly ? 'owned' : 'all'}
-                  onChange={v => setOwnedOnly(v === 'owned')}
-                  options={[
-                    { value: 'all', label: 'All cards' },
-                    { value: 'owned', label: 'Owned only' },
-                  ]}
-                />
-              </div>
-              )}
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 6, letterSpacing: 0.4 }}>
-                {sorted.length} of {setPool.length} · Codex cost / ATK / HP / styles on the card
-              </div>
-            </>
-          )}
         </div>
       </div>
+
+      {activeTab === 'library' && (
+        <div style={{
+          maxWidth: 700, margin: '0 auto',
+          padding: '10px 12px 0',
+        }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', marginBottom: filtersOpen ? 8 : 0 }}>
+            <input
+              type="search"
+              placeholder="Search name, UUID slug, ability…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                flex: 1, minWidth: 0, boxSizing: 'border-box',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(57,255,20,0.2)',
+                borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 11,
+                fontFamily: "'LEMON MILK', sans-serif", outline: 'none',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(o => !o)}
+              style={{
+                flexShrink: 0, borderRadius: 10, padding: '8px 10px', cursor: 'pointer',
+                border: filtersOpen ? '1.5px solid #39ff14' : '1px solid rgba(255,255,255,0.16)',
+                background: filtersOpen ? 'rgba(57,255,20,0.16)' : 'rgba(255,255,255,0.06)',
+                color: filtersOpen ? '#39ff14' : '#ccc',
+                fontSize: 9, fontWeight: 900, letterSpacing: 0.5,
+                display: 'flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              <SlidersHorizontal size={13} /> {filtersOpen ? 'HIDE' : 'FILTERS'}
+            </button>
+          </div>
+          {filtersOpen && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+              <FilterSelect
+                label="SET"
+                value={filterSet}
+                onChange={v => { setFilterSet(v as CardSetId); setFilterAbility('all'); }}
+                options={SET_TABS.map(t => ({
+                  value: t.id,
+                  label: `${t.label} (${allCards.filter(c => (c.cardSet || 'badbudz') === t.id).length})`,
+                }))}
+              />
+              <FilterSelect
+                label="RARITY"
+                value={filterRarity}
+                onChange={setFilterRarity}
+                options={[
+                  { value: 'all', label: `All (${setPool.length})` },
+                  ...RARITY_ORDER.filter(r => (rarityCounts[r] || 0) > 0 || r === filterRarity).map(r => ({
+                    value: r,
+                    label: `${r.toUpperCase()} (${rarityCounts[r]})`,
+                  })),
+                ]}
+              />
+              <FilterSelect
+                label="TYPE"
+                value={filterType}
+                onChange={setFilterType}
+                options={[
+                  { value: 'all', label: 'All types' },
+                  ...['minion', 'tower', 'building', 'spell'].filter(t => (typeCounts[t] || 0) > 0 || t === filterType).map(t => ({
+                    value: t,
+                    label: `${(TYPE_META[t]?.icon || '')} ${t.toUpperCase()} (${typeCounts[t]})`,
+                  })),
+                ]}
+              />
+              <FilterSelect
+                label="CLASS"
+                value={filterClass}
+                onChange={setFilterClass}
+                options={[
+                  { value: 'all', label: 'All classes' },
+                  ...['melee', 'ranged', 'magical', 'tank'].filter(c => (classCounts[c] || 0) > 0 || c === filterClass).map(c => ({
+                    value: c,
+                    label: `${(CLASS_META[c]?.icon || '')} ${c.toUpperCase()} (${classCounts[c]})`,
+                  })),
+                ]}
+              />
+              <FilterSelect
+                label="PLAY STYLE"
+                value={filterStyle}
+                onChange={setFilterStyle}
+                options={[
+                  { value: 'all', label: 'All styles' },
+                  ...PLAY_STYLE_SLOTS.filter(s => (styleCounts[s.key] || 0) > 0 || s.key === filterStyle).map(s => ({
+                    value: s.key,
+                    label: `${s.label} (${styleCounts[s.key]})`,
+                  })),
+                ]}
+              />
+              <FilterSelect
+                label="ABILITY"
+                value={filterAbility}
+                onChange={setFilterAbility}
+                options={[
+                  { value: 'all', label: 'All abilities' },
+                  ...abilityOptions.map(name => ({
+                    value: name,
+                    label: `${name} (${abilityCounts[name] || 0})`,
+                  })),
+                ]}
+              />
+              <FilterSelect
+                label="BACKGROUND"
+                value={filterBg}
+                onChange={setFilterBg}
+                options={[
+                  { value: 'all', label: 'All plates' },
+                  ...CARD_BACKGROUNDS.map(bg => ({ value: bg.id, label: bg.label })),
+                ]}
+              />
+              <FilterSelect
+                label="OWNED"
+                value={ownedOnly ? 'owned' : 'all'}
+                onChange={v => setOwnedOnly(v === 'owned')}
+                options={[
+                  { value: 'all', label: 'All cards' },
+                  { value: 'owned', label: 'Owned only' },
+                ]}
+              />
+            </div>
+          )}
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginBottom: 8, letterSpacing: 0.4 }}>
+            {sorted.length} of {setPool.length} · Codex cost / ATK / HP / styles on the card
+          </div>
+        </div>
+      )}
 
       {/* ── Main Content Area ──────────────────────── */}
       {activeTab === 'badbudz' ? (
