@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, X, Sparkles, Copy, Check, ExternalLink, Zap, Coins, Flame, Layers } from 'lucide-react';
+import { ArrowLeft, X, Sparkles, Copy, Check, ExternalLink, Zap, Coins, Flame, Layers, SlidersHorizontal } from 'lucide-react';
 import {
   BADBUDZ_CARDS,
   GRUDAWARS_CARDS,
@@ -384,6 +384,7 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
   const [filterAbility, setFilterAbility] = useState(initial.ability);
   const [ownedOnly, setOwnedOnly]       = useState(initial.owned);
   const [search, setSearch]             = useState(initial.q);
+  const [filtersOpen, setFiltersOpen]   = useState(false);
   const [selected, setSelected]         = useState<ClassificationCard | null>(null);
   const [ownedIds, setOwnedIds]         = useState<Set<string>>(new Set());
   const [extraOwnedCards, setExtraOwnedCards] = useState<ClassificationCard[]>([]);
@@ -619,12 +620,13 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
         pointerEvents: 'none',
       }} />
 
-      {/* ── Sticky Header ──────────────────────────── */}
+      {/* Compact sticky chrome only — filters live in the scroll, not over the cards. */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(5,13,5,0.95)', backdropFilter: 'blur(16px)',
         borderBottom: '1px solid rgba(57,255,20,0.18)',
         padding: '10px 14px 8px',
+        paddingTop: 'max(10px, env(safe-area-inset-top))',
       }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
 
@@ -704,19 +706,36 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
 
           {activeTab === 'library' && (
             <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: filtersOpen ? 8 : 0, alignItems: 'stretch' }}>
               <input
                 type="search"
                 placeholder="Search name, UUID slug, ability…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
-                  width: '100%', boxSizing: 'border-box',
+                  flex: 1, minWidth: 0, boxSizing: 'border-box',
                   background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(57,255,20,0.2)',
                   borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 11,
-                  fontFamily: "'LEMON MILK', sans-serif", outline: 'none', marginBottom: 8,
+                  fontFamily: "'LEMON MILK', sans-serif", outline: 'none',
                 }}
               />
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(o => !o)}
+                style={{
+                  flexShrink: 0, borderRadius: 10, padding: '8px 10px', cursor: 'pointer',
+                  border: filtersOpen ? '1.5px solid #39ff14' : '1px solid rgba(255,255,255,0.16)',
+                  background: filtersOpen ? 'rgba(57,255,20,0.16)' : 'rgba(255,255,255,0.06)',
+                  color: filtersOpen ? '#39ff14' : '#ccc',
+                  fontSize: 9, fontWeight: 900, letterSpacing: 0.5,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}
+              >
+                <SlidersHorizontal size={13} /> {filtersOpen ? 'HIDE' : 'FILTERS'}
+              </button>
+              </div>
 
+              {filtersOpen && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
                 <FilterSelect
                   label="SET"
@@ -806,7 +825,8 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
                   ]}
                 />
               </div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginBottom: 2, letterSpacing: 0.4 }}>
+              )}
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 6, letterSpacing: 0.4 }}>
                 {sorted.length} of {setPool.length} · Codex cost / ATK / HP / styles on the card
               </div>
             </>
@@ -1133,9 +1153,9 @@ export default function LibraryPage({ onBack, walletAddress, initialTab = 'libra
         /* ── Card Grid ──────────────────────────────── */
         <div style={{
           maxWidth: 700, margin: '0 auto',
-          padding: '14px 12px 100px',
+          padding: '14px 12px calc(28px + env(safe-area-inset-bottom))',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(186px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 168px), 1fr))',
           gap: 14,
         }}>
         {sorted.map(card => (
@@ -1542,7 +1562,9 @@ function CardDetailModal({ card, owned, onClose }: { card: ClassificationCard; o
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))',
+        overflowY: 'auto',
       }}
     >
       <div

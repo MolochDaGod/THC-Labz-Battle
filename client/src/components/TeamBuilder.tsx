@@ -409,7 +409,7 @@ export default function TeamBuilder({ walletAddress, growerzUnitCards = [], onBa
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 120px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px calc(128px + env(safe-area-inset-bottom))' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
 
           {/* ── Deck Slots ─────────────────────────────── */}
@@ -537,7 +537,8 @@ export default function TeamBuilder({ walletAddress, growerzUnitCards = [], onBa
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
           background: 'rgba(5,13,5,0.95)', backdropFilter: 'blur(16px)',
-          borderTop: '1px solid rgba(57,255,20,0.25)', padding: '12px 16px 20px',
+          borderTop: '1px solid rgba(57,255,20,0.25)',
+          padding: '12px 16px calc(16px + env(safe-area-inset-bottom))',
         }}>
           <button
             onClick={handleContinue}
