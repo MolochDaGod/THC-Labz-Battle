@@ -139,7 +139,7 @@ interface AuthenticTHCClashBattleProps {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 640;
 
-const GAME_BOARD_BG = '/game-assets/thc-clash-gameboard.png';
+const GAME_BOARD_BG = '/maps/cannabis.jpg';
 
 
 // Default tower layout - positions tuned so health bars are always in viewport
@@ -557,17 +557,16 @@ export default function AuthenticTHCClashBattle({
     setCurrentHand(startingHand);
   };
 
-  // Load gameboard image (used only for cannabis theme)
+  const themeArtRef = useRef<Record<string, HTMLImageElement>>({});
   useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => { gameboardImageRef.current = img; };
-    img.onerror = () => {
-      const fallback = new Image();
-      fallback.onload = () => { gameboardImageRef.current = fallback; };
-      fallback.src = '/attached_assets/thc-clash-gameboard.png';
-    };
-    img.src = GAME_BOARD_BG;
+    MAP_THEMES.forEach((theme) => {
+      const img = new Image();
+      img.onload = () => { themeArtRef.current[theme.id] = img; };
+      img.src = theme.image;
+    });
+    const cannabis = new Image();
+    cannabis.onload = () => { gameboardImageRef.current = cannabis; };
+    cannabis.src = GAME_BOARD_BG;
   }, []);
 
   // Load puter.js for free AI image generation
@@ -731,24 +730,19 @@ export default function AuthenticTHCClashBattle({
 
       // Draw map background - themed
       const activeTheme = getTheme(selectedThemeIdRef.current);
-      const useUploadedBg = selectedThemeIdRef.current === 'cannabis' && gameboardImageRef.current;
-      const useAiBg = themeImageRef.current;
-
-      if (useUploadedBg) {
-        ctx.drawImage(gameboardImageRef.current!, 0, -30, CANVAS_WIDTH, CANVAS_HEIGHT + 60);
-      } else if (useAiBg) {
-        ctx.drawImage(themeImageRef.current!, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        // Overlay subtle darkening at very top and bottom so health bars remain readable
-        const topGrad = ctx.createLinearGradient(0, 0, 0, 90);
-        topGrad.addColorStop(0, 'rgba(0,0,0,0.45)');
+      const painted = themeArtRef.current[selectedThemeIdRef.current];
+      if (painted) {
+        ctx.drawImage(painted, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        const topGrad = ctx.createLinearGradient(0, 0, 0, 70);
+        topGrad.addColorStop(0, 'rgba(0,0,0,0.35)');
         topGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = topGrad;
-        ctx.fillRect(0, 0, CANVAS_WIDTH, 90);
-        const botGrad = ctx.createLinearGradient(0, CANVAS_HEIGHT - 80, 0, CANVAS_HEIGHT);
+        ctx.fillRect(0, 0, CANVAS_WIDTH, 70);
+        const botGrad = ctx.createLinearGradient(0, CANVAS_HEIGHT - 56, 0, CANVAS_HEIGHT);
         botGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        botGrad.addColorStop(1, 'rgba(0,0,0,0.35)');
+        botGrad.addColorStop(1, 'rgba(0,0,0,0.28)');
         ctx.fillStyle = botGrad;
-        ctx.fillRect(0, CANVAS_HEIGHT - 80, CANVAS_WIDTH, 80);
+        ctx.fillRect(0, CANVAS_HEIGHT - 56, CANVAS_WIDTH, 56);
       } else {
         drawThemeFallback(ctx, activeTheme, CANVAS_WIDTH, CANVAS_HEIGHT, Date.now());
       }
@@ -2563,6 +2557,26 @@ export default function AuthenticTHCClashBattle({
               🌿 Sprites ready
             </span>
           )}
+          <div className="flex items-center gap-1 ml-1">
+            {MAP_THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                title={theme.name}
+                onClick={() => {
+                  setSelectedThemeId(theme.id);
+                  selectedThemeIdRef.current = theme.id;
+                }}
+                className={`w-8 h-8 rounded-lg text-base leading-none border ${
+                  selectedThemeId === theme.id
+                    ? 'border-yellow-400 bg-black/70 scale-110'
+                    : 'border-white/15 bg-black/40 opacity-70'
+                }`}
+              >
+                {theme.icon}
+              </button>
+            ))}
+          </div>
         </div>
         
         <div className="flex items-center gap-6 text-white">

@@ -2,6 +2,8 @@ export interface MapTheme {
   id: string;
   name: string;
   icon: string;
+  /** Painted arena. Same Clash layout as drawThemeFallback: center river, bridges at 20% / 80% X. */
+  image: string;
   puterPrompt: string;
   bgGradient: [string, string];
   topZoneColor: string;
@@ -20,6 +22,7 @@ export const MAP_THEMES: MapTheme[] = [
     id: 'cannabis',
     name: 'Cannabis Garden',
     icon: '🌿',
+    image: '/maps/cannabis.jpg',
     puterPrompt: 'top-down view lush cannabis garden battle arena for a card game, vibrant green cannabis plants, stone cobblestone path down the center, river of water in the middle, Clash Royale style game board, saturated greens and earthy tones, pixel art style, no text, no letters',
     bgGradient: ['#1a5c1a', '#0d3d0d'],
     topZoneColor: '#1e7a1e',
@@ -36,6 +39,7 @@ export const MAP_THEMES: MapTheme[] = [
     id: 'volcano',
     name: 'Lava Fields',
     icon: '🌋',
+    image: '/maps/volcano.jpg',
     puterPrompt: 'top-down view volcanic battlefield arena for a card game, black obsidian rock ground, rivers of glowing orange lava in the middle, glowing cracks, fire pits, ash smoke, Clash Royale style game board, dark blacks reds and oranges, pixel art style, no text, no letters',
     bgGradient: ['#3d0a00', '#1a0500'],
     topZoneColor: '#4a1000',
@@ -52,6 +56,7 @@ export const MAP_THEMES: MapTheme[] = [
     id: 'arctic',
     name: 'Frozen Tundra',
     icon: '❄️',
+    image: '/maps/arctic.jpg',
     puterPrompt: 'top-down view arctic frozen tundra battle arena for a card game, snow covered ground, frozen river of ice in the middle, icicles, snowdrifts, pine trees dusted in snow, Clash Royale style game board, cool blue whites and icy teals, pixel art style, no text, no letters',
     bgGradient: ['#0d2a4a', '#0a1a2e'],
     topZoneColor: '#1a3d5c',
@@ -68,6 +73,7 @@ export const MAP_THEMES: MapTheme[] = [
     id: 'nightforest',
     name: 'Moonlit Forest',
     icon: '🌙',
+    image: '/maps/nightforest.jpg',
     puterPrompt: 'top-down view dark mystical night forest battle arena for a card game, moonlight glowing through ancient twisted trees, purple and blue mystical fog, fireflies, magical glowing mushrooms, moonlit river in the middle, Clash Royale style game board, deep purples and blues, pixel art style, no text, no letters',
     bgGradient: ['#0d0820', '#050310'],
     topZoneColor: '#120a2e',
@@ -84,6 +90,7 @@ export const MAP_THEMES: MapTheme[] = [
     id: 'desert',
     name: 'Desert Oasis',
     icon: '🏜️',
+    image: '/maps/desert.jpg',
     puterPrompt: 'top-down view desert oasis battle arena for a card game, golden sand dunes, an oasis river with turquoise water in the middle, palm trees, cacti, sandstone ruins, ancient temple details, Clash Royale style game board, warm golds tans and turquoise, pixel art style, no text, no letters',
     bgGradient: ['#5c3d0a', '#3d2500'],
     topZoneColor: '#6b4a10',
@@ -100,6 +107,7 @@ export const MAP_THEMES: MapTheme[] = [
     id: 'galaxy',
     name: 'Galaxy Station',
     icon: '🌌',
+    image: '/maps/galaxy.jpg',
     puterPrompt: 'top-down view futuristic space station battle arena for a card game, metallic dark floor with glowing blue energy lines, cosmic purple nebula visible through transparent panels, stars, an energy river beam in the middle, sci-fi Clash Royale style game board, deep purples blues and neon cyan, pixel art style, no text, no letters',
     bgGradient: ['#050a2e', '#020615'],
     topZoneColor: '#0a1040',
