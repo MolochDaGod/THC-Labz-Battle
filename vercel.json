@@ -14,7 +14,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://dopebudz.thc-labz.xyz https://*.vercel.app http://localhost:*"
+          "value": "frame-ancestors 'self' https://dopebudz.thc-labz.xyz https://*.vercel.app http://localhost:* https://www.spawn.co https://spawn.co https://*.spawn.co https://play.bigspawn.net https://*.bigspawn.net"
         },
         {
           "key": "X-Frame-Options",
