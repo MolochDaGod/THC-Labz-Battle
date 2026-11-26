@@ -8,6 +8,13 @@ vite.config.ts.*
 .env
 .env.*
 
+# Wallet files and secrets - NEVER commit these
+**/ai-agent-wallet.txt
+**/*wallet*.txt
+**/*-wallet.json
+**/*keypair*.json
+**/*private-key*.txt
+
 # Large 3D models (serve from CDN or local dev only)
 client/public/card-art/*.glb
 client/public/geometries/*.glb

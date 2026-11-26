@@ -176,11 +176,17 @@ class LeaderboardMonitor {
       // Add tokens to AI agent wallet
       const updateField = tokenType === 'budz' ? 'budzBalance' : 'gbuxBalance';
       
+      const AI_AGENT_WALLET_ADDRESS = process.env.AI_AGENT_WALLET_ADDRESS;
+      
+      if (!AI_AGENT_WALLET_ADDRESS) {
+        throw new Error('AI_AGENT_WALLET_ADDRESS environment variable is not set. Cannot perform emergency refill.');
+      }
+      
       await db.update(users)
         .set({
           [updateField]: sql`${tokenType === 'budz' ? users.budzBalance : users.gbuxBalance} + ${amount}`
         })
-        .where(sql`${users.walletAddress} = 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65'`);
+        .where(sql`${users.walletAddress} = ${AI_AGENT_WALLET_ADDRESS}`);
       
       console.log(`✅ Emergency refill completed: +${amount} ${tokenType.toUpperCase()}`);
       return true;

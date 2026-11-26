@@ -24,15 +24,25 @@ const HELIUS_API_URL = `https://api.helius.xyz/v0/token-metadata?api-key=${HELIU
 const HELIUS_PRICE_API = `https://api.helius.xyz/v0/tokens/price-history?api-key=${HELIUS_PROJECT_ID}`;
 
 /**
- * THC LABZ swap recipient wallets
+ * THC LABZ swap recipient wallets - MUST be set via environment variables
  */
-const THC_SWAP_MAIN_WALLET = 'BdnCwgupmX4szmbBxpT7QJ5RkSRT4WS5BSSSUUo8Pe8u'; // 97% recipient
-const THC_SWAP_FEE_WALLET = '98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK'; // 3% fee recipient
+const THC_SWAP_MAIN_WALLET = process.env.THC_SWAP_MAIN_WALLET;
+const THC_SWAP_FEE_WALLET = process.env.THC_SWAP_FEE_WALLET;
 
 /**
  * AI Agent wallet for processing swaps and fees
  */
-const AI_AGENT_WALLET = 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65';
+const AI_AGENT_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
+
+if (!THC_SWAP_MAIN_WALLET) {
+  console.error('❌ CRITICAL: THC_SWAP_MAIN_WALLET must be set in environment variables');
+}
+if (!THC_SWAP_FEE_WALLET) {
+  console.error('❌ CRITICAL: THC_SWAP_FEE_WALLET must be set in environment variables');
+}
+if (!AI_AGENT_WALLET) {
+  console.error('❌ CRITICAL: AI_AGENT_WALLET_ADDRESS must be set in environment variables');
+}
 
 /**
  * AI Agent Crossmint wallet ID for token transfers

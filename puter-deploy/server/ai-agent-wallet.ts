@@ -18,7 +18,7 @@ interface AIAgentWallet {
 
 class AIAgentWalletService {
   private static readonly AI_AGENT_WALLET_ID = 'grench-ai-master-wallet';
-  private static readonly AI_AGENT_SOLANA_ADDRESS = 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65';
+  private static readonly AI_AGENT_SOLANA_ADDRESS = process.env.AI_AGENT_WALLET_ADDRESS || '';
   
   /**
    * Initialize or get existing AI agent wallet
@@ -26,6 +26,10 @@ class AIAgentWalletService {
   async initializeAIAgentWallet(): Promise<AIAgentWallet> {
     try {
       console.log('🤖 Initializing Grench AI Agent wallet...');
+      
+      if (!AIAgentWalletService.AI_AGENT_SOLANA_ADDRESS) {
+        throw new Error('AI_AGENT_WALLET_ADDRESS environment variable is not set. Cannot initialize AI agent wallet.');
+      }
       
       const db = storage.getDb();
       if (!db) {

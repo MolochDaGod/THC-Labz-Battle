@@ -29,15 +29,22 @@ function getPrimaryRPCUrl(): string {
 }
 
 /**
- * THC LABZ swap recipient wallets
+ * THC LABZ swap recipient wallets - MUST be set via environment variables
  */
-const THC_SWAP_MAIN_WALLET = 'BdnCwgupmX4szmbBxpT7QJ5RkSRT4WS5BSSSUUo8Pe8u'; // 97% recipient
-const THC_SWAP_FEE_WALLET = 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65'; // AI Agent wallet for fee collection
+const THC_SWAP_MAIN_WALLET = process.env.THC_SWAP_MAIN_WALLET;
+const THC_SWAP_FEE_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
 
 /**
  * AI Agent wallet for processing swaps and fees
  */
-const AI_AGENT_WALLET = 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65';
+const AI_AGENT_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
+
+if (!THC_SWAP_MAIN_WALLET) {
+  console.error('❌ CRITICAL: THC_SWAP_MAIN_WALLET must be set in environment variables');
+}
+if (!AI_AGENT_WALLET) {
+  console.error('❌ CRITICAL: AI_AGENT_WALLET_ADDRESS must be set in environment variables');
+}
 
 /**
  * AI Agent Crossmint wallet ID for token transfers
@@ -363,13 +370,19 @@ export async function executeTokenSwap(req: Request, res: Response) {
       console.log(`💱 Conversion: ${amount} THC → ${budzAmount} BUDZ (Rate: ${conversionRate.toFixed(2)} BUDZ per THC), User gets: ${userBudzAmount}`);
       
       // Transfer 97% of THC LABZ to main wallet
+      if (!THC_SWAP_MAIN_WALLET) {
+        throw new Error('THC_SWAP_MAIN_WALLET not configured');
+      }
       const mainTransfer = await crossmintService.transferThcLabz(
         serverWallet,
         THC_SWAP_MAIN_WALLET,
         mainWalletAmount
       );
       
-      // Transfer 3% of THC LABZ to fee wallet  
+      // Transfer 3% of THC LABZ to fee wallet
+      if (!THC_SWAP_FEE_WALLET) {
+        throw new Error('AI_AGENT_WALLET_ADDRESS not configured for fee collection');
+      }
       const feeTransfer = await crossmintService.transferThcLabz(
         serverWallet,
         THC_SWAP_FEE_WALLET,
@@ -418,6 +431,9 @@ export async function executeTokenSwap(req: Request, res: Response) {
       console.log(`💱 Stable swap: ${amount} GBUX → ${budzAmount} BUDZ (1:10 rate)`);
       
       // Send GBUX to AI Agent wallet (AI manages all token supply)
+      if (!AI_AGENT_WALLET) {
+        throw new Error('AI_AGENT_WALLET_ADDRESS not configured');
+      }
       const gbuxTransfer = await crossmintService.transferGbux(
         serverWallet,
         AI_AGENT_WALLET,

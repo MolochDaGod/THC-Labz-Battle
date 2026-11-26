@@ -945,9 +945,10 @@ export default function DopeWarsGame({}: DopeWarsGameProps = {}) {
   // Real-time clock state
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   
-  // Admin wallet addresses
-  const adminWallets = ['98jzgFFkPhrw9sfr5YyttTpCBiJyid6tzxxJjXrj7xXK', 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65', 'Fyfu65hZv3npv6wChMFQXqjUfc2hWmq3mGSZbVLDJc9n'];
-  const isAdmin = connectedWallet && adminWallets.includes(connectedWallet);
+  // Admin wallet addresses - COMPROMISED WALLETS REMOVED
+  // TODO: Update this list with new admin wallet addresses after rotation
+  const adminWallets: string[] = [];
+  const isAdmin = false; // Disabled until new admin wallets are configured
 
   // Calculate final achievement rewards
   const calculateFinalAchievements = async () => {
@@ -2136,8 +2137,8 @@ export default function DopeWarsGame({}: DopeWarsGameProps = {}) {
           walletAddress: connectedWallet,
           serverWallet: serverWallet,
           amount: swapAmount,
-          direction: swapDirection,
-          aiAgentWallet: 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65'
+          direction: swapDirection
+          // aiAgentWallet removed - server will use AI_AGENT_WALLET_ADDRESS from environment
         })
       });
 

@@ -636,7 +636,7 @@ export default function AdminPanel({ onClose, onTestEndGameVideo, onTestAchievem
                   <div className="bg-gray-800 p-6 rounded-lg border border-red-400">
                     <h4 className="text-lg font-bold text-red-400 mb-4">AI Agent Wallet</h4>
                     <p className="text-gray-300 mb-4">
-                      AI Agent Wallet: <span className="font-mono text-cyan-400">ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65</span>
+                      AI Agent Wallet: <span className="font-mono text-yellow-400">[Configured via Environment Variable]</span>
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
                       This wallet controls the entire 10 billion token supply and processes all custom rewards, 
