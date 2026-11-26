@@ -4,11 +4,15 @@ import { grenchAI } from "./grench-ai";
 import { leaderboard, users, lifetimeLeaderboard } from "../shared/schema";
 
 // Agent AI wallet configuration - MUST be set via environment variables
-const AGENT_AI_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
-const AGENT_AI_SECRET = process.env.AI_AGENT_WALLET_SECRET;
+// Supports both new names and common alternative names for backward compatibility
+const AGENT_AI_WALLET = process.env.AI_AGENT_WALLET_ADDRESS || process.env.AI_AGENT_WALLET || process.env.AGENT_WALLET;
+const AGENT_AI_SECRET = process.env.AI_AGENT_WALLET_SECRET || process.env.AGENT_WALLET_SECRET || process.env.AGENT_SEED_PHRASE || process.env.WALLET_SECRET;
 
 if (!AGENT_AI_WALLET || !AGENT_AI_SECRET) {
-  console.error('❌ CRITICAL: AI_AGENT_WALLET_ADDRESS and AI_AGENT_WALLET_SECRET must be set in environment variables');
+  console.error('❌ CRITICAL: AI agent wallet credentials must be set in environment variables');
+  console.error('❌ Supported env var names:');
+  console.error('   - AI_AGENT_WALLET_ADDRESS (or AI_AGENT_WALLET or AGENT_WALLET)');
+  console.error('   - AI_AGENT_WALLET_SECRET (or AGENT_WALLET_SECRET or AGENT_SEED_PHRASE or WALLET_SECRET)');
   console.error('❌ Reward processing will fail without these credentials');
 }
 

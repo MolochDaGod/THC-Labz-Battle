@@ -8,11 +8,12 @@ import { sql } from 'drizzle-orm';
 
 const router = Router();
 
-const TREASURY_WALLET   = process.env.AI_AGENT_TREASURY_WALLET;
+// Supports multiple env var names for backward compatibility
+const TREASURY_WALLET   = process.env.AI_AGENT_TREASURY_WALLET || process.env.TREASURY_WALLET || process.env.AGENT_TREASURY;
 
 if (!TREASURY_WALLET) {
-  console.error('❌ CRITICAL: AI_AGENT_TREASURY_WALLET must be set in environment variables');
-  throw new Error('AI_AGENT_TREASURY_WALLET environment variable is required');
+  console.error('❌ CRITICAL: Treasury wallet must be set (AI_AGENT_TREASURY_WALLET, TREASURY_WALLET, or AGENT_TREASURY)');
+  throw new Error('Treasury wallet environment variable is required');
 }
 const GBUX_MINT         = '55TpSoMNxbfsNJ9U1dQoo9H3dRtDmjBZVMcKqvU2nray';
 const BUDZ_MINT         = '2i7TjYvmTfyU8P22x8HkX2Wv8nmEtsHbyR8QnThxnsiQ';

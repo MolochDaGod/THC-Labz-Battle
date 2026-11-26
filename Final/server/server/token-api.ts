@@ -25,23 +25,25 @@ const HELIUS_PRICE_API = `https://api.helius.xyz/v0/tokens/price-history?api-key
 
 /**
  * THC LABZ swap recipient wallets - MUST be set via environment variables
+ * Supports multiple env var names for backward compatibility
  */
-const THC_SWAP_MAIN_WALLET = process.env.THC_SWAP_MAIN_WALLET;
-const THC_SWAP_FEE_WALLET = process.env.THC_SWAP_FEE_WALLET;
+const THC_SWAP_MAIN_WALLET = process.env.THC_SWAP_MAIN_WALLET || process.env.THC_MAIN_WALLET;
+const THC_SWAP_FEE_WALLET = process.env.THC_SWAP_FEE_WALLET || process.env.AI_AGENT_WALLET_ADDRESS || process.env.AI_AGENT_WALLET || process.env.AGENT_WALLET;
 
 /**
  * AI Agent wallet for processing swaps and fees
+ * Supports multiple env var names for backward compatibility
  */
-const AI_AGENT_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
+const AI_AGENT_WALLET = process.env.AI_AGENT_WALLET_ADDRESS || process.env.AI_AGENT_WALLET || process.env.AGENT_WALLET;
 
 if (!THC_SWAP_MAIN_WALLET) {
-  console.error('❌ CRITICAL: THC_SWAP_MAIN_WALLET must be set in environment variables');
+  console.error('❌ CRITICAL: THC swap main wallet must be set (THC_SWAP_MAIN_WALLET or THC_MAIN_WALLET)');
 }
 if (!THC_SWAP_FEE_WALLET) {
-  console.error('❌ CRITICAL: THC_SWAP_FEE_WALLET must be set in environment variables');
+  console.error('❌ CRITICAL: THC swap fee wallet must be set (THC_SWAP_FEE_WALLET or AI_AGENT_WALLET_*)');
 }
 if (!AI_AGENT_WALLET) {
-  console.error('❌ CRITICAL: AI_AGENT_WALLET_ADDRESS must be set in environment variables');
+  console.error('❌ CRITICAL: AI agent wallet must be set (AI_AGENT_WALLET_ADDRESS, AI_AGENT_WALLET, or AGENT_WALLET)');
 }
 
 /**
