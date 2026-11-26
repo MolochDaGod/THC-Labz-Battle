@@ -176,10 +176,11 @@ class LeaderboardMonitor {
       // Add tokens to AI agent wallet
       const updateField = tokenType === 'budz' ? 'budzBalance' : 'gbuxBalance';
       
-      const AI_AGENT_WALLET_ADDRESS = process.env.AI_AGENT_WALLET_ADDRESS;
+      // Supports multiple env var names for backward compatibility
+      const AI_AGENT_WALLET_ADDRESS = process.env.AI_AGENT_WALLET_ADDRESS || process.env.AI_AGENT_WALLET || process.env.AGENT_WALLET;
       
       if (!AI_AGENT_WALLET_ADDRESS) {
-        throw new Error('AI_AGENT_WALLET_ADDRESS environment variable is not set. Cannot perform emergency refill.');
+        throw new Error('AI agent wallet not configured. Set AI_AGENT_WALLET_ADDRESS, AI_AGENT_WALLET, or AGENT_WALLET');
       }
       
       await db.update(users)
