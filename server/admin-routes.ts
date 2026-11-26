@@ -200,8 +200,14 @@ export const adminRoutes = {
 
       console.log(`🎁 Admin custom reward: ${amount} ${token.toUpperCase()} to ${walletAddress} - Reason: ${reason}`);
 
-      // AI Agent wallet for token transfers
-      const AI_AGENT_WALLET = 'ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65';
+      // AI Agent wallet for token transfers - MUST be set via environment variable
+      const AI_AGENT_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
+      
+      if (!AI_AGENT_WALLET) {
+        return res.status(500).json({ 
+          error: 'AI_AGENT_WALLET_ADDRESS environment variable is not set. Cannot send tokens.' 
+        });
+      }
 
       let transactionId = '';
       

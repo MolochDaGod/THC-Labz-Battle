@@ -3,9 +3,14 @@ import { storage } from "./storage";
 import { grenchAI } from "./grench-ai";
 import { leaderboard, users, lifetimeLeaderboard } from "../shared/schema";
 
-// Agent AI wallet configuration
-const AGENT_AI_WALLET = "ErSGeWkLuKqmW2MNrcFWPsYryNPXDW224GmgNBf8ZT65";
-const AGENT_AI_SECRET = "dream chest village mango summer transfer prefer whip jeans head pond firm";
+// Agent AI wallet configuration - MUST be set via environment variables
+const AGENT_AI_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
+const AGENT_AI_SECRET = process.env.AI_AGENT_WALLET_SECRET;
+
+if (!AGENT_AI_WALLET || !AGENT_AI_SECRET) {
+  console.error('❌ CRITICAL: AI_AGENT_WALLET_ADDRESS and AI_AGENT_WALLET_SECRET must be set in environment variables');
+  console.error('❌ Reward processing will fail without these credentials');
+}
 
 // Token contracts
 const BUDZ_CONTRACT = "2i7TjYvmTfyU8P22x8HkX2Wv8nmEtsHbyR8QnThxnsiQ";

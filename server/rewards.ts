@@ -3,9 +3,14 @@ import { storage } from "./storage";
 import { grenchAI } from "./grench-ai";
 import { leaderboard, users, lifetimeLeaderboard } from "../shared/schema";
 
-// Agent AI wallet configuration - BUDZ AI Agent Reward Token
-const AGENT_AI_WALLET = "2i7TjYvmTfyU8P22x8HkX2Wv8nmEtsHbyR8QnThxnsiQ";
-const AGENT_AI_SECRET = "dream chest village mango summer transfer prefer whip jeans head pond firm";
+// Agent AI wallet configuration - MUST be set via environment variables
+const AGENT_AI_WALLET = process.env.AI_AGENT_WALLET_ADDRESS;
+const AGENT_AI_SECRET = process.env.AI_AGENT_WALLET_SECRET;
+
+if (!AGENT_AI_WALLET || !AGENT_AI_SECRET) {
+  console.error('❌ CRITICAL: AI_AGENT_WALLET_ADDRESS and AI_AGENT_WALLET_SECRET must be set in environment variables');
+  console.error('❌ Reward processing will fail without these credentials');
+}
 
 // Token contracts - BUDZ is the AI agent reward token
 const BUDZ_CONTRACT = "2i7TjYvmTfyU8P22x8HkX2Wv8nmEtsHbyR8QnThxnsiQ";
